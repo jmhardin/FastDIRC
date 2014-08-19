@@ -1,0 +1,11 @@
+1) Unpack goptical 1.0 (I used the one updated 07-Jan-2012)
+
+2) Replace the file in goptical_core_src/sys_system.cc with the one in this directory
+	This one is changed so that the index_get function correctly indexes objects after an object is removed from the system.  Failing to replace this will cause this code to segfault.
+
+3) Build and install goptical
+
+4) Make sure the goptical_core/src/.libs/libgoptical-1.0.so is in your ld path (I had to edit /etc/ld.so.conf.d/ to add it and then run ldconfig)
+
+5) Edit the Makefile to correctly point to that library
+
