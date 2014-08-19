@@ -1,0 +1,402 @@
+#include <vector>
+
+#include "../include/dirc_goptical_sim.h"
+#include "../include/dirc_optical_components.h"
+#include "../include/dirc_point.h"
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+
+#include <Goptical/Analysis/Spot>
+
+#include <Goptical/Math/Vector>
+#include <Goptical/Math/VectorPair>
+
+#include <Goptical/Sys/System>
+#include <Goptical/Sys/SourcePoint>
+#include <Goptical/Sys/SourceRays>
+#include <Goptical/Sys/Source>
+#include <Goptical/Sys/Group>
+#include <Goptical/Design/Telescope/Newton>
+#include <Goptical/Sys/Image>
+#include <Goptical/Sys/Lens>
+#include <Goptical/Sys/OpticalSurface>
+#include <Goptical/Sys/Mirror>
+#include <Goptical/Sys/Mirror>
+#include <Goptical/Data/Plot>
+#include <Goptical/Data/PlotData>
+#include <Goptical/Data/Set>
+
+#include <Goptical/Trace/Tracer>
+#include <Goptical/Trace/Result>
+#include <Goptical/Trace/Distribution>
+#include <Goptical/Trace/Sequence>
+#include <Goptical/Trace/Params>
+#include <Goptical/Trace/Ray>
+#include "Goptical/common.hh"
+
+#include <Goptical/Io/RendererSvg>
+#include <Goptical/Io/Rgb>
+#include <Goptical/Io/RendererViewport>
+
+#include <stdlib.h>
+#include <math.h>
+
+#include <TRandom3.h>
+
+
+using namespace Goptical;
+
+//Using close simplex 
+DircGopticalSim::DircGopticalSim(double ifoc_r/*=540.66*/, \
+	double ifoc_mirror_size/*=300.38*/, \
+	double ifoc_rot/*=-73.503*/, \
+	double isens_size/*=600*/, \
+	double isens_rot/*=90*/)
+{
+	foc_r = ifoc_r;
+	foc_mirror_size = ifoc_mirror_size;
+	foc_rot = ifoc_rot;
+	sens_size = isens_size;
+	sens_rot = isens_rot;
+	
+	barLength=1550;
+	barWidth=50;
+	barDepth=17;
+	
+	rand_gen = new TRandom3;
+	
+// 	sys = ref<Sys::System>::create();
+	
+	build_system();
+}
+void DircGopticalSim::build_system()
+{
+	//**********************************************************************
+	// Optical system definition
+	//  std::cout << "START EVAL" << std::endl;
+	
+	//TODO:make these params
+	double size = 2200;//overal System scale 13.1 deg = 10+3.1 at 4m
+	double testSize = 1800;
+	//  double sourceDist = ((double*)params)[1];
+	
+	//  double barLength=2450;
+
+// 	double sourceDist = barDepth*.99;
+	
+	double focR = foc_r;
+	double focMirrorSize = foc_mirror_size;
+	double focRot = foc_rot;
+	double sensSize = sens_size;
+	double sensRot = sens_rot;
+	
+	double testy = barLength/2+1000;
+	
+	ref<qwartzCrystal> qwartz = ref<qwartzCrystal>::create();
+	ref<mineralOil> oil = ref<mineralOil>::create();
+	
+	
+	ref<Curve::Flat> barCurve = ref<Curve::Flat>::create();
+	ref<Shape::Rectangle> barXYShape = ref<Shape::Rectangle>::create(barWidth,barLength);
+	ref<Shape::Rectangle> barYZShape = ref<Shape::Rectangle>::create(barDepth,barLength);
+	ref<Shape::Rectangle> barXZShape = ref<Shape::Rectangle>::create(barWidth,barDepth);
+	
+	
+	Sys::OpticalSurface qwartzBarFarPlane(Math::VectorPair<3>(0,0,0,0,0,0),barCurve,barXYShape,qwartz,_Goptical::Material::vacuum);
+	sys.add(qwartzBarFarPlane);
+	
+	Sys::OpticalSurface qwartzBarClosePlane(Math::VectorPair<3>(0,0,-barDepth,0,0,0),barCurve,barXYShape,qwartz,_Goptical::Material::vacuum);
+	qwartzBarClosePlane.rotate(0,180,0);
+	sys.add(qwartzBarClosePlane);
+	
+	Sys::OpticalSurface qwartzBarYZ1Plane(Math::VectorPair<3>(-barWidth/2,0,-barDepth/2,0,0,0),barCurve,barYZShape,qwartz,_Goptical::Material::vacuum);
+	qwartzBarYZ1Plane.rotate(0,90,0);
+	sys.add(qwartzBarYZ1Plane);
+	
+	Sys::OpticalSurface qwartzBarYZ2Plane(Math::VectorPair<3>(barWidth/2,0,-barDepth/2,0,0,0),barCurve,barYZShape,qwartz,_Goptical::Material::vacuum);
+	qwartzBarYZ2Plane.rotate(0,-90,0);
+	sys.add(qwartzBarYZ2Plane);
+	
+	Sys::OpticalSurface qwartzBarXZ1Plane(Math::VectorPair<3>(0,barLength/2+0,-barDepth/2,0,0,0),barCurve,barXZShape,qwartz,oil);
+	qwartzBarXZ1Plane.rotate(90,0,0);
+	//  sys.add(qwartzBarXZ1Plane);
+	
+	Sys::OpticalSurface qwartzBarXZ2Plane(Math::VectorPair<3>(0,-barLength/2,-barDepth/2,0,0,0),barCurve,barXZShape,qwartz,_Goptical::Material::vacuum);
+	qwartzBarXZ2Plane.rotate(-90,0,0);
+	sys.add(qwartzBarXZ2Plane);
+	
+	
+	//Wedge
+	
+	double wedgeWidthOff = 5;
+	double wedgeDepthOff = 10;
+	double wedgeFarAngle = .006*57.3;
+	double wedgeCloseAngle = 30;
+	double wedgeWidth=barWidth - wedgeWidthOff;
+// 	double wedgeDepthLow = barDepth+wedgeDepthOff;
+	double wedgeDepthHigh = 79;
+	double wedgeHeight = 91;
+	
+	ref<Curve::Flat> wedgeCurve = ref<Curve::Flat>::create();
+	ref<Shape::Rectangle> wedgeFarShape = ref<Shape::Rectangle>::create(wedgeWidth,wedgeHeight/cos(wedgeFarAngle/57.3));
+	ref<Shape::Rectangle> wedgeCloseShape = ref<Shape::Rectangle>::create(wedgeWidth,wedgeHeight/cos(wedgeCloseAngle/57.3));
+	ref<Shape::Rectangle> wedgeSideShape = ref<Shape::Rectangle>::create(wedgeDepthHigh,wedgeHeight);
+	// ref<Shape::Rectangle> wedgeBottomShape = ref<Shape::Rectangle>::create(wedgeDepthLow,wedgeWidth);
+	// ref<Shape::Rectangle> wedgeTopShape = ref<Shape::Rectangle>::create(wedgeWidth,wedgeDepthHigh);
+	ref<Shape::Rectangle> wedgeSmallShape = ref<Shape::Rectangle>::create(wedgeWidthOff,barDepth);
+	
+	Sys::OpticalSurface wedgeFarPlane(Math::VectorPair<3>((-barWidth+wedgeWidth)/2,barLength/2+wedgeHeight/2,wedgeHeight/(2/tan(wedgeFarAngle/57.3))),wedgeCurve,wedgeFarShape,qwartz,_Goptical::Material::vacuum);
+	wedgeFarPlane.rotate(wedgeFarAngle,0,0);
+	sys.add(wedgeFarPlane);
+	
+	
+	Sys::OpticalSurface wedgeClosePlane(Math::VectorPair<3>((-barWidth+wedgeWidth)/2,barLength/2+wedgeHeight/2,-barDepth-wedgeDepthOff-wedgeHeight/(2/tan(wedgeCloseAngle/57.3))),wedgeCurve,wedgeCloseShape,qwartz,_Goptical::Material::vacuum);
+	wedgeClosePlane.rotate(0,180,0);
+	wedgeClosePlane.rotate(wedgeCloseAngle,0,0);
+	sys.add(wedgeClosePlane);
+	
+	Sys::OpticalSurface wedgeLeftPlane(Math::VectorPair<3>(-barWidth/2,barLength/2+wedgeHeight/2,-wedgeDepthHigh/2),wedgeCurve,wedgeSideShape,qwartz,_Goptical::Material::vacuum);
+	wedgeLeftPlane.rotate(0,90,0);
+	sys.add(wedgeLeftPlane);
+	
+	Sys::OpticalSurface wedgeRightPlane(Math::VectorPair<3>(barWidth/2-wedgeWidthOff,barLength/2+wedgeHeight/2,-wedgeDepthHigh/2),wedgeCurve,wedgeSideShape,qwartz,_Goptical::Material::vacuum);
+	wedgeRightPlane.rotate(0,-90,0);
+	sys.add(wedgeRightPlane);
+	
+	Sys::OpticalSurface wedgeSmallPlane(Math::VectorPair<3>(barWidth/2-wedgeWidthOff/2,barLength/2,0),wedgeCurve,wedgeSmallShape,qwartz,_Goptical::Material::vacuum);
+	wedgeSmallPlane.rotate(90,0,0);
+	sys.add(wedgeSmallPlane);
+	
+	/*  
+	 *  Sys::OpticalSurface wedgeTopPlane(Math::VectorPair<3>((-barWidth+wedgeWidth)/2,barLength/2+wedgeHeight,-wedgeDepthHigh/2),wedgeCurve,wedgeTopShape,qwartz,oil);
+	 *  wedgeTopPlane.rotate(90,0,0);
+	 *  sys.add(wedgeTopPlane);
+	 */
+	
+	//Window implemented as a gap
+	//TODO - put in double x,y,z for readability
+	
+	double upperWedgeDepthHigh = 130;
+	double upperWedgeTop = 178.6;
+	double upperWedgeHeight = 78;
+	
+	ref<Curve::Flat> upperWedgeCurve = ref<Curve::Flat>::create();
+	ref<Shape::Rectangle> upperWedgeFarShape = ref<Shape::Rectangle>::create(wedgeWidth,upperWedgeHeight);
+	ref<Shape::Rectangle> upperWedgeCloseShape = ref<Shape::Rectangle>::create(wedgeWidth,upperWedgeHeight/cos(wedgeCloseAngle/57.3));
+	ref<Shape::Rectangle> upperWedgeSideShape = ref<Shape::Rectangle>::create(upperWedgeDepthHigh,upperWedgeHeight);
+	// ref<Shape::Rectangle> wedgeBottomShape = ref<Shape::Rectangle>::create(wedgeDepthLow,wedgeWidth);
+	ref<Shape::Rectangle> upperWedgeTopShape = ref<Shape::Rectangle>::create(wedgeWidth,upperWedgeDepthHigh);
+	
+	double uwx = (-barWidth+wedgeWidth)/2;
+	double uwy = barLength/2+upperWedgeTop-upperWedgeHeight/2;
+	double uwz = 0;
+	
+	Sys::OpticalSurface upperWedgeFarPlane(Math::VectorPair<3>(uwx,uwy,uwz),upperWedgeCurve,upperWedgeFarShape,qwartz,_Goptical::Material::vacuum);
+	wedgeFarPlane.rotate(0,0,0);
+	sys.add(upperWedgeFarPlane);
+	
+	uwx = (-barWidth+wedgeWidth)/2;
+	uwy = uwy;
+	uwz = -barDepth-wedgeDepthOff-(upperWedgeTop-upperWedgeHeight/2)*tan(wedgeCloseAngle/57.3);
+	
+	Sys::OpticalSurface upperWedgeClosePlane(Math::VectorPair<3>(uwx,uwy,uwz),upperWedgeCurve,upperWedgeCloseShape,qwartz,_Goptical::Material::vacuum);
+	upperWedgeClosePlane.rotate(0,180,0);
+	upperWedgeClosePlane.rotate(wedgeCloseAngle,0,0);
+	sys.add(upperWedgeClosePlane);
+	
+	uwx = barWidth/2-wedgeWidthOff;
+	uwy = uwy;
+	uwz = -upperWedgeDepthHigh/2;
+	
+	Sys::OpticalSurface upperWedgeRightPlane(Math::VectorPair<3>(uwx,uwy,uwz),upperWedgeCurve,upperWedgeSideShape,qwartz,_Goptical::Material::vacuum);
+	upperWedgeRightPlane.rotate(0,-90,0);
+	sys.add(upperWedgeRightPlane);
+	
+	uwx = -barWidth/2;
+	uwy = uwy;
+	uwz = -upperWedgeDepthHigh/2;
+	
+	Sys::OpticalSurface upperWedgeLeftPlane(Math::VectorPair<3>(uwx,uwy,uwz),upperWedgeCurve,upperWedgeSideShape,qwartz,_Goptical::Material::vacuum);
+	upperWedgeLeftPlane.rotate(0,90,0);
+	sys.add(upperWedgeLeftPlane);
+	
+	uwx = (-barWidth+wedgeWidth)/2;
+	uwy = barLength/2+upperWedgeTop;
+	uwz = -upperWedgeDepthHigh/2;
+	
+	Sys::OpticalSurface upperWedgeTopPlane(Math::VectorPair<3>(uwx,uwy,uwz),upperWedgeCurve,upperWedgeTopShape,qwartz,oil);
+	upperWedgeTopPlane.rotate(90,0,0);
+	sys.add(upperWedgeTopPlane);
+	//Box
+	//Focus Mirror
+	double boxSize = barWidth*35;
+	double mirrorDepth = 288;
+	focRot = 74.11;
+	focR = -1200;
+	focMirrorSize = mirrorDepth;
+	
+// 	double focSag = focR-sqrt(focR*focR-focMirrorSize*focMirrorSize/4);
+// 	double focAng = atan(focSag*2/focMirrorSize) - focRot/57.3;
+	
+	//  double focz = -focSag*cos(focRot/57.3)+focMirrorSize*sin(focRot/57.3)/2;
+	//  double focy = focSag*sin(focRot/57.3)+focMirrorSize*cos(focRot/57.3)/2;
+	
+	double focz = -focMirrorSize*sin(focRot/57.3)/2;
+	double focy = focMirrorSize*cos(focRot/57.3)/2;
+	
+	double focYoff = 139;
+	
+	double fx,fy,fz;
+	fx = 0;
+	fy = focy + barLength/2+upperWedgeTop+focYoff;
+	fz = focz;
+	
+	ref<Shape::Rectangle> focMirrorShape = ref<Shape::Rectangle>::create(boxSize,focMirrorSize);
+	cylinderY focCylinder(-focR);
+	ref<Sys::Mirror> focMirror = ref<Sys::Mirror>::create(Math::Vector<3>(fx,fy,fz),focCylinder,focMirrorShape,true,Material::mirror,oil);
+	focMirror->rotate(focRot,0,0);
+	sys.add(focMirror);
+	
+	
+	//Image Plane
+	
+	sensSize = 312;
+	//sensSize = 600;
+	sensRot = 47.87;
+	double boxCloseZ = -614;
+	
+	double reflOff = 9;
+	double sx,sy,sz;
+	sx = 0;
+	sy = -sensSize*cos(sensRot/57.3)/2-reflOff+barLength/2;
+	sz = boxCloseZ + sensSize*sin(sensRot/57.3)/2;
+	
+	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,sensSize);
+	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
+	Sys::Image boxImage(Math::Vector<3>(sx,sy,sz),boxImageCurve,boxImageShape);
+	boxImage.rotate(sensRot,0,0);
+	//  Sys::Image boxImage(Math::Vector<3>(0,imageendy/2+barLength/2+wedgeHeight,gsl_vector_get(vars,0)),boxImageCurve,boxImageShape);
+	//  boxImage.rotate(0,0,0);
+	sys.add(boxImage);
+	
+	
+	ref<Shape::Rectangle> blockShape = ref<Shape::Rectangle>::create(boxSize,upperWedgeTop);
+	ref<Sys::Mirror> opaqueMirror=ref<Sys::Mirror>::create(Math::Vector<3>(0,barLength/2+upperWedgeTop,0),barCurve,blockShape,true,Material::mirror,oil);
+	sys.add(opaqueMirror);
+	
+	ref<Curve::Flat> imgCurve = ref<Curve::Flat>::create();
+	ref<Shape::Rectangle> imgShape = ref<Shape::Rectangle>::create(size/0.5,testSize*2);
+	Sys::Image testImage(Math::VectorPair<3>(0,testy,0,0,0,0),imgCurve,imgShape);
+	testImage.rotate(90,0,0);
+	sys.add(testImage);
+	
+	printf("sys pointer loc build sim: %p\n",&sys);
+}
+std::vector<dirc_point> DircGopticalSim::sim_n_photons(int n_photons, \
+	double ckov_theta /*= 47*/, \
+	double particle_x /*= 0*/, \
+	double particle_y /*= 0*/, \
+	double particle_theta /*= 0*/, \
+	double particle_phi /*= 0*/, \
+	bool outfile /*= false*/)
+{
+	printf("sys pointer loc trace sim: %p\n",&sys);
+	
+// 	double sourceAngle = 0;
+	double sDepth = .95*barDepth;
+// 	double sHeight = sDepth*tan(sourceAngle/57.3);
+	double emitAngle = ckov_theta;
+	double particleTheta = particle_theta;
+	double particlePhi = particle_phi;
+	
+	int numPhots = n_photons;
+	
+	double sourcez = -sDepth;
+	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
+	double sourcex = particle_x;
+	double tsy = sourcey;
+	double tsx = sourcex;
+	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
+	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
+	
+	ref<qwartzCrystal> qwartz = ref<qwartzCrystal>::create();
+	ref<mineralOil> oil = ref<mineralOil>::create();
+
+	Sys::SourceRays srcrays(Math::Vector<3>(sourcex,sourcey,sourcez));
+	srcrays.set_material(qwartz);
+	
+	double sourceOff,randPhi;
+	
+	for (int i = 0; i < numPhots; i++)
+	{ 
+		sourceOff = rand_gen->Uniform(0,2*3.14159265);
+		randPhi = rand_gen->Uniform(0,barDepth);
+		std::cout << i << " " << sourceOff << std::endl;
+		srcrays.add_rays(Math::VectorPair<3>(0,0,sourceOff,sin(emitAngle/57.3)*cos(randPhi),sin(emitAngle/57.3)*sin(randPhi),cos(emitAngle/57.3)),&srcrays);
+	}
+	srcrays.rotate(particleTheta,0,0);
+	srcrays.rotate(0,0,particlePhi);
+	printf("srsrays before: %p\n",&srcrays);
+	printf("Before add\n");
+	
+	sys.add(srcrays);
+	
+	printf("Before Trace\n");
+	
+	Trace::Tracer         tracer(sys);
+	
+	tracer.get_params().set_max_bounce(1000);
+	tracer.get_trace_result().set_generated_save_state(srcrays);
+	
+	tracer.trace();
+	
+	std::vector<dirc_point> rval;
+	
+	
+	_Goptical::Trace::rays_queue_t rays = tracer.get_trace_result().get_generated(srcrays);
+	
+	double x, y;
+	for (unsigned int i = 0; i < rays.size(); i++)
+	{
+		x = ((Math::Vector3)rays[i]->get_intercept_point()).x();
+		y = ((Math::Vector3)rays[i]->get_intercept_point()).y();
+		
+		dirc_point add_point;
+		add_point.x = x;
+		add_point.y = y;
+		
+		rval.push_back(add_point);
+	}
+	
+	printf("After Trace\n");
+	if (outfile == true)
+	{
+		
+		Io::RendererSvg       svg_renderer("layout.svg", 1000, 700);
+		Io::RendererViewport  &renderer = svg_renderer;
+		// 3d system layout
+		
+		std::cout << renderer.get_feature_size() << std::endl;
+		renderer.set_feature_size(20);
+		
+		renderer.set_perspective();
+		renderer.set_fov(45);	
+		
+		
+		sys.draw_3d_fit(renderer, 0);
+		renderer.set_camera_transform(renderer.get_camera_transform().linear_rotation(Math::Vector3(0,0,0)));
+		sys.draw_3d(renderer);
+		
+		tracer.get_trace_result().draw_3d(renderer);
+		Analysis::Spot spot(sys);
+		spot.get_tracer().get_params().set_max_bounce(5000);
+		Io::RendererSvg renderSpot("spot.svg", 1000, 1000, Io::rgb_black);
+		
+		spot.draw_diagram(renderSpot);
+	}
+	
+	sys.remove(srcrays);
+	return rval;
+}

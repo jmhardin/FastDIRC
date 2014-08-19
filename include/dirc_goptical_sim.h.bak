@@ -1,0 +1,43 @@
+#include <vector>
+#include <TRandom3.h>
+
+#include "dirc_point.h"
+
+#include <Goptical/Sys/System>
+
+#ifndef DIRC_GOPTICAL_SIM
+#define DIRC_GOPTICAL_SIM 
+using namespace Goptical;
+class DircGopticalSim
+{
+private:
+	double foc_r;
+	double foc_mirror_size;
+	double foc_rot;
+	double sens_size;
+	double sens_rot;
+	
+	double barLength;
+	double barWidth;
+	double barDepth;
+	
+	Sys::System sys;
+	
+	TRandom3 *rand_gen;
+	
+	void build_system();
+public:
+	DircGopticalSim(double ifoc_r = 540.66, \
+		double ifoc_mirror_size = 300.38, \
+		double ifoc_rot = 73.503, \
+		double isens_size = 600, \
+		double isens_rot = 90);
+	std::vector<dirc_point> sim_n_photons(int n_photons, \
+		double ckov_theta = 47, \
+		double particle_x = 0, \
+		double particle_y = 0, \
+		double particle_theta = 0, \
+		double particle_phi = 0, \
+		bool outfile = false);	
+};
+#endif
