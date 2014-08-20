@@ -41,7 +41,7 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
 int main(int nargs, char* argv[])
 {
 
-// 	Math::Transform3 trans;
+// 	Math::Transform3 trans;  
 // 	Math::Vector3 startz(0,0,1);
 // 	Math::VectorPair3 pair(0,0,0,0,1,0);
 // 	
