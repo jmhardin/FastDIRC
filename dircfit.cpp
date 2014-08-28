@@ -86,8 +86,8 @@ int main(int nargs, char* argv[])
 	
 	double particle_x = 0;
 	double particle_y = 0;
-	double particle_theta = 0;
-	double particle_phi = 0;
+	double particle_theta = 4;
+	double particle_phi = 40;
 	
 	int num_runs = 4000;
 	
@@ -118,9 +118,9 @@ int main(int nargs, char* argv[])
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
-	double mirror_r_difference = 0;
+	double mirror_r_difference = in_num;
 	double wedge_non_uniformity = 0;
-	double pmt_offset = in_num;
+	double pmt_offset = 0;
 	bool three_seg_mirror = true;
 	
 	
