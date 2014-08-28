@@ -56,11 +56,7 @@ public:
 	}
 	double get_refractive_index(double wavelength) const
 	{
-		return 1.54427;
-		//Val above taken from internet - check later
-// 		return 1.473;
-		//Edge Kludge for now
-// 			return 1.3579;
+		return 1.47;
 	}
 	bool is_opaque() const
 	{
@@ -98,6 +94,7 @@ public:
 		return false;
 	}
 };
+
 class offSphere : public Curve::Base
 {
 private:

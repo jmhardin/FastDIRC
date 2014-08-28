@@ -104,7 +104,10 @@ void trace_rays(\
   
   Trace::Tracer tracer(sys);
   tracer.get_params().set_max_bounce(5000);
-  tracer.get_trace_result().set_generated_save_state(srcrays);
+  if (outframe == true)
+  {//deals with below
+    tracer.get_trace_result().set_generated_save_state(srcrays);
+  }
   tracer.get_trace_result().set_intercepted_save_state(image);
 
   tracer.trace();
@@ -121,9 +124,12 @@ void trace_rays(\
 	  rval.x = x;
 	  rval.y = y;
 	  
+	  printf("%12.04f\n",y);
+	  
   }
-//   printf("%d\n",rays.size());
+  printf("%d\n",rays.size());
 
+  
   if (outframe == true)
   {
 	  printf("Rendering 3d\n");
@@ -132,14 +138,14 @@ void trace_rays(\
 	  Io::RendererViewport  &renderer = svg_renderer;
 	  // 3d system layout
 	  
-// 	  renderer.set_feature_size(200);
+// 	  renderer.set_feature_size(.11);
 	  
 	  renderer.set_perspective();
-// 	  renderer.set_fov(3);	
+	  renderer.set_fov(30);	
 	  
 	  
 	  sys.draw_3d_fit(renderer, 0);
-// 	  renderer.set_camera_transform(renderer.get_camera_transform().linear_rotation(Math::Vector3(0,0,0)));
+	  renderer.set_camera_transform(renderer.get_camera_transform().linear_rotation(Math::Vector3(0,0,0)));
 	  sys.draw_3d(renderer);
 	  
 	  tracer.get_trace_result().draw_3d(renderer);
@@ -191,6 +197,16 @@ vec3 propagate_light(\
   
   if (num_display == 0)
   {
+//     Math::VectorPair3 mid_ray(\
+// 	  0,\
+// 	  0,\
+// 	  -3*r,\
+// 	  0,\
+// 	  0,\
+// 	  1);
+//     
+//     srcrays.add_rays(mid_ray,&srcrays);
+    
     Math::VectorPair3 new_ray(\
 	  ipos.x,\
 	  ipos.y,\
@@ -216,6 +232,9 @@ vec3 propagate_light(\
 	rgen,\
 	pos,\
 	dir);
+      
+//       dir.y = 0;
+//       dir.z = 1;
       
       Math::VectorPair3 new_ray(\
 	pos.x,\
@@ -260,7 +279,7 @@ vec3 propagate_light(\
   }
 
   
-  ref<cylinderY> lens_curve = ref<cylinderY>::create(r);
+  ref<cylinderY> lens_curve = ref<cylinderY>::create(-r);
   ref<Shape::Rectangle> lens_shape = ref<Shape::Rectangle>::create(system_width, lens_height);
   
   double sagitta_off = r - sqrt(r*r - lens_height*lens_height/4);
@@ -270,10 +289,9 @@ vec3 propagate_light(\
       Math::VectorPair<3>(0,0,-sagitta_off),\
       lens_curve,\
       lens_shape,\
-      qwartz,\
-      liquid);
+      liquid,\
+      qwartz);
   
-  lens_surface->rotate(0,180,0);
     
   sys.add(*lens_surface);
   
@@ -300,16 +318,16 @@ vec3 propagate_light(\
 int main(int argc, char** argv)
 {
   int num_points_tested = 1000000;
-  int num_points_displayed = 100;
+  int num_points_displayed = 20;
   
   
   double pmt_height = 6;
-  double lens_r = 50;
+  double lens_r = 6;
   double lens_height = 10;
-  double zoff_target = 0;
-  double zoff_source = 5*lens_height;
+  double zoff_target = 40;
+  double zoff_source = 4*lens_height;
   double system_width = lens_height;
-  double source_height = 2*zoff_source;
+  double source_height = lens_height;
   
   vec3 pos,dir;
   
@@ -356,7 +374,7 @@ int main(int argc, char** argv)
     
     dir.z = 1;
     dir.y = 0;
-    pos.y = -1;
+//     pos.y = -1;
     
     rpos = propagate_light(\
       lens_r,\
@@ -366,7 +384,7 @@ int main(int argc, char** argv)
       pos,\
       dir);
     
-    printf("%12.04f\n",rpos.y);
+//     printf("%12.04f\n",rpos.y);
     
     if (fabs(rpos.y) < pmt_height/2)
     {

@@ -59,6 +59,11 @@ private:
 	
 	double upperWedgeFarZ;
 	
+	double boxCloseZ;
+	double reflOff;
+	
+	bool three_seg_mirror;
+	
 	double quartzIndex;
 	double liquidIndex;
 	double quartzLiquidY;
@@ -158,6 +163,8 @@ private:
 		double &dz,\
 		double dt);
 public:
+	void set_three_seg_mirror(bool itsm);
+	void set_pmt_offset(double r);
 	void set_liquid_absorbtion(double iabs);
 	std::vector<double> get_dist_traveled();
 	void set_store_traveled(bool sst = true);

@@ -65,11 +65,11 @@ int main(int nargs, char* argv[])
 		printf("in number: %12.04f\n",in_num);
 	}
 	
-	double resx = in_num;
-	double resy = in_num;
-	double minx = -1500;
+	double resx = 6;
+	double resy = 6;
+	double minx = -2000;
 	double maxx = -minx;
-	double miny = -500;
+	double miny = -800;
 	double maxy = -miny;
 	
 	double rad_to_deg = 57.2958;
@@ -99,6 +99,13 @@ int main(int nargs, char* argv[])
 	double sfunc_r = 35;
 	double sfunc_sig = 6;
 	
+	bool out_layout = false;
+	if (out_layout == true)
+	{
+	  n_phi_phots = 100;
+	  n_z_phots = 4;
+	}
+	
 	//20k,Fold_x, 6, and 1.5 result in .8935 - 3.3 mrad or better
 	
 	//Good perpendicular version needs up_douwn_sep=false
@@ -111,14 +118,16 @@ int main(int nargs, char* argv[])
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
-	double mirror_r_difference = -10000000000;
+	double mirror_r_difference = 0;
 	double wedge_non_uniformity = 0;
+	double pmt_offset = in_num;
+	bool three_seg_mirror = true;
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
 	
-	bool coverage_plot = false;
+	bool coverage_plot = true;
 	int num_cov = 100000;
 	
 	bool up_down_sep = false;
@@ -195,6 +204,9 @@ int main(int nargs, char* argv[])
 	
 	dirc_model->set_liquid_absorbtion(liquid_absorbtion);
 	dirc_model->set_liquid_index(liquid_index);
+	dirc_model->set_three_seg_mirror(three_seg_mirror);
+	
+	dirc_model->set_pmt_offset(pmt_offset);
 	
 	for (int i = 0; i < 1; i++)
 	{
@@ -204,7 +216,7 @@ int main(int nargs, char* argv[])
 			n_phi_phots,\
 			n_z_phots,\
 			false,\
-			false,\
+			out_layout,\
 			pion_angle,\
 			particle_x,\
 			particle_y,\
@@ -219,7 +231,7 @@ int main(int nargs, char* argv[])
 			n_phi_phots,\
 			n_z_phots,\
 			false,\
-			false,\
+			out_layout,\
 			kaon_angle,
 			particle_x,\
 			particle_y,\

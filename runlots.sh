@@ -1,52 +1,44 @@
-typerun=oil_flat_res_perp_water
+typerun=perp_flat_pathlength
 
 mkdir ${typerun}
 
-amount=6.0
+amount=-200
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=10.0
+amount=-100
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=15.0
+amount=100
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=20.0
+amount=200
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=25.0
+amount=-500
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=30.0
+amount=-400
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=35.0
+amount=-300
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=40.0
+amount=300
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=50.0
+amount=400
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=60.0
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=70.0
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=80.0
+amount=500
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
