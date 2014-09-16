@@ -73,7 +73,7 @@ DircGopticalSim::DircGopticalSim(
 	barLength=4900;
 	barWidth=35;
 	barDepth=17.25;
-	wedgeWidthOff = 5;
+	wedgeWidthOff = 1.75;
 	wedgeDepthOff = 10;
 	wedgeFarAngle = .006*57.3;
 	wedgeCloseAngle = 30;
@@ -110,10 +110,13 @@ DircGopticalSim::DircGopticalSim(
 	
 	upperWedgeFarPlaneD = upperWedgeBottom*upperWedgeFarPlaneNy;
 	
+	sidemirror_xl = -1000000;
+	sidemirror_xr = 1000000;
+	
 	//Take average
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
-	quartzLiquidY = upperWedgeBottom;
+	quartzLiquidY = upperWedgeBottom + 5;
 	
 	
 	//Negative to make reflections easier
@@ -145,20 +148,69 @@ DircGopticalSim::DircGopticalSim(
 	max_QE = 600;
 	sep_QE = (max_QE - min_QE)/(num_QE - 1);
 	
-	double t_QE[31] = {\
-                    299.998, 309.995, 320.018, 329.99,  339.987, 350.007, 360.015,\
-                    370.007, 379.985, 389.985, 400.007, 410.012, 420.001, 430.009,\
-                    440.001, 450.011, 460.002, 470.012, 480.002, 490.008, 499.995,\
-                    509.997, 520.014, 530.008, 540.017, 550.003, 560.001, 570.011,\
-                    579.997, 589.993, 600.0\
+	double t_QE[31] = {\     
+		    0.016415, 0.074064, 0.141658, 0.184219, 0.20634,  0.217191, 0.223244,
+                    0.222296, 0.215232, 0.206302, 0.195574, 0.183007, 0.169403, 0.155447,
+                    0.140014, 0.127696, 0.115716, 0.104086, 0.092256, 0.084083, 0.075418,
+                    0.067311, 0.060243, 0.053588, 0.047765, 0.04344,  0.037999, 0.034177,
+                    0.030869, 0.027848, 0.024141
                 };
+		
+		
+		    // Transmittance of quartz per 1m
+
+
 	
 	for (int i = 0; i < num_QE; i++)
 	{
 		vals_QE.push_back(t_QE[i]);
 	}
 	
+	num_transmittance = 36;
+	min_transmittance = 300;
+	max_transmittance = 660;
+	sep_transmittance = (max_transmittance - min_transmittance)/(num_transmittance - 1);
+	
+	double tmp_quartz_transmittance[36] = {\
+		    0.999572036,0.999544661,0.999515062,0.999483019,0.999448285,\
+		    0.999410586,0.999369611,0.999325013,0.999276402,0.999223336,\
+		    0.999165317,0.999101778,0.999032079,0.998955488,0.998871172,\
+		    0.998778177,0.99867541 ,0.998561611,0.998435332,0.998294892,\
+		    0.998138345,0.997963425,0.997767484,0.997547418,0.99729958 ,\
+		    0.99701966 ,0.99670255 ,0.996342167,0.995931242,0.995461041,\
+		    0.994921022,0.994298396,0.993577567,0.992739402,0.991760297,\
+		    0.990610945\
+		    };
+	for (int i = 0; i < num_transmittance; i++)
+	{
+		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
+	}
 	build_system();
+}
+void DircGopticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points)
+{
+  double tmpx = 0;
+  for (unsigned int i = 0; i < points.size(); i++)
+  {
+    tmpx = points[i].x;
+    while (tmpx < sidemirror_xl || tmpx > sidemirror_xr)
+    {
+      if (tmpx < sidemirror_xl)
+      {
+	tmpx = 2*sidemirror_xl - tmpx;
+      }
+      if (tmpx > sidemirror_xr)
+      {
+	tmpx = 2*sidemirror_xr - tmpx;
+      }
+    }
+    points[i].x = tmpx;
+  }
+}
+void DircGopticalSim::set_sidemirror(double ixr, double ixl)
+{
+  sidemirror_xr = ixr;
+  sidemirror_xl = ixl;
 }
 void DircGopticalSim::set_three_seg_mirror(bool itsm)
 {
@@ -197,6 +249,7 @@ void DircGopticalSim::set_liquid_index(double li)
 	y = 0;
 	z = sqrt(3)/2;
 	optical_interface_z(quartzIndex,liquidIndex,x,y,z);
+	
 // 	printf("n12 = %12.04f sin21 = %12.04f\n",quartzIndex/liquidIndex,2*(x/(sqrt(z*z+x*x))));
 }
 void DircGopticalSim::rotate_2d(double &x, double &y, double cval, double sval)
@@ -680,12 +733,8 @@ void DircGopticalSim::build_system()
 // 	sys.add(*testImage);
 	
 }
-double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_spread)
+double DircGopticalSim::get_quartz_n(double lambda)
 {
-// 	printf("called get ckov\n");
-	//May be slow enough to consider approximating in distribution generation
-	double out_ang = 0;
-	double tmp_lam = 0;
 	double B1,B2,B3,C1,C2,C3;
 	B1 = 0.6961663;             // B1
 	B2 = 0.4079426;             // B2
@@ -693,15 +742,29 @@ double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_s
 	C1 = 0.0046791;             // C1
 	C2 = 0.0135121;             // C2
 	C3 = 97.9340025;          // C3
+	double lam2;
+	double n_lam;
+	lam2 = lambda*lambda/1000000;
+		
+	n_lam = sqrt(1 + B1*lam2/(lam2-C1) + B2*lam2/(lam2-C2) + B3*lam2/(lam2-C3));
+	
+	return n_lam;
+}
+double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength)
+{
+// 	printf("called get ckov\n");
+	//May be slow enough to consider approximating in distribution generation
+	double out_ang = 0;
+	double tmp_lam = 0;
 	double tmp_QE_val;
 	double above_ind;
 	int ind_QE;
-	double lam2;
 	double n_lam;
     
 	while (true)
 	{
 		tmp_lam = rand_gen->Uniform(min_QE,max_QE);
+		wavelength = tmp_lam;
 		
 		//Ignoring that the QE points are right on multiples of 10.  Assuming they are for speed.
 		//This may not be neccessary, but I doubt it matters.
@@ -717,10 +780,8 @@ double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_s
 			
 		//Test emission distribution, second b/c it's a less stringent cut
 		if (rand_gen->Uniform(0,1/(min_QE*min_QE)) > 1/(tmp_lam*tmp_lam)) continue;
-		
-		lam2 = tmp_lam*tmp_lam/1000000;
-		
-		n_lam = sqrt(1 + B1*lam2/(lam2-C1) + B2*lam2/(lam2-C2) + B3*lam2/(lam2-C3));
+				
+		n_lam = get_quartz_n(tmp_lam);
 		
 		out_ang = 57.3*acos(1/(beta*n_lam));
 		break;
@@ -729,6 +790,29 @@ double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_s
 	out_ang += rand_gen->Gaus(0,additional_spread);
 	
 	return out_ang;	
+}
+bool DircGopticalSim::quartz_transmission_mc(double R, double lambda)
+{
+	int ind_transmittance;
+	double above_ind;
+	double tmp_transmittance;
+	double tmp_transmittance_constant;
+	double trans_prob;
+	
+	ind_transmittance = (lambda - min_transmittance)/sep_transmittance;
+		
+	above_ind = lambda - (min_transmittance + sep_transmittance*ind_transmittance);
+		
+	//Simple linear interp between values.  5th order poly fit looked like it worked too
+	tmp_transmittance = quartz_transmittance[ind_transmittance]*(sep_transmittance-above_ind)/sep_transmittance\
+	      + quartz_transmittance[ind_transmittance+1]*above_ind/sep_transmittance;
+	      
+	tmp_transmittance_constant = log(tmp_transmittance);
+	
+	trans_prob = exp(R/1000.*tmp_transmittance_constant);
+	
+	return (rand_gen->Uniform(0,1) < trans_prob);
+
 }
 double DircGopticalSim::get_beta(double E, double m)
 {
@@ -939,14 +1023,14 @@ void DircGopticalSim::fill_rand_phi(\
 	double check_dir /* = 0*/,\
 	double beta/* = -1*/)
 {
-	double sDepth = .95*barDepth;
+// 	double sDepth = .95*barDepth;
 	double emitAngle = ckov_theta;
 	double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
 	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
 	
 	int numPhots = n_photons;
 	
-	double sourcez = -sDepth;
+// 	double sourcez = -sDepth;
 	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
 	double sourcex = particle_x;
 	double tsy = sourcey;
@@ -967,6 +1051,7 @@ void DircGopticalSim::fill_rand_phi(\
 	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
 	
 	double temit, rand_add;
+	double wavelength = 400;
 	
 	for (int i = 0; i < numPhots; i++)
 	{ 
@@ -980,7 +1065,7 @@ void DircGopticalSim::fill_rand_phi(\
 		}
 		else
 		{
-			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc);
+			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
 		Math::Vector3 start_ray(0,0,sourceOff);
 		Math::Vector3 dir_ray(\
@@ -1052,6 +1137,156 @@ void DircGopticalSim::fill_rand_phi(\
 		srcrays.add_rays(new_ray,&srcrays);
 	}
 }
+std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(\
+	std::vector<double> &before_interface,\
+	std::vector<double> &after_interface,\
+	int n_photons, \
+	double ckov_theta /*= 47*/, \
+	double particle_x /*= 0*/, \
+	double particle_y /*= 0*/, \
+	double particle_theta /*= 0*/, \
+	double particle_phi /*= 0*/,\
+	double phi_theta_unc, /*= .0015*57.3*/
+	double ckov_theta_unc /* = .0055*57.3*/,\
+	double check_dir /* = 0*/,\
+	double beta/* = -1*/)
+{
+	//returns theta versus cerenkov phi_theta_unc
+  
+	std::vector<std::pair<double,double> > rval;
+  
+	before_interface.clear();
+	after_interface.clear();
+	refraction_before.clear();
+	refraction_after.clear();
+	store_refraction = true;
+	
+// 	printf("refraction called with n: %d\n",n_photons);
+	
+	double emitAngle = ckov_theta;
+	double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
+	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
+	
+	int numPhots = n_photons;
+	
+// 	double sourcez = -sDepth;
+	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
+	double sourcex = particle_x;
+	double tsy = sourcey;
+	double tsx = sourcex;
+	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
+	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
+	
+	
+	double bar_dist_travelled;
+	
+	double sourceOff,randPhi;
+	
+	Math::Transform3 trans;
+	trans.reset();
+	trans.linear_rotation(Math::Vector3(particleTheta,0,0));
+	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
+	
+	double temit, rand_add;
+	double wavelength = 400;
+	
+	for (int i = 0; i < numPhots; i++)
+	{ 
+		randPhi = rand_gen->Uniform(0,2*3.14159265);
+		sourceOff = -rand_gen->Uniform(0,barDepth);
+		
+
+		if (beta < 0)
+		{
+			rand_add = rand_gen->Gaus(0,ckov_theta_unc);
+			temit = emitAngle + rand_add;
+		}
+		else
+		{
+			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
+		}
+		Math::Vector3 start_ray(0,0,sourceOff);
+		Math::Vector3 dir_ray(\
+			sin(temit/57.3)*cos(randPhi),\
+			sin(temit/57.3)*sin(randPhi),\
+			cos(temit/57.3));
+		
+		start_ray = trans.transform_linear(start_ray);
+		dir_ray = trans.transform_linear(dir_ray);	
+		
+		start_ray.x() = start_ray.x() + particle_x;
+		start_ray.y() = start_ray.y() + particle_y;
+		
+		Math::VectorPair3 new_ray(\
+			start_ray.x(),\
+			start_ray.y(),\
+			start_ray.z(),\
+			dir_ray.x(),\
+			dir_ray.y(),\
+			dir_ray.z());
+		
+		if (dir_ray.y() * check_dir < -.00001)
+		{
+			//Get all rays in one direction or the other.
+			//check_dir = 0 sidesteps this
+			continue;
+		}
+		
+
+		
+		bar_dist_travelled = warp_ray(\
+			new_ray.x0(),\
+			new_ray.y0(),\
+			new_ray.z0(),\
+			new_ray.x1(),\
+			new_ray.y1(),\
+			new_ray.z1(),\
+			asin(1/1.47));
+		if (new_ray.z0() > 0)
+		{
+			continue;
+		}
+		
+		if (!quartz_transmission_mc(bar_dist_travelled,wavelength))
+		{
+		  //absorbed in bar
+		  continue;
+		}
+		
+		
+		spread_wedge_mirror();
+		
+		
+		warp_wedge(\
+			new_ray.x0(),\
+			new_ray.y0(),\
+			new_ray.z0(),\
+			new_ray.x1(),\
+			new_ray.y1(),\
+			new_ray.z1());
+		
+		
+		std::pair<double, double> add_val;
+// 		printf("adding: %12.04f %12.04f\n",randPhi,refraction_before[refraction_before.size() - 1]);
+		add_val.first = randPhi;
+		add_val.second = refraction_before[refraction_before.size() - 1];
+		rval.push_back(add_val);
+	}
+	
+	for (unsigned int i = 0; i < refraction_before.size(); i++)
+	{
+// 	  printf("filling vector %d\n",i);
+	  before_interface.push_back(refraction_before[i]);
+	  after_interface.push_back(refraction_after[i]);
+	}
+	
+	store_refraction = false;
+	refraction_before.clear();
+	refraction_after.clear();
+	
+	return rval;
+}
+
 void DircGopticalSim::fill_reg_phi(\
 	Sys::SourceRays &srcrays,\
 	int n_photons_phi, \
@@ -1071,7 +1306,7 @@ void DircGopticalSim::fill_reg_phi(\
 	double particleTheta = particle_theta;
 	double particlePhi = particle_phi;
 	
-	double sourcez = -sDepth;
+// 	double sourcez = -sDepth;
 	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
 	double sourcex = particle_x;
 	double tsy = sourcey;
@@ -1091,9 +1326,10 @@ void DircGopticalSim::fill_reg_phi(\
 	trans.linear_rotation(Math::Vector3(particle_theta,0,0));
 	trans.linear_rotation(Math::Vector3(0,0,particle_phi));
 
-	int num_through = 0;
+// 	int num_through = 0;
 	double temit;
 	double rand_add;
+	double wavelength = 400;
 	for (int i = 0; i < n_photons_z; i++)
 	{
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
@@ -1109,7 +1345,7 @@ void DircGopticalSim::fill_reg_phi(\
 			}
 			else
 			{
-				temit = get_cerenkov_angle_rand(beta,ckov_theta_unc);
+				temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 			}
 				
 			
@@ -1253,6 +1489,7 @@ std::vector<dirc_point> DircGopticalSim::trace_source_rays(\
 		printf("Rendered spot\n");
 	}
 	
+	sidemirror_reflect_points(rval);
 	sys.remove(srcrays);
 	
 	return rval;
@@ -1261,7 +1498,7 @@ std::vector<dirc_point> DircGopticalSim::trace_source_rays(\
 // void DircGopticalSim::warp_ray(\
 // 	Math::VectorPair3 &ray,\
 // 	double critical_angle)
-void DircGopticalSim::warp_ray(\
+double DircGopticalSim::warp_ray(\
 	double &x,\
 	double &y,\
 	double &z,\
@@ -1271,13 +1508,16 @@ void DircGopticalSim::warp_ray(\
 	double critical_angle)
 {
 //Implemented to avoid total internal reflection computations
-//Expects ray to be "prerotated" by particle theta and phi
+//Expects ray to be "prerotated" by particle theta and phi - just propagates the vectors
 //Uses bar geometry.
 //Modifys the ray.
 //Be careful about x,y,and z - can't straight rotate that
-	
+//returns distance traveled
+  
+	double rval = 0; //stores total distance;
+  
 	double delx, dely,delz;
-	double xzR;
+// 	double xzR;
 	//Start the rays in the quartz for simulation reasons
 	double grace_room = 0;
 	
@@ -1292,6 +1532,9 @@ void DircGopticalSim::warp_ray(\
 		dely = barLength*(1.5-grace_room) + y;
 		dy = -dy;
 	}
+	
+	rval += dely*dely;
+	
 	y = barLength*(.5-grace_room);
 	
 	if (acos(fabs(dz)) < critical_angle ||\
@@ -1303,14 +1546,15 @@ void DircGopticalSim::warp_ray(\
 		//also assume failure if it isn't going up fast enough (absorbed)
 		//Positive z origin signals fail
 		z = 1337;
-		return;
+		return -1;
 	}
 	
 	//Del on x and z refers to distance from first reflection
 	//I sincerly hope dz is positive - might be worth checking
 	
 	int nbouncesx, nbouncesz, nbouncesy;
-	double remainderx, remaindery;
+	double remainderx;
+// 	double remaindery;
 	double lrx;
 // 	double lrz = 1;
 	double remainderz = 0;
@@ -1337,6 +1581,8 @@ void DircGopticalSim::warp_ray(\
 	delx = fabs(dely*dx/dy) - lrx*(barWidth/2-x);
 	delz = fabs(dely*dz/dy) + z;
 	
+	rval += delx*delx + delx*delx;
+	
 	if (dz < 0) printf("dz: %12.04f : Negative and confusing\n",dz);
 
 	
@@ -1357,7 +1603,7 @@ void DircGopticalSim::warp_ray(\
 	{
 		//Hit the 5mm where the wedge is not.  Assume lost
 		z = 1337;
-		return;
+		return -1;
 	}
 	nbouncesz = delz/barDepth + 1;
 	remainderz = delz - barDepth*(nbouncesz-1);
@@ -1371,6 +1617,8 @@ void DircGopticalSim::warp_ray(\
 	{
 		z = remainderz-barDepth;
 	}
+	
+	return sqrt(rval);
 }
 void DircGopticalSim::warp_wedge(\
 	double &x,\
@@ -1386,7 +1634,7 @@ void DircGopticalSim::warp_wedge(\
 	//Starts y at 0
 	
 	bool passed_interface = false;
-	double x0 = x;
+// 	double x0 = x;
 	double dt = 0; //dummy variable representing parametric line
 	double n_dot_v = 0; //dummy variable to save dot product
 	double n_dot_v0 = 0;
@@ -1418,29 +1666,29 @@ void DircGopticalSim::warp_wedge(\
 		else
 		{
 // 			printf("IM HERE REFLECTING AND SUCH\n");
-// 			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
-// 			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
-// 		
-// 			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
-// 			//never reached??? probably not  can possibly remove if statement
-// 			//No bottom wedge, try top
-// 			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
-// 			{
-// 				//Does pass through optical interface
-// // 				if (dt*dy
-// 				
-// 				//Following statement performs the propagation if it does not fail
-// 				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
-// 				{
-// 					//Goes out the window, fail and return
-// 					z = 1337;
-// 					return;
-// 				}
-// 				
-// 				//Reflect off top wedge			
-// 				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
-// 				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
-// 			}
+			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
+			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
+		
+			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
+			//never reached??? probably not  can possibly remove if statement
+			//No bottom wedge, try top
+			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
+			{
+				//Does pass through optical interface
+// 				if (dt*dy
+				
+				//Following statement performs the propagation if it does not fail
+				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
+				{
+					//Goes out the window, fail and return
+					z = 1337;
+					return;
+				}
+				
+				//Reflect off top wedge			
+				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
+				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
+			}
 		}
 	}
 	//Now dz < 0 or we have a new starting vector.  Either way, we intersect with the "close" wedge now
@@ -1451,7 +1699,7 @@ void DircGopticalSim::warp_wedge(\
 	
 // 	printf("uw: %12.04f %12.04f %12.04f :: %12.04f %12.04f %12.04f dt: %12.04f\n",x,y,z,dx,dy,dz,dt);
 
-	//Assume close enough to determin which wedge it hit
+	//Assume close enough to determine which wedge it hit
 	double ty = dt*dy + y - barLength/2;
 	
 	if ((ty < wedgeHeight))
@@ -1545,7 +1793,7 @@ void DircGopticalSim::warp_wedge(\
 	
 	//Now we just finish
 	
-	dt = (upperWedgeTop	+ barLength/2 - y)/dy;
+	dt = (upperWedgeTop + barLength/2 - y)/dy;
 	if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 	{
 		//I'm not sure if it can go out the window at this point, but just in case
@@ -1568,6 +1816,11 @@ bool DircGopticalSim::optical_interface_z(\
 	//n1 is starting index of refraction, n2 is ending
 	//Assume that it's going through the z plane
 	//(this will change the ordering when called in our current geometry)
+  
+	double before_ang = acos(dz);
+	double after_ang = 0;
+	
+	
 	double n12rat = n1/n2;
 	double n12rat2 = n12rat*n12rat;
 	
@@ -1579,6 +1832,17 @@ bool DircGopticalSim::optical_interface_z(\
 	//simpler expression than I expected
 	dx *= n12rat;
 	dy *= n12rat;
+	
+// 	printf("in optical interface store_refraction: %s\n",store_refraction ? "true" : "false");
+	if (store_refraction == true)
+	{
+// 	  printf("storing refraction\n");
+	  after_ang = acos(dz);
+	  refraction_before.push_back(before_ang);
+	  refraction_after.push_back(after_ang);
+	}
+	
+	return true;
 }
 bool DircGopticalSim::x_wedge_coerce_check(\
 	double &x,\
@@ -1598,8 +1862,8 @@ bool DircGopticalSim::x_wedge_coerce_check(\
 	//returns false if it goes out the window on the x step
 	//Will not check for y and z directions (assumes dt corresponds to an intersection/reflection point)
 	
-	double cx = x;
-	double cdx = dx;
+// 	double cx = x;
+// 	double cdx = dx;
 	double cdt = 0;
 	double tdt = 0;
 	double ty = y - barLength/2;

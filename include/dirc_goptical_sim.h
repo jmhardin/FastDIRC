@@ -1,10 +1,13 @@
 #include <vector>
+#include <utility>
 #include <TRandom3.h>
 
 #include "dirc_point.h"
 #include "dirc_optical_components.h"
 
 #include <Goptical/Sys/System>
+
+
 
 #ifndef DIRC_GOPTICAL_SIM
 #define DIRC_GOPTICAL_SIM 
@@ -64,6 +67,9 @@ private:
 	
 	bool three_seg_mirror;
 	
+	double sidemirror_xr;
+	double sidemirror_xl;
+	
 	double quartzIndex;
 	double liquidIndex;
 	double quartzLiquidY;
@@ -75,9 +81,16 @@ private:
 	std::vector<double> dist_traveled;
 	bool store_traveled;
 	
+	bool store_refraction;
+	std::vector<double> refraction_before;
+	std::vector<double> refraction_after;
+	
 	double min_QE,max_QE,sep_QE;
 	int num_QE;
 	std::vector<double> vals_QE;
+	double min_transmittance,max_transmittance,sep_transmittance;
+	int num_transmittance;
+	std::vector<double> quartz_transmittance;
 	
 	Sys::System sys;
 // 	Sys::SourceRays srcrays;
@@ -91,9 +104,12 @@ private:
 	
 	void rotate_2d(double &x, double &y, double cval, double sval);
 	
+	
 	void build_system();
 	void clear_system();
+	void sidemirror_reflect_points(std::vector<dirc_point> &points);
 	void spread_wedge_mirror();
+	bool quartz_transmission_mc(double R, double lambda);
 	bool absorbtion_mc(double dx, double dy);
 	std::vector<dirc_point> trace_source_rays(\
 		Sys::SourceRays &srcrays, \
@@ -125,14 +141,14 @@ private:
 		double beta /* = -1*/,\
 		double check_dir /* = 0 */);
 	
-	
+	double get_quartz_n(double lambda);
 	bool optical_interface_z(\
 		double n1,\
 		double n2,\
 		double &dx,\
 		double &dy,\
 		double &dz);
-	void warp_ray(\
+	double warp_ray(\
 		double &x,\
 		double &y,\
 		double &z,\
@@ -163,6 +179,7 @@ private:
 		double &dz,\
 		double dt);
 public:
+	void set_sidemirror(double ixr, double ixl);
 	void set_three_seg_mirror(bool itsm);
 	void set_pmt_offset(double r);
 	void set_liquid_absorbtion(double iabs);
@@ -173,7 +190,7 @@ public:
 	void set_focus_mirror_angle(double ang);
 	void set_pmt_angle(double ang);
 	void set_wedge_mirror_rand(double ispread);
-	double get_cerenkov_angle_rand(double beta, double additional_spread);
+	double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength);
 	double get_beta(double E, double m);
 	void set_upper_wedge_angle_diff(double rads);	
 	DircGopticalSim(\
@@ -183,6 +200,19 @@ public:
 		double ifoc_rot = 74.11, \
 		double isens_size = 600, \
 		double isens_rot = 47.87);
+	std::vector<std::pair<double,double> > get_refraction_rand_phi(\
+		std::vector<double> &before_interface,\
+		std::vector<double> &after_interface,\
+		int n_photons, \
+		double ckov_theta = 47, \
+		double particle_x = 0, \
+		double particle_y = 0, \
+		double particle_theta = 0, \
+		double particle_phi = 0,\
+		double phi_theta_unc = .0015*57.3,\
+		double ckov_theta_unc = .0055*57.3,\
+		double check_dir = 0,\
+		double beta = -1);
 	std::vector<dirc_point> sim_rand_n_photons(\
 		int n_photons,\
 		bool outspot = false, \

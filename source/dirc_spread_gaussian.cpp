@@ -11,8 +11,6 @@ DircSpreadGaussian::DircSpreadGaussian(\
 {
 	sigma2 = isigma*isigma;
 	rand_gen = new TRandom3(123);
-// 	support_spread(2);
-// 	support_x_weight(); (silly)
 }
 void DircSpreadGaussian::support_spread(double spread_sig)
 {
@@ -43,9 +41,7 @@ double DircSpreadGaussian::radius_spread_function(double r)
 {
 	if (r < 20*sqrt(sigma2))
 	{
-// 		return exp(-r/sqrt(sigma2));
 		return exp(-r*r/sigma2);
-// 		return exp(-sqrt(r)/sqrt(sqrt(sigma2)));
 // 		return std::max(0.0,(1-r*r/sigma2)); //Epanechnikov
 // 		return std::max(0.0,(1-r*r/sigma2)*(1-r*r/sigma2)); //quartic
 		 // 		return std::min(sqrt(sigma2),sqrt(sigma2)/r);
