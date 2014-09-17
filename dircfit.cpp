@@ -72,17 +72,17 @@ int main(int nargs, char* argv[])
 	
 	double particle_x = 0;
 	double particle_y = 0;
-	double particle_theta = 0;
-	double particle_phi = 0;
+	double particle_theta = 4;
+	double particle_phi = 40;
 	
-	int num_runs = 0;
+	int num_runs = 1000;
 	
 	int n_sim_phots = 40;
 	
-	int refraction_sim_n = 10000000;
+	int refraction_sim_n = 0;
 	
-// 	int n_phi_phots =120000;
-	int n_phi_phots =2;
+	int n_phi_phots =60000;
+// 	int n_phi_phots =2;
 	int n_z_phots = 4;	
 	double sfunc_m = 25;
 	double sfunc_r = 35;
@@ -119,7 +119,7 @@ int main(int nargs, char* argv[])
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = 1.33;
+	double liquid_index = 1.47;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;

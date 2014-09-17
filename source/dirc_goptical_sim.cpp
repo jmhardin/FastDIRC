@@ -116,7 +116,7 @@ DircGopticalSim::DircGopticalSim(
 	//Take average
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
-	quartzLiquidY = upperWedgeBottom + 5;
+	quartzLiquidY = upperWedgeBottom + 15;
 	
 	
 	//Negative to make reflections easier
@@ -793,6 +793,10 @@ double DircGopticalSim::get_cerenkov_angle_rand(double beta, double additional_s
 }
 bool DircGopticalSim::quartz_transmission_mc(double R, double lambda)
 {
+	if (R > 10000)
+	{
+// 	  printf("using R: %12.04f\n",R);
+	}
 	int ind_transmittance;
 	double above_ind;
 	double tmp_transmittance;
@@ -809,7 +813,11 @@ bool DircGopticalSim::quartz_transmission_mc(double R, double lambda)
 	      
 	tmp_transmittance_constant = log(tmp_transmittance);
 	
+	
+	
 	trans_prob = exp(R/1000.*tmp_transmittance_constant);
+	
+// 	printf("trans_prob: %12.04f\n",trans_prob);
 	
 	return (rand_gen->Uniform(0,1) < trans_prob);
 
@@ -1247,6 +1255,8 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 			continue;
 		}
 		
+// 		if (bar_dist_travelled > 70000) continue;
+		
 		if (!quartz_transmission_mc(bar_dist_travelled,wavelength))
 		{
 		  //absorbed in bar
@@ -1666,29 +1676,29 @@ void DircGopticalSim::warp_wedge(\
 		else
 		{
 // 			printf("IM HERE REFLECTING AND SUCH\n");
-			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
-			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
-		
-			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
-			//never reached??? probably not  can possibly remove if statement
-			//No bottom wedge, try top
-			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
-			{
-				//Does pass through optical interface
-// 				if (dt*dy
-				
-				//Following statement performs the propagation if it does not fail
-				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
-				{
-					//Goes out the window, fail and return
-					z = 1337;
-					return;
-				}
-				
-				//Reflect off top wedge			
-				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
-				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
-			}
+// 			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
+// 			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
+// 		
+// 			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
+// 			//never reached??? probably not  can possibly remove if statement
+// 			//No bottom wedge, try top
+// 			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
+// 			{
+// 				//Does pass through optical interface
+// // 				if (dt*dy
+// 				
+// 				//Following statement performs the propagation if it does not fail
+// 				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
+// 				{
+// 					//Goes out the window, fail and return
+// 					z = 1337;
+// 					return;
+// 				}
+// 				
+// 				//Reflect off top wedge			
+// 				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
+// 				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
+// 			}
 		}
 	}
 	//Now dz < 0 or we have a new starting vector.  Either way, we intersect with the "close" wedge now
