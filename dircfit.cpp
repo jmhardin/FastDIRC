@@ -66,7 +66,7 @@ int main(int nargs, char* argv[])
 	double ckov_unc = .003*57.3; //transport = 3mrad
 
 	
-	double energy = 4.5;
+	double energy = 5.0;
 	double kmass = .4937;
 	double pimass = .1396;
 	
@@ -75,13 +75,13 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 1000;
+	int num_runs = 4000;
 	
 	int n_sim_phots = 40;
 	
 	int refraction_sim_n = 0;
 	
-	int n_phi_phots =60000;
+	int n_phi_phots = 120000;
 // 	int n_phi_phots =2;
 	int n_z_phots = 4;	
 	double sfunc_m = 25;
@@ -119,7 +119,7 @@ int main(int nargs, char* argv[])
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = 1.47;
+	double liquid_index = in_num;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;
@@ -280,30 +280,29 @@ int main(int nargs, char* argv[])
 		
 		if (overlap_x > 0)
 		{
-		  confound_points = dirc_model->sim_rand_n_photons(\
-			n_sim_phots,\
-			false,\
-			false,\
-			pion_angle,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			tracking_unc,\
-			ckov_unc,\
-			1,\
-			up_down_sep);
-		   //assume electrom has v=c
-		  
-		  for (unsigned int i = 0; i < confound_points.size(); i++)
-		  {
-		    confound_points[i].x += overlap_x;
-		  }
+			confound_points = dirc_model->sim_rand_n_photons(\
+			      n_sim_phots,\
+			      false,\
+			      false,\
+			      pion_angle,\
+			      particle_x,\
+			      particle_y,\
+			      particle_theta,\
+			      particle_phi,\
+			      tracking_unc,\
+			      ckov_unc,\
+			      1,\
+			      up_down_sep);
+			//assume electrom has v=c
+			
+			for (unsigned int i = 0; i < confound_points.size(); i++)
+			{
+			      confound_points[i].x += overlap_x;
+			}
 		}
 		
 		
 		fflush(stdout);
-		
 		sim_points = dirc_model->sim_rand_n_photons(\
 			n_sim_phots,\
 			false,\
@@ -319,12 +318,13 @@ int main(int nargs, char* argv[])
 			up_down_sep);
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
-		  sim_points.push_back(confound_points[i]);
+			sim_points.push_back(confound_points[i]);
 		}
 		digitizer.digitize_points(sim_points);
 		
 		llc = pdf_pion->get_log_likelihood(sim_points);
 		llf = pdf_kaon->get_log_likelihood(sim_points);
+		
 
 		ll_diff_pion->Fill(llc-llf);
 				
@@ -346,7 +346,7 @@ int main(int nargs, char* argv[])
 		
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
-		  sim_points.push_back(confound_points[i]);
+			sim_points.push_back(confound_points[i]);
 		}
 		
 		digitizer.digitize_points(sim_points);

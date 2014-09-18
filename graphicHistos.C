@@ -3,8 +3,9 @@ double hmin = -20;
 double hmax = 20;
 
 
-double spread = 1.7;
-double seperation = 5.2;
+double spread = 1.75;
+//double seperation = 5.2;
+double seperation = 4.19;
 double mean_pion = 0;
 double mean_kaon = mean_pion + seperation;
 

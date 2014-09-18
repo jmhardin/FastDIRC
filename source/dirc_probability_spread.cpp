@@ -1,7 +1,7 @@
 #include "dirc_point.h"
 #include "../include/dirc_probability_spread.h"
 #include <math.h>
-#include<stdio.h>
+#include <stdio.h>
 //by reference - later for speed
 DircProbabilitySpread::DircProbabilitySpread(\
 	std::vector<dirc_point> isupport, \
@@ -20,7 +20,7 @@ double DircProbabilitySpread::get_log_likelihood(std::vector<dirc_point> inpoint
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
 		tprob = 0;
-// 		weight = get_weight(inpoints[i]);
+		weight = get_weight(inpoints[i]);
 		for (unsigned int j = 0; j < support_points.size(); j++)
 		{
 			if (test_time_dir && support_points[j].t*inpoints[i].t < -.00001)

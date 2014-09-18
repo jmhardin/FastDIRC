@@ -1,5 +1,5 @@
-#include "dirc_probability_spread.h"
 #include "dirc_point.h"
+#include "dirc_probability_spread.h"
 #include <vector>
 
 #ifndef DIRC_PROBABILITY_SPERATION

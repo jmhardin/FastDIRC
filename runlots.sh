@@ -1,40 +1,12 @@
-typerun=ang560deg_3seg_radius
+typerun=ang440_3seg_index_5000MeV
 
 mkdir ${typerun}
 
-amount=600
+amount=1.47
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=500
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=400
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=300
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=200
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=100
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=0
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=-200
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=-400
+amount=1.33
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
