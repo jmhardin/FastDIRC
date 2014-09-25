@@ -1,7 +1,7 @@
 void refraction_plots(TString ifile)
 {
 	double peak_zoom_before_a = 15;
-	double peak_zoom_before_b = 20;
+	double peak_zoom_before_b = 22;
 	double peak_zoom_after_a = 15;
 	double peak_zoom_after_b = 22;
 	TFile *f = new TFile(ifile);

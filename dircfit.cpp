@@ -75,13 +75,13 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 4000;
+	int num_runs = 2000;
 	
 	int n_sim_phots = 40;
 	
 	int refraction_sim_n = 0;
 	
-	int n_phi_phots = 120000;
+	int n_phi_phots = 100000;
 // 	int n_phi_phots =2;
 	int n_z_phots = 4;	
 	double sfunc_m = 25;
@@ -103,12 +103,16 @@ int main(int nargs, char* argv[])
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
 	double mirror_angle_change_unc = 0;
+	double mirror_angle_change_yunc = in_num;
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
 	double mirror_r_difference = 0;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
+	
+	double upper_wedge_yang_spread = 0;
+	int rseed = 0;
 	
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
@@ -119,18 +123,20 @@ int main(int nargs, char* argv[])
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = in_num;
+	double liquid_index = 1.33;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;
 	
 	bool up_down_sep = false;
 	
-	TRandom3 spread_ang(23);
+	
+	
+	TRandom3 spread_ang(rseed+2);
 	
 	
 	DircGopticalSim *dirc_model = new DircGopticalSim(\
-		4357,\
+		rseed,\
 		-1200 + mirror_r_difference,\
 		300.38,\
 		74.11 + mirror_angle_change,\
@@ -177,15 +183,19 @@ int main(int nargs, char* argv[])
 	
 	TH1F *pion_cerenkov = new TH1F("pion_cerenkov","pion cerenkov angle distribution",300,45,48);
 	TH1F *kaon_cerenkov = new TH1F("kaon_cerenkov","kaon cerenkov angle distribution",300,45,48);
+	TH1F *pion_lambda = new TH1F("pion_lambda","pion wavelength distribution",450,250,700);
+	TH1F *kaon_lambda = new TH1F("kaon_lambda","kaon wavelength distribution",450,250,700);
 
 	TH1F *liquid_dist = new TH1F("liquid_dist","distance travelled in liquid (mm)",1500,0,1500);
 	dirc_model ->set_store_traveled(true);
 	
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1000000; i++)
 	{
 		double tmp;
 		pion_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(pion_beta,ckov_unc, tmp));
+		pion_lambda->Fill(tmp);
 		kaon_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(kaon_beta,ckov_unc, tmp));
+		kaon_lambda->Fill(tmp);
 	}
 
 	
@@ -251,9 +261,14 @@ int main(int nargs, char* argv[])
 // 	DircProbabilitySpread* pdf_pion = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_pion);
 // 	DircProbabilitySpread* pdf_kaon = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_kaon);
 
-	DircProbabilitySpread* pdf_pion = new DircSpreadGaussian(sfunc_sig, hit_points_pion);
-	DircProbabilitySpread* pdf_kaon = new DircSpreadGaussian(sfunc_sig, hit_points_kaon);
-// 	
+// 	DircProbabilitySpread* pdf_pion = new DircSpreadGaussian(sfunc_sig, hit_points_pion);
+// 	DircProbabilitySpread* pdf_kaon = new DircSpreadGaussian(sfunc_sig, hit_points_kaon);
+
+	DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(sfunc_sig, hit_points_pion);
+	DircSpreadGaussian* pdf_kaon = new DircSpreadGaussian(sfunc_sig, hit_points_kaon);
+
+	
+	// 	
 	//Digitizing and linear is eqivalent to "counting," but slower
 // 	digitizer.digitize_points(hit_points_pion);
 // 	digitizer.digitize_points(hit_points_kaon);
@@ -271,8 +286,12 @@ int main(int nargs, char* argv[])
 	for (int i = 0; i < num_runs; i++)
 	{
 // 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
-		dirc_model->set_focus_mirror_angle(spread_ang.Gaus(74.11,mirror_angle_change_unc));
-// 		dirc_model->set_upper_wedge_angle_diff(spread_ang.Gaus(0,wedge_uncertainty));
+		dirc_model->set_focus_mirror_angle(\
+			spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+			spread_ang.Gaus(0,mirror_angle_change_yunc));
+		dirc_model->set_upper_wedge_angle_diff(\
+			spread_ang.Gaus(0,wedge_uncertainty),\
+			spread_ang.Gaus(0,upper_wedge_yang_spread));
 // 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,bar_box_box_angle));
 		
 		printf("\r                                                    ");
@@ -526,6 +545,9 @@ int main(int nargs, char* argv[])
 	pion_coverage_xy->Write();
 	kaon_coverage_xy->Write();
 	liquid_dist->Write();
+	pion_lambda->Write();
+	kaon_lambda->Write();
+	
 	
 	ref_pion_before->Write();
 	ref_pion_after->Write();

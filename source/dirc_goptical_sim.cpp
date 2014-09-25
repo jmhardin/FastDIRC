@@ -67,6 +67,7 @@ DircGopticalSim::DircGopticalSim(
 	foc_r = ifoc_r;
 	foc_mirror_size = ifoc_mirror_size;
 	foc_rot = ifoc_rot;
+	foc_yrot = 0;
 	sens_size = isens_size;
 	sens_rot = isens_rot;
 	
@@ -267,11 +268,13 @@ void DircGopticalSim::set_bar_box_angle(double ang)
 	box_angle_off_cval = cos(ang);
 	box_angle_off_sval = sin(ang);
 }
-void DircGopticalSim::set_upper_wedge_angle_diff(double rads)
+void DircGopticalSim::set_upper_wedge_angle_diff(double rads, double rads_y)
 {
 	upperWedgeClosePlaneNx = 0; //Shouldn't be needed
 	upperWedgeClosePlaneNy = sin(wedgeCloseAngle/57.296 + rads);
 	upperWedgeClosePlaneNz = cos(wedgeCloseAngle/57.296 + rads);
+	
+	rotate_2d(upperWedgeClosePlaneNx,upperWedgeClosePlaneNz,cos(rads_y),sin(rads_y));
 	
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
 	
@@ -290,10 +293,11 @@ void DircGopticalSim::clear_system()
 		sys.remove(**iterator);
 	}
 }
-void DircGopticalSim::set_focus_mirror_angle(double ang)
+void DircGopticalSim::set_focus_mirror_angle(double ang,double yang)
 {
 	clear_system();
 	foc_rot = ang;
+	foc_yrot = yang;
 	build_system();
 }
 void DircGopticalSim::set_pmt_angle(double ang)
@@ -600,6 +604,7 @@ void DircGopticalSim::build_system()
 			  Material::mirror,\
 			  oil);
 	  focMirror->rotate(focRot,0,0);
+	  focMirror->rotate(0,foc_yrot,0);
 	  sys.add(*focMirror);
 	}
 	else if (three_seg_mirror == true)//condition not needed obviously
@@ -636,7 +641,11 @@ void DircGopticalSim::build_system()
 			  true,\
 			  Material::mirror,\
 			  oil);
+	  
+	  segMirror1->rotate(0,foc_yrot,0);
 	  segMirror1->rotate(theta_1*57.3,0,0);
+	  
+	  
 	  sys.add(*segMirror1);
 
 	  fy += seg_h*cos(theta_1)/2 + seg_h*cos(theta_2)/2;//update these by moving the centers
@@ -650,7 +659,11 @@ void DircGopticalSim::build_system()
 			  true,\
 			  Material::mirror,\
 			  oil);
+	  
+	  segMirror2->rotate(0,foc_yrot,0);
 	  segMirror2->rotate(theta_2*57.3,0,0);
+	  
+	  
 	  sys.add(*segMirror2);
 
 	  fy += seg_h*cos(theta_2)/2 + seg_h*cos(theta_3)/2;
@@ -664,7 +677,10 @@ void DircGopticalSim::build_system()
 			  true,\
 			  Material::mirror,\
 			  oil);
+	  
+	  segMirror3->rotate(0,foc_yrot,0);
 	  segMirror3->rotate(theta_3*57.3,0,0);
+	  
 	  sys.add(*segMirror3);
 	  
 	}
@@ -1745,8 +1761,8 @@ void DircGopticalSim::warp_wedge(\
 		
 		//NOW intersect with upper wedge
 		
-		n_dot_v = -(dy*upperWedgeClosePlaneNy + dz*upperWedgeClosePlaneNz);
-		n_dot_v0 = -(y*upperWedgeClosePlaneNy + z*upperWedgeClosePlaneNz);
+		n_dot_v = -(dy*upperWedgeClosePlaneNy + dz*upperWedgeClosePlaneNz + dx*upperWedgeClosePlaneNx);
+		n_dot_v0 = -(y*upperWedgeClosePlaneNy + z*upperWedgeClosePlaneNz + x*upperWedgeClosePlaneNx);
 	
 		dt = -(upperWedgeClosePlaneD+n_dot_v0)/n_dot_v;
 		
@@ -1759,8 +1775,10 @@ void DircGopticalSim::warp_wedge(\
 				return;
 			}
 			
+			dx += 2*n_dot_v*upperWedgeClosePlaneNx;
 			dy += 2*n_dot_v*upperWedgeClosePlaneNy;
 			dz += 2*n_dot_v*upperWedgeClosePlaneNz;
+			
 		}
 		else
 		{

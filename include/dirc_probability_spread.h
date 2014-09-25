@@ -18,7 +18,7 @@ public:
 		std::vector<dirc_point> isupport,\
 		bool itest_time_dir = true);
 	
-	double get_log_likelihood(std::vector<dirc_point> inpoints);
+	inline double get_log_likelihood(std::vector<dirc_point> inpoints) __attribute__((always_inline));
 	double get_single_log_likelihood(dirc_point inpoint);
 	virtual double support_spread_function(dirc_point support, dirc_point test) = 0;
 };

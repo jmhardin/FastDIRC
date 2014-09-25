@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <math.h>
 
+// DircProbabilitySeparation::DircProbabilitySeparation(\
+// 	DircProbabilitySpread* ineg_dens, \
+// 	DircProbabilitySpread* ipos_dens)
 DircProbabilitySeparation::DircProbabilitySeparation(\
-	DircProbabilitySpread* ineg_dens, \
-	DircProbabilitySpread* ipos_dens)
+	DircSpreadGaussian* ineg_dens, \
+	DircSpreadGaussian* ipos_dens)
 {
 	neg_dens = ineg_dens;
 	pos_dens = ipos_dens;

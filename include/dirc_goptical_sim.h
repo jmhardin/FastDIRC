@@ -18,6 +18,7 @@ private:
 	double foc_r;
 	double foc_mirror_size;
 	double foc_rot;
+	double foc_yrot;
 	double sens_size;
 	double sens_rot;
 	
@@ -187,12 +188,12 @@ public:
 	void set_store_traveled(bool sst = true);
 	void set_liquid_index(double li);
 	void set_bar_box_angle(double ang);
-	void set_focus_mirror_angle(double ang);
+	void set_focus_mirror_angle(double ang,double yang = 0);
 	void set_pmt_angle(double ang);
 	void set_wedge_mirror_rand(double ispread);
 	double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength);
 	double get_beta(double E, double m);
-	void set_upper_wedge_angle_diff(double rads);	
+	void set_upper_wedge_angle_diff(double rads, double radsy_y = 0);	
 	DircGopticalSim(\
 		int rand_seed = 4357,\
 		double ifoc_r = -1200, \
