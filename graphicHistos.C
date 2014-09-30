@@ -11,7 +11,7 @@ double gaussian_ROC_integral(double sep, double sig)
 	for (int i = 0; i < npoints; i++)
 	{
 		x = min + i*step;
-		y = TMath::Gaus(x,sep,sig,true)*TMath::Erf(x/sig);
+		y = TMath::Gaus(x,sep,sig,true)*(.5+TMath::Erf(x/(sqrt(2)*sig))/2);
 		ival += y*step;
 	}
 	return ival;
@@ -188,13 +188,13 @@ TH1F *fhkaon = (TH1F*) f1->Get("ll_diff_kaon");
 fhpion->Reset();
 fhkaon->Reset();
 
-fhpion->SetBins(10000,hmin,hmax);
-fhkaon->SetBins(10000,hmin,hmax);
+fhpion->SetBins(1000,hmin,hmax);
+fhkaon->SetBins(1000,hmin,hmax);
 
 double pion_obs, kaon_obs;
 double pion_ll_diff, kaon_ll_diff;
 
-for (int ii = 0; ii < 100000; ii++)
+for (int ii = 0; ii < 10000; ii++)
 {
         pion_obs = randgen->Gaus(mean_pion,spread);
         kaon_obs = randgen->Gaus(mean_kaon,spread);
@@ -246,7 +246,7 @@ fscale_int = 1/fhkaon->Integral(0,fkaon_missid->GetNbinsX());
 fkaon_missid->Scale(fscale_int);
 
 
-/*
+
 
 TGraph* froc_graph;
 int froc_n = fpion_veto_eff->GetNbinsX();
@@ -261,11 +261,26 @@ for (int i = 0; i < fpion_veto_eff->GetNbinsX(); i++)
         fxr[i] = fpion_veto_eff->GetBinContent(i);
         fyr[i] = fkaon_missid->GetBinContent(i);
 
+
         fival -= (fyr[i]+flast_y)*(fxr[i] - flast_x)/2;
         flast_x = fxr[i];
 	flast_y = fyr[i];
 }
+ival = 0;
+flast_x = fpion_veto_eff->GetBinContent(0);
+flast_y = fkaon_missid->GetBinContent(0);
+for (int i = 0; i < fpion_veto_eff->GetNbinsX(); i++)
+{
 
+//Why oh why is Erf not the standard definition
+	double t = hmin + i*(hmax-hmin)/fpion_veto_eff->GetNbinsX();
+	fxr[i] = .5 + TMath::Erf(t/(sqrt(2)*spread))/2;
+	fyr[i] = .5 - TMath::Erf((t-seperation)/(sqrt(2)*spread))/2;
+
+        fival -= (fyr[i]+flast_y)*(fxr[i] - flast_x)/2;
+        flast_x = fxr[i];
+	flast_y = fyr[i];
+}	
 //printf("Fake ROC integral: %12.04f\n",fival);
 
 froc_graph = new TGraph(fxr,fyr);
@@ -278,10 +293,10 @@ froc_graph->GetXaxis()->SetLimits(0,1.01);
 froc_graph->SetMinimum(0);
 froc_graph->SetMaximum(1.01);
 
-//froc_graph->Draw("CP");
-//c1->Print("roc_curve_fake.gif");
+froc_graph->Draw("");
+c1->Print("roc_curve_fake.gif");
 
-*/
+
 
 
 printf("Matching resolution: %6.03f\n",spread);

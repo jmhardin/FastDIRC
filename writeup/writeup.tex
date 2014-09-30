@@ -8,53 +8,81 @@
 \maketitle
 
 \section{Kernel density estimation}
-The image of the photons on the PMT plane is very complex (see Figure~\ref{fig:distribution}), and so fitting an analytic curve to the data was determined to be infeasible.  As an alternative fitting method, we are trying Kernel Density Estimation \cite{rosenblatt1956}.
+As shown in Fig. \ref{fig:perp_distribution} and Fig. \ref{fig:distribution}, the pattern of the photons occupancy on the PMT plane can be very complicated.  Consequently, fitting an analytic curve to the data was determined to be infeasible.  As an alternative fitting method, we are trying Kernel Density Estimation \cite{rosenblatt1956}.
 \begin{figure}
 \centering
-\caption{Expected PMT occupancy for one off angle pion.  This geometry has the segmented mirrors and water filling the readout box.\label{fig:distribution}}
-\includegraphics[width=5in]{pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png}
+\includegraphics[width=4in]{pngs/perp_distro.png}
+\caption{Expected PMT occupancy for one pion perpendicular to the bars.  This geometry has the segmented mirrors and water filling the readout box.\label{fig:perp_distribution}}
 \end{figure}
-Kernel density estimation works by using a set of monte carlo points to produce a continuous estimate of the value of the pdf that these points are produced from.  The function is obtained by adding the value of a spreading function around each of the provisional points.  While there are several possible options, such as a truncated parabola ("Epanechnikov") or a uniform, for this analysis, a gaussian is chosen as the spreading function mostly due to it's familiarity.  In the early stages of the analysis, several possible functions were tried and little variation was found between them.  Explicitly, the probability at a point $\vec{x}$ with a set of $N_p$ provisional points $\vec{p_i}$ is taken to be the normalized form of:
+\begin{figure}
+\centering
+\includegraphics[width=4in]{pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png}
+\caption{Expected PMT occupancy for one pion and $\theta=4 \phi=40$.  This geometry has the segmented mirrors and water filling the readout box.\label{fig:distribution}}
+\end{figure}
+Kernel density estimation works by using a set of monte carlo points to produce an estimate of the Probability Distribution Function ("PDF") on the PMT plane.  The function is obtained by adding the value of a spreading function around each of the points used for estimation.  To do a proper estimation, this simulation used ~$2*10^5$ of these points, which will be refered to from here on out as the "provisional" points.  This is in contrast to the ~$25$ "real" points which were used to simulate the readout from an actual charged particle passing through the bar.
+
+While there are several possible options for spreading functions, such as a truncated parabola ("Epanechnikov") or a uniform distribution, for this analysis, a gaussian is chosen as the spreading function mostly due to its familiarity.  In the early stages of the analysis, several possible functions were tried and little variation was found between them.  
+
+Explicitly, the probability at a (2 dimensional) point $\vec{x}$ with a set of $N_p$ provisional points $\vec{p_i}$ is taken to be the normalized form of:
 
 \begin{equation}
-pdf(x) = \sum\limits_{i=1}^{N_p} g(\frac{|p_i-x|}{\lambda})
+\textrm{pdf}(x) = \sum\limits_{i=1}^{N_p} \textrm{g}(\frac{|p_i-x|}{\lambda})
 \end{equation}
 \begin{equation}
-g(y) = exp(\frac{-y^2}{2})
+\textrm{g}(y) = \textrm{exp}(\frac{-y^2}{2})
 \end{equation}
-Where g is our gaussian spreading function and lambda is optimized to the number of points thrown.  $\lambda$ is also known as the bandwidth, and scales non-trivially with n \cite{SJOS:SJOS445}.
-
-In the case of the DiRC, it is possible to simulate the path of a photon from its creation all the way onto the PMT plane. It is also possible to know within a certain precision the trajectory and energy of an incident particle using the information of the other sub-detectors.  Using the kinematic information, then, one hypothesis for each provisional particle is created and the produced Cerenkov photons are tracked to the PMT plane. Using these provisional points, one pdf for each candidate particle is constructed with kernel density estimation.  This results in 2-3 (depending on the numer of candidates) pdfs per incident particle.
+Where g is our gaussian spreading function and lambda is optimized to the number of provisional points.  $\lambda$ is also known as the bandwidth, and scales non-trivially with $N_p$ \cite{SJOS:SJOS445}.
 
 \section{Using the PDFs}
-For testing purposes, and with the knowledge that it is the main PID motivation, the pion and the kaon were considered as candidate particles. The study was performed at 4.5 and 5 GeV/c to produce a measurable overlap.  
+In the case of the DiRC, it is possible to simulate the path of a photon from its creation all the way onto the PMT plane. It is also possible to know within a certain precision the trajectory and energy of an incident particle using the information of the other sub-detectors.  Using the kinematic information to produce the correct distribution of photons, one hypothesis PDF for each candidate particle is created.  This is done by tracking the photons from their production to the plane and using Kernel Density Estimation to fill in the PDF.  In order to identify particles, we classify the candidate particles as the possible particle types that could have produced a hit in the DiRC.  Typically these will be pions, kaons, and sometimes protons, so 2-3 candidate pdfs are created per real hit in the DiRC.
 
-The produced Cerenkov photons were tracked through the DIRC geometry, and the loglikelihood that they came from each of the provision pdfs was computed.  In order to do this, $N_x$ Photons from each candidate particle were tracked through the simulation to the PMT plane.  These $N_x$ particles were then used to compare the loglikelihood that they cam from one pdf or the other.  If we let $\vec{p_{pion\,i}}$ be the set of provisional particles for the candidate pion and $\vec{p_{kaon\,i}}$ The loglikelihoods were computed as follows:
+In the following, the pion and the kaon were considered as candidate particles. The study was performed at 4.5 and 5 GeV/c to produce a measurable overlap.  
+
+In order to do so, $N_x$ photons (representing the expected number of detected photons during the experiment) for each candidate particle were tracked during the simulation up to the PMT plane, and $N_p$ photons were generated to produce the PDFs of the 2 candidates.  These $N_x$ particles were then used to compete the loglikelihood from each candidate PDF.  The loglikelihoods were computed as follows:
 
 \begin{equation}
-ll_{pion} = \sum\limits_{j=1}^{j=N_x} ln(\sum\limits_{i=1}^{i=N_{pion,p}} g(\frac{|p_{pion,i}-x_j|}{\lambda}))
+ll_{pion} = \sum\limits_{j=1}^{N_x} \textrm{ln}(\sum\limits_{i=1}^{N^{pion}_{p}} \textrm{g}(\frac{|p^{pion}_{i}-x_j|}{\lambda}))
 \end{equation}
-Similarly:
+And:
 \begin{equation}
-ll_{kaon} = \sum\limits_{j=1}^{j=N_x} ln(\sum\limits_{i=1}^{i=N_{kaon,p}} g(\frac{|p_{kaon,i}-x_j|}{\lambda}))
+ll_{kaon} = \sum\limits_{j=1}^{N_x} \textrm{ln}(\sum\limits_{i=1}^{N^{kaon}_{p}} \textrm{g}(\frac{|p^{kaon}_{i}-x_j|}{\lambda}))
 \end{equation}
 
-$N_p$ is typically large and currently cosen such that the acheived resolution is on a plateau.  $N_x$ is normalized to 25 for a perpendicular track, as this is what SLAC sees in the test beam
+$N_p$ is typically large and currently chosen such that the achieved resolution is on a plateau.  $N_x$ is normalized to 25 for a perpendicular trackaccording to the experimental data from SLAC.
 
-The difference in these loglikelihoods is then reported as the figure of merit to cut on.  The histograms of the loglikelihood difference for a pion versus a kaon is shown here in Figure~\ref{fig:llhistos}.
+The difference in these loglikelihoods is then reported as the figure of merit to cut on.  The histograms of the loglikelihood difference for a pion versus a kaon is shown in Fig. \ref{fig:llhistos}.
 
 \begin{figure}
 \centering
+\includegraphics[width=4in]{pngs/ll_diffs.png}
 \caption{$ll_{pion} - ll_{kaon}$ for a non perpendicular track in water.  Pion values shown in red, while kaon values shown in blue. \label{fig:llhistos}}
-\includegraphics[width=5in]{pngs/ll_diffs.png}
 \end{figure}
 
-To quantify the performance, a ROC (Receiver Operating Characteristic) curveis produced as in Figure~\ref{fig:roccurve} and the integral of this ROC curve is compared to the integral of a ROC curve of two ideal gaussians with a mean separation equal to the nominal angular separation of the pion and kaon Cerenkov angles. The gaussians have the same standard deviation, and this sigma is set such that the integrals of the two ROC curves agree.  This number is then quoted as the nominal resolution.
+To quantify the performance, a ROC (Receiver Operating Characteristic) curve is produced as in Fig. \ref{fig:roccurve}.  The ROC curve is a way of reperesenting all possible loglikehood cuts on one plot.  It is defined parametrically with the parametric variable being the position on the x axis of Fig. \ref{fig:llhistos}.  Then, the x value of the ROC curve is the integral from the right to that position of the pion histogram, while the y value is the integral from the left to that position of the kaon histogram.  In the plot, these are refered to as the pion efficiency ("Fraction of correctly identified pions with a lefted handed cut) and kaon missid (fraction of kaons identified as pions with a left handed cut) respectively.  A ROC curve of ideal separation has an area of 1 and is a perfect square, so areas under the curve are used to quantify the separating power of a given variable.  
+
+Then the integral of this ROC curve is compared to the integral of a ROC curve of two ideal gaussians with a mean separation equal to the nominal angular separation of the pion and kaon Cerenkov angles. The gaussians have the same standard deviation, and this sigma is set such that the integrals of the two ROC curves agree.  This number is then quoted as the nominal resolution.  In the example figure shown in Fig. \ref{fig:roc_curve}, the integral is .956, which corresponds to a resolution of 1.5 mrad.
 \begin{figure}
 \centering
-\caption{ROC curve for the histograms in Figure~\ref{fig:llhistos} \label{fig:roccurve}}
-\includegraphics[width=5in]{pngs/roc_curve.png}
+\includegraphics[width=4in]{pngs/roc_curve.png}
+\caption{ROC curve for the histograms in Fig. \ref{fig:llhistos} \label{fig:roccurve}}
 \end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=4in]{pngs/roc_over.png}
+\caption{The same ROC curve as in Fig. \ref{fig:roccurve} (red) plotted under a ROC curve for an 2 ideal gaussians with seperation 4.05 mrad and standard deviation 1.74. \label{fig:roccurve_over}}
+\end{figure}
+
+The area under a ROC curve for two gaussians each with standard deviation $\sigma$ and means separated by $a$ can be obtained as follows:
+
+\begin{equation}
+\int_{-\infty}^{\infty} \textrm{GausCDF}(\frac{t}{\sigma})*\textrm{Exp}(\frac{-(t-a)^2}{2\sigma^2})\,dt
+\end{equation}
+
+Using this integral, $\sigma$ is numerically solved for such that the integral is equal to that of the ROC curve generated to obtain the nominal resolution.  This resolution is robust 
+
+\section{Speed Considerations}
+A major drawback of this method is that it requires a large number of points to accurately approximate the provisional PDF (the resolution plataeus at ~2e5). To that end, the simulation code must be written to allow a fast computation of the PDF.  Initially, the simulation was done entirely through GOptical \cite{goptical}, with the physics processes (PMTs quantum efficiency, surface effect, Cerenkov spectrum, transmittance etc.) being computed manually, but achieving a small reconstruction rate. The most significant performance drag is the number of reflections required to propagate the photons through the bars.  An analytical approach is now used to transport the photons to the end of the bars, avoiding the computation of the bounces during the propagation. The current reconstruction rate is currently about 1-10 Hz depending on the parameters chosen and shape of the PDF. But efforts will be made to optimize the code and it is expected to be able to reach a 50Hz reconstruction once the tracking is fully done by specialized c++ code (rather than letting GOptical handle the focusing mirrors as is done now).
+
 
 \bibliography{bibliography}{}
 \bibliographystyle{plain}

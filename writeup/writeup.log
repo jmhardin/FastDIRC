@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.8.20)  25 SEP 2014 18:28
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.8.20)  27 SEP 2014 01:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -146,78 +146,62 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 LaTeX Warning: No \author given.
 
+<pngs/perp_distro.png, id=1, 698.61pt x 473.77pt>
+File: pngs/perp_distro.png Graphic file (type png)
+ <use pngs/perp_distro.png>
+Package pdftex.def Info: pngs/perp_distro.png used on input line 14.
+(pdftex.def)             Requested size: 289.07999pt x 196.03978pt.
 
-LaTeX Warning: Citation `rosenblatt1956' on page 1 undefined on input line 11.
-
-
-<pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png, id=1, 698.61pt x 473
+<pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png, id=2, 698.61pt x 473
 .77pt>
 File: pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png Graphic file (ty
 pe png)
  <use pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png>
 Package pdftex.def Info: pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.p
-ng used on input line 15.
-(pdftex.def)             Requested size: 361.34999pt x 245.05334pt.
-
-Overfull \hbox (1.34999pt too wide) in paragraph at lines 15--16
- [][] 
- []
-
+ng used on input line 19.
+(pdftex.def)             Requested size: 289.07999pt x 196.03978pt.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <10.95> on input line 17.
+(Font)              <10.95> on input line 20.
+ [1
 
-LaTeX Warning: Citation `SJOS:SJOS445' on page 1 undefined on input line 25.
-
-[1
-
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2 <./pngs/fitdirc_ang440_
-3seg_index_5000MeV_133_pion_dist.png>]
-
-LaTeX Warning: Reference `fig:llhistos' on page 3 undefined on input line 44.
-
-<pngs/ll_diffs.png, id=22, 999.735pt x 774.895pt>
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2 <./pngs/perp_distro.png
+> <./pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png>]
+<pngs/ll_diffs.png, id=23, 999.735pt x 774.895pt>
 File: pngs/ll_diffs.png Graphic file (type png)
  <use pngs/ll_diffs.png>
-Package pdftex.def Info: pngs/ll_diffs.png used on input line 49.
-(pdftex.def)             Requested size: 361.34999pt x 280.08527pt.
+Package pdftex.def Info: pngs/ll_diffs.png used on input line 57.
+(pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-Overfull \hbox (1.34999pt too wide) in paragraph at lines 49--50
- [][] 
- []
+[3]
 
+LaTeX Warning: Reference `fig:roc_curve' on page 4 undefined on input line 63.
 
-LaTeX Warning: Reference `fig:roccurve' on page 3 undefined on input line 52.
-
-
-LaTeX Warning: Reference `fig:llhistos' on page 3 undefined on input line 55.
-
-<pngs/roc_curve.png, id=23, 999.735pt x 774.895pt>
+<pngs/roc_curve.png, id=27, 999.735pt x 774.895pt>
 File: pngs/roc_curve.png Graphic file (type png)
  <use pngs/roc_curve.png>
-Package pdftex.def Info: pngs/roc_curve.png used on input line 56.
-(pdftex.def)             Requested size: 361.34999pt x 280.08527pt.
+Package pdftex.def Info: pngs/roc_curve.png used on input line 66.
+(pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-Overfull \hbox (1.34999pt too wide) in paragraph at lines 56--57
- [][] 
- []
+<pngs/roc_over.png, id=28, 999.735pt x 774.895pt>
+File: pngs/roc_over.png Graphic file (type png)
+ <use pngs/roc_over.png>
+Package pdftex.def Info: pngs/roc_over.png used on input line 71.
+(pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-(./writeup.bbl [3] [4 <./pngs/ll_diffs.png>] [5 <./pngs/roc_curve.png>])
-[6] (./writeup.aux)
+[4 <./pngs/ll_diffs.png>] [5 <./pngs/roc_curve.png> <./pngs/roc_over.png>]
+(./writeup.bbl) [6] (./writeup.aux)
 
 LaTeX Warning: There were undefined references.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
  ) 
 Here is how much of TeX's memory you used:
- 1609 strings out of 495028
- 23019 string characters out of 6181497
- 78094 words of memory out of 5000000
- 4818 multiletter control sequences out of 15000+600000
+ 1623 strings out of 495028
+ 23299 string characters out of 6181497
+ 79135 words of memory out of 5000000
+ 4830 multiletter control sequences out of 15000+600000
  8850 words of font info for 31 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 37i,6n,23p,766b,228s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,6n,23p,1148b,224s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texl
@@ -228,12 +212,12 @@ t/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts
 public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
 s/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cms
-y10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pf
-b>
-Output written on writeup.pdf (6 pages, 160609 bytes).
+y10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb
+></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
+Output written on writeup.pdf (6 pages, 180453 bytes).
 PDF statistics:
- 77 PDF objects out of 1000 (max. 8388607)
- 50 compressed objects within 1 object stream
+ 85 PDF objects out of 1000 (max. 8388607)
+ 53 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 16 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 26 words of extra memory for PDF output out of 10000 (max. 10000000)
 

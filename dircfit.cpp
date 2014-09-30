@@ -103,7 +103,7 @@ int main(int nargs, char* argv[])
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
 	double mirror_angle_change_unc = 0;
-	double mirror_angle_change_yunc = in_num;
+	double mirror_angle_change_yunc = 0;
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
@@ -123,7 +123,7 @@ int main(int nargs, char* argv[])
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = 1.33;
+	double liquid_index = in_num;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;

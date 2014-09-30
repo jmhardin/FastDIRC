@@ -1,5 +1,10 @@
 \begin{thebibliography}{1}
 
+\bibitem{goptical}
+Alexandre Becoulet.
+\newblock Goptical.
+\newblock http://www.gnu.org/software/goptical/.
+
 \bibitem{SJOS:SJOS445}
 TARN DUONG and MARTIN~L. HAZELTON.
 \newblock Cross-validation bandwidth matrices for multivariate kernel density
