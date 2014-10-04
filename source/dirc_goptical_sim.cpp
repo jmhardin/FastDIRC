@@ -358,9 +358,13 @@ void DircGopticalSim::build_system()
 	double sensSize = sens_size;
 	double sensRot = sens_rot;
 	
-	double testy = barLength/2+1000; 
+	double testy = barLength/2+1000;
+	
+	
 	
 //Must add all elements as "ref<X>", otherwise they will descope and the system won't work after this function call
+	ref<Curve::Flat> flatCurve = ref<Curve::Flat>::create();
+	
 	//Box
 	//Focus Mirror
 	
@@ -521,7 +525,7 @@ void DircGopticalSim::build_system()
 	ref<Sys::Mirror> backFlatMirror = \
 		ref<Sys::Mirror>::create(\
 			Math::Vector<3>(0,barLength/2+upperWedgeTop + backFlatYSize/2,0),\
-			barCurve,\
+			flatCurve,\
 			blockShape,\
 			true,\
 			Material::mirror,\
