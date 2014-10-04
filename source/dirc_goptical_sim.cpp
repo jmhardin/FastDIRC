@@ -71,6 +71,9 @@ DircGopticalSim::DircGopticalSim(
 	sens_size = isens_size;
 	sens_rot = isens_rot;
 	
+	focMirrorBottom = 139;
+	focMirrorZDim = 288;
+	
 	barLength=4900;
 	barWidth=35;
 	barDepth=17.25;
@@ -149,7 +152,7 @@ DircGopticalSim::DircGopticalSim(
 	max_QE = 600;
 	sep_QE = (max_QE - min_QE)/(num_QE - 1);
 	
-	double t_QE[31] = {\     
+	double t_QE[31] = {\
 		    0.016415, 0.074064, 0.141658, 0.184219, 0.20634,  0.217191, 0.223244,
                     0.222296, 0.215232, 0.206302, 0.195574, 0.183007, 0.169403, 0.155447,
                     0.140014, 0.127696, 0.115716, 0.104086, 0.092256, 0.084083, 0.075418,
@@ -187,6 +190,11 @@ DircGopticalSim::DircGopticalSim(
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
 	build_system();
+}
+void DircGopticalSim::fill_threeseg_plane_vecs()
+{
+  
+  
 }
 void DircGopticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points)
 {
@@ -576,8 +584,9 @@ void DircGopticalSim::build_system()
 	//Focus Mirror
 	
 	double boxSize = size;
-	double mirrorDepth = 288;//I would not really cal this the mirror depth any more - more like the head on height
-	double focYoff = 139;
+	double mirrorDepth = focMirrorZDim;//I would not really call this the mirror depth any more - more like the head on height
+	double focYoff = focMirrorBottom;
+	
 	if (three_seg_mirror == false)
 	{
 	  focRot = foc_rot;
@@ -1578,13 +1587,16 @@ double DircGopticalSim::warp_ray(\
 	//Del on x and z refers to distance from first reflection
 	//I sincerly hope dz is positive - might be worth checking
 	
-	int nbouncesx, nbouncesz, nbouncesy;
+	int nbouncesx;
+// 	int nbouncesy;
+	int nbouncesz;
+	
 	double remainderx;
 // 	double remaindery;
 	double lrx;
 // 	double lrz = 1;
 	double remainderz = 0;
-	
+	/*Not used right now, so don't branch if you don't have to
 	if(dy > 0)
 	{
 		nbouncesy = 0;
@@ -1592,7 +1604,7 @@ double DircGopticalSim::warp_ray(\
 	else
 	{
 		nbouncesy = 1;
-	}
+	}*/
 	
 	//deterimines if particle is going left or right
 	if (dx < 0)
@@ -1881,6 +1893,8 @@ bool DircGopticalSim::x_wedge_coerce_check(\
 	double &dz,\
 	double dt)
 {
+	//already have dt, be sure to add it in when calling this
+  
 	//assumes x starts between the sides of the wedge
 	//assumes dy/dx constant over the whole distance
 	//also performs the index plane crossing
@@ -1978,7 +1992,7 @@ bool DircGopticalSim::absorbtion_mc(double dx, double dy)
 		return false;
 	}
 }
-void warp_box(\
+double DircGopticalSim::warp_box(\
 	double &x,\
 	double &y,\
 	double &z,\
@@ -1988,5 +2002,12 @@ void warp_box(\
 {
 //does not currently include x bouncing off the side - need to add that later
 //possibly in the last "warp to plane" bit
-	
+	double rval = 0; //distance traveled
+  
+	if (three_seg_mirror  == true)
+	{
+	  
+	  
+	}
+	return rval;
 }

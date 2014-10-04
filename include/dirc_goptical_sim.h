@@ -36,7 +36,7 @@ private:
 	double upperWedgeTop;
 	double upperWedgeHeight;
 	double upperWedgeBottom;
-
+	
 	double wedgeClosePlaneNx;
 	double wedgeClosePlaneNy;
 	double wedgeClosePlaneNz;
@@ -47,6 +47,15 @@ private:
 	double upperWedgeClosePlaneNz;
 	double upperWedgeClosePlaneD;
 	double lowerWedgeExtensionZ;
+	
+	
+	double focMirrorBottom;
+	double focMirrorZDim;
+	//Multiseg?  probably not.  If it goes up again, use arrays
+	double threeSeg1Nx,threeSeg1Ny,threeSeg1Nz,threeSeg1D;
+	double threeSeg2Nx,threeSeg2Ny,threeSeg2Nz,threeSeg2D;
+	double threeSeg3Nx,threeSeg3Ny,threeSeg3Nz,threeSeg3D;
+	
 	
 	bool upperWedgeNonUniform;
 	double upperWedgeNonUniformSpread;
@@ -108,6 +117,7 @@ private:
 	
 	void build_system();
 	void clear_system();
+	void fill_threeseg_plane_vecs();
 	void sidemirror_reflect_points(std::vector<dirc_point> &points);
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
@@ -164,7 +174,7 @@ private:
 		double &dx,\
 		double &dy,\
 		double &dz);
-	void warp_box(\
+	double warp_box(\
 		double &x,\
 		double &y,\
 		double &z,\

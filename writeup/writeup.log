@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.8.20)  27 SEP 2014 01:36
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.8.20)  29 SEP 2014 22:19
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -166,58 +166,51 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2 <./pngs/perp_distro.png
 > <./pngs/fitdirc_ang440_3seg_index_5000MeV_133_pion_dist.png>]
-<pngs/ll_diffs.png, id=23, 999.735pt x 774.895pt>
+<pngs/ll_diffs.png, id=24, 999.735pt x 774.895pt>
 File: pngs/ll_diffs.png Graphic file (type png)
  <use pngs/ll_diffs.png>
-Package pdftex.def Info: pngs/ll_diffs.png used on input line 57.
+Package pdftex.def Info: pngs/ll_diffs.png used on input line 58.
 (pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-[3]
-
-LaTeX Warning: Reference `fig:roc_curve' on page 4 undefined on input line 63.
-
-<pngs/roc_curve.png, id=27, 999.735pt x 774.895pt>
+[3] [4 <./pngs/ll_diffs.png>]
+<pngs/roc_curve.png, id=32, 999.735pt x 774.895pt>
 File: pngs/roc_curve.png Graphic file (type png)
  <use pngs/roc_curve.png>
-Package pdftex.def Info: pngs/roc_curve.png used on input line 66.
+Package pdftex.def Info: pngs/roc_curve.png used on input line 67.
 (pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-<pngs/roc_over.png, id=28, 999.735pt x 774.895pt>
+<pngs/roc_over.png, id=33, 999.735pt x 774.895pt>
 File: pngs/roc_over.png Graphic file (type png)
  <use pngs/roc_over.png>
-Package pdftex.def Info: pngs/roc_over.png used on input line 71.
+Package pdftex.def Info: pngs/roc_over.png used on input line 72.
 (pdftex.def)             Requested size: 289.07999pt x 224.06348pt.
 
-[4 <./pngs/ll_diffs.png>] [5 <./pngs/roc_curve.png> <./pngs/roc_over.png>]
-(./writeup.bbl) [6] (./writeup.aux)
-
-LaTeX Warning: There were undefined references.
-
- ) 
+[5] [6 <./pngs/roc_curve.png> <./pngs/roc_over.png>] (./writeup.bbl) [7]
+(./writeup.aux) ) 
 Here is how much of TeX's memory you used:
- 1623 strings out of 495028
- 23299 string characters out of 6181497
+ 1620 strings out of 495028
+ 23260 string characters out of 6181497
  79135 words of memory out of 5000000
- 4830 multiletter control sequences out of 15000+600000
- 8850 words of font info for 31 fonts, out of 8000000 for 9000
+ 4828 multiletter control sequences out of 15000+600000
+ 8542 words of font info for 30 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 37i,6n,23p,1148b,224s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texl
-ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/te
-xmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dis
-t/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts
-/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
-amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
-s/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cms
-y10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb
-></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on writeup.pdf (6 pages, 180453 bytes).
+ 37i,6n,23p,1163b,224s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><
+/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/sh
+are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
+amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmti10.pfb>
+Output written on writeup.pdf (7 pages, 174383 bytes).
 PDF statistics:
- 85 PDF objects out of 1000 (max. 8388607)
- 53 compressed objects within 1 object stream
+ 86 PDF objects out of 1000 (max. 8388607)
+ 54 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  26 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -1,40 +1,28 @@
-typerun=ang440_3seg_index_5000MeV
+typerun=ang440_3seg_focmirror_unc
 
 mkdir ${typerun}
 
-amount=1.47
+amount=.01
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=1.45
+amount=.02
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=1.43
+amount=.04
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=1.41
+amount=.08
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=1.39
+amount=.16
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=1.37
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=1.35
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=1.33
-time ./dircfit ${amount}
-mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
-
-amount=1.31
+amount=.32
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 

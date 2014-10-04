@@ -75,7 +75,7 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 2000;
+	int num_runs = 10;
 	
 	int n_sim_phots = 40;
 	
@@ -84,8 +84,8 @@ int main(int nargs, char* argv[])
 	int n_phi_phots = 100000;
 // 	int n_phi_phots =2;
 	int n_z_phots = 4;	
-	double sfunc_m = 25;
-	double sfunc_r = 35;
+// 	double sfunc_m = 25;
+// 	double sfunc_r = 35;
 	double sfunc_sig = 6;
 	
 	bool out_layout = false;
@@ -119,11 +119,11 @@ int main(int nargs, char* argv[])
 	
 	double overlap_x = -1;
 	
-	bool three_seg_mirror = true;
+	bool three_seg_mirror = false;
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = in_num;
+	double liquid_index = 1.47;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;
@@ -132,7 +132,7 @@ int main(int nargs, char* argv[])
 	
 	
 	
-	TRandom3 spread_ang(rseed+2);
+	TRandom3 spread_ang(rseed+3);
 	
 	
 	DircGopticalSim *dirc_model = new DircGopticalSim(\
@@ -285,7 +285,7 @@ int main(int nargs, char* argv[])
 	
 	for (int i = 0; i < num_runs; i++)
 	{
-// 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
+// // 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
 		dirc_model->set_focus_mirror_angle(\
 			spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 			spread_ang.Gaus(0,mirror_angle_change_yunc));
