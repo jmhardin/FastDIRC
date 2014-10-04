@@ -358,7 +358,7 @@ void DircGopticalSim::build_system()
 	double sensSize = sens_size;
 	double sensRot = sens_rot;
 	
-	double testy = barLength/2+1000;
+	double testy = barLength/2+1000; 
 	
 //Must add all elements as "ref<X>", otherwise they will descope and the system won't work after this function call
 	//Box
