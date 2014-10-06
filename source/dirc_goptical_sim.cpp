@@ -60,7 +60,7 @@ DircGopticalSim::DircGopticalSim(
 	int rand_seed /*=4357*/,\
 	double ifoc_r/*=540.66*/, \
 	double ifoc_mirror_size/*=300.38*/, \
-	double ifoc_rot/*=-73.503*/, \
+	double ifoc_rot/*=-74.11*/, \
 	double isens_size/*=600*/, \
 	double isens_rot/*=90*/)
 {
@@ -70,9 +70,8 @@ DircGopticalSim::DircGopticalSim(
 	foc_yrot = 0;
 	sens_size = isens_size;
 	sens_rot = isens_rot;
+
 	
-	focMirrorBottom = 139;
-	focMirrorZDim = 288;
 	
 	barLength=4900;
 	barWidth=35;
@@ -112,7 +111,15 @@ DircGopticalSim::DircGopticalSim(
 	upperWedgeFarPlaneNy = 0;
 	upperWedgeFarPlaneNz = -1;
 	
-	upperWedgeFarPlaneD = upperWedgeBottom*upperWedgeFarPlaneNy;
+	upperWedgeFarPlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeFarPlaneNy;
+	
+	
+	fill_threeseg_plane_vecs();
+	
+	
+	
+	
+	
 	
 	sidemirror_xl = -1000000;
 	sidemirror_xr = 1000000;
@@ -193,8 +200,48 @@ DircGopticalSim::DircGopticalSim(
 }
 void DircGopticalSim::fill_threeseg_plane_vecs()
 {
+	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
+	focMirrorTop = focMirrorBottom + foc_mirror_size*cos(foc_rot/57.3);
+	focMirrorZDim = foc_mirror_size*sin(foc_rot/57.3);
+	
+	//If we ever go to more than 3 segments, use a loop
+	
+	double theta_m = foc_rot/57.3;//radians of rotation to go through
+	double theta_c = fabs(2*asin(focMirrorZDim/(2*foc_r)));//angle subtended by the mirror
+	double seg_h = fabs(2*foc_r*sin(theta_c/6));//length of each segment;
+	
+	//I had to do some geometry and algebra to get these numbers, but in hindsight, it's obvious.  Always that way.
+	double theta_1 = theta_m - theta_c/3;
+	double theta_2 = theta_m;
+	double theta_3 = theta_m + theta_c/3;
+	
+	threeSeg1Y = focMirrorBottom;
+	threeSeg1Z = 0;
+	
+	threeSeg2Y = threeSeg1Y + seg_h*cos(theta_1);
+	threeSeg2Z = threeSeg1Z - seg_h*sin(theta_1);
+	
+	threeSeg3Y = threeSeg2Y + seg_h*cos(theta_2);
+	threeSeg3Z = threeSeg2Z - seg_h*sin(theta_2);
   
-  
+// 	printf("ThreeSeg3z: %12.04f  seg_h: %12.04f\n",threeSeg3Z,seg_h);
+	
+	threeSeg1Ny = sin(theta_1);
+	threeSeg1Nz = cos(theta_1);
+	rotate_2d(threeSeg1Nx,threeSeg1Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
+	threeSeg1D = threeSeg1Ny*threeSeg1Y + threeSeg1Nz*threeSeg1Z;//Use point x=0 as reference
+		
+	threeSeg2Ny = sin(theta_2);
+	threeSeg2Nz = cos(theta_2);
+	rotate_2d(threeSeg2Nx,threeSeg2Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
+	threeSeg2D = threeSeg2Ny*threeSeg2Y + threeSeg2Nz*threeSeg2Z;//Use point x=0 as reference
+	
+	threeSeg3Ny = sin(theta_3);
+	threeSeg3Nz = cos(theta_3);
+	rotate_2d(threeSeg3Nx,threeSeg3Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
+	threeSeg3D = threeSeg3Ny*threeSeg3Y + threeSeg3Nz*threeSeg3Z;//Use point x=0 as reference
+	
+	
 }
 void DircGopticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points)
 {
@@ -384,7 +431,7 @@ void DircGopticalSim::build_system()
 	  
 	  double fx,fy,fz;
 	  fx = 0;
-	  fy = focy + barLength/2+upperWedgeTop+focYoff;
+	  fy = focy + focYoff;
 	  fz = focz;
 	  
 	  ref<Shape::Rectangle> focMirrorShape = ref<Shape::Rectangle>::create(boxSize,focMirrorSize);
@@ -422,7 +469,7 @@ void DircGopticalSim::build_system()
 	  double theta_2 = theta_m;
 	  double theta_3 = theta_m + theta_c/3;
 	  
-	  fy = barLength/2 + upperWedgeTop + focYoff + seg_h*cos(theta_1)/2;
+	  fy = focYoff + seg_h*cos(theta_1)/2;
 	  fz = -seg_h*sin(theta_1)/2;
 	  
 // 	  printf("tm = %12.04f tc = %12.04f fy = %12.04f seg_h = %12.04f focy = %12.04f\n",theta_m,theta_c,fy,seg_h,seg_h*cos(theta_1)/2);
@@ -440,7 +487,7 @@ void DircGopticalSim::build_system()
 	  segMirror1->rotate(theta_1*57.3,0,0);
 	  
 	  
-	  sys.add(*segMirror1);
+// 	  sys.add(*segMirror1);
 
 	  fy += seg_h*cos(theta_1)/2 + seg_h*cos(theta_2)/2;//update these by moving the centers
 	  fz += -seg_h*sin(theta_1)/2 - seg_h*sin(theta_2)/2;
@@ -458,7 +505,7 @@ void DircGopticalSim::build_system()
 	  segMirror2->rotate(theta_2*57.3,0,0);
 	  
 	  
-	  sys.add(*segMirror2);
+// 	  sys.add(*segMirror2);
 
 	  fy += seg_h*cos(theta_2)/2 + seg_h*cos(theta_3)/2;
 	  fz += -seg_h*sin(theta_2)/2 - seg_h*sin(theta_3)/2;
@@ -475,7 +522,7 @@ void DircGopticalSim::build_system()
 	  segMirror3->rotate(0,foc_yrot,0);
 	  segMirror3->rotate(theta_3*57.3,0,0);
 	  
-	  sys.add(*segMirror3);
+// 	  sys.add(*segMirror3);
 	  
 	}
 	//Image Plane
@@ -530,7 +577,7 @@ void DircGopticalSim::build_system()
 			true,\
 			Material::mirror,\
 			oil);
-	sys.add(*backFlatMirror);
+// 	sys.add(*backFlatMirror);
 	
 	ref<Curve::Flat> imgCurve = ref<Curve::Flat>::create();
 	ref<Shape::Rectangle> imgShape = ref<Shape::Rectangle>::create(size/0.5,testSize*2);
@@ -767,6 +814,7 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 			0,\
 			beta);
 	
+		
 		return trace_source_rays(srcrays,outspot,outframe);
 	}
 	else
@@ -803,6 +851,8 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 			ckov_theta_unc,\
 			-1,\
 			beta);
+		
+		
 		
 		tval = trace_source_rays(upsrcrays,outspot,outframe);
 		for (unsigned int i = 0; i < tval.size(); i++)
@@ -1085,6 +1135,25 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 			new_ray.y1(),\
 			new_ray.z1());
 		
+		rotate_2d(new_ray.y1(),new_ray.z1(),box_angle_off_cval,box_angle_off_sval);
+		
+		if (new_ray.z0() > 0)
+		{
+			continue;
+		}
+		
+		warp_box(\
+			new_ray.x0(),\
+			new_ray.y0(),\
+			new_ray.z0(),\
+			new_ray.x1(),\
+			new_ray.y1(),\
+			new_ray.z1());
+		
+		if (new_ray.z0() > 0)
+		{
+			continue;
+		}
 		
 		std::pair<double, double> add_val;
 // 		printf("adding: %12.04f %12.04f\n",randPhi,refraction_before[refraction_before.size() - 1]);
@@ -1146,7 +1215,7 @@ void DircGopticalSim::fill_reg_phi(\
 	trans.linear_rotation(Math::Vector3(particle_theta,0,0));
 	trans.linear_rotation(Math::Vector3(0,0,particle_phi));
 
-// 	int num_through = 0;
+	int num_through = 0;
 	double temit;
 	double rand_add;
 	double wavelength = 400;
@@ -1222,10 +1291,25 @@ void DircGopticalSim::fill_reg_phi(\
 				new_ray.y1(),\
 				new_ray.z1());
 			
+// 			printf("dz: %12.04f\n",new_ray.z1());
+			
 			//account (quickly) for the bar box having a different angle than the readout
 			rotate_2d(new_ray.y1(),new_ray.z1(),box_angle_off_cval,box_angle_off_sval);
 			
 // 			printf("%12.04f %12.04f %12.04f :: %12.04f %12.04f %12.04f\n",new_ray.x0(),new_ray.y0(),new_ray.z0(),new_ray.x1(),new_ray.y1(),new_ray.z1());
+			
+			if (new_ray.z0() > 0)
+			{
+				continue;
+			}
+			
+			warp_box(\
+				new_ray.x0(),\
+				new_ray.y0(),\
+				new_ray.z0(),\
+				new_ray.x1(),\
+				new_ray.y1(),\
+				new_ray.z1());
 			
 			if (new_ray.z0() > 0)
 			{
@@ -1238,7 +1322,6 @@ void DircGopticalSim::fill_reg_phi(\
 				continue;
 			}
 // 			printf("%d\n",num_through++);
-			
 			srcrays.add_rays(new_ray,&srcrays);
 		}
 	}
@@ -1558,6 +1641,7 @@ void DircGopticalSim::warp_wedge(\
 		
 		//NOW intersect with upper wedge
 		
+		//Signs are weird here, it works, but I think they are twisted up with the initialization too
 		n_dot_v = -(dy*upperWedgeClosePlaneNy + dz*upperWedgeClosePlaneNz + dx*upperWedgeClosePlaneNx);
 		n_dot_v0 = -(y*upperWedgeClosePlaneNy + z*upperWedgeClosePlaneNz + x*upperWedgeClosePlaneNx);
 	
@@ -1785,14 +1869,228 @@ double DircGopticalSim::warp_box(\
 	double &dy,\
 	double &dz)
 {
+  //Consider branch profiling or some such other optimizations
+  //Also, Fast Math, but don't tell the people in the penthouse
+  
 //does not currently include x bouncing off the side - need to add that later
 //possibly in the last "warp to plane" bit
 	double rval = 0; //distance traveled
-  
-	if (three_seg_mirror  == true)
-	{
-	  
-	  
+
+//first reflect off the back of the bar
+	double dt;
+	
+	if (dz > 0)
+	{//Condition may not be needed - try without for speed later
+		dt = -z/dz;
+		
+		if (y + dy*dt < focMirrorBottom)
+		{
+			//reflects off of back
+			x += dx*dt;
+			y += dy*dt;
+			z += dz*dt;
+			
+			//Abuse the fact that this vector is normalized and hope it stays that way
+			dz = -dz;
+			rval += dt;
+		}
 	}
+	
+	
+	double trval  = 0;
+	if (three_seg_mirror == true)
+	{
+// 		printf("preplane x: %8.04f   y: %8.04f   z: %8.04f\n",x,y,z);
+		trval = three_seg_reflect(\
+		  x,\
+		  y,\
+		  z,\
+		  dx,\
+		  dy,\
+		  dz);
+	}/*
+	else
+	{
+		 trval = focus_reflect(\
+		  x,\
+		  y,\
+		  z,\
+		  dx,\
+		  dy,\
+		  dz);
+	}*/
+	
+	if (trval < 0)
+	{
+		  z = 1337;
+		  return -1;
+	}
+
+	//short propagate in front of the mirrors:
+	x += .1*dx;
+	y += .1*dy;
+	z += .1*dz;
+	
+// 	printf("x: %8.04f   y: %8.04f   z: %8.04f   dx: %8.04f    dy: %8.04f    dz: %8.04f\n",x,y,z,dx,dy,dz);
+	
+	
+	rval += trval;
+	
 	return rval;
+}
+void DircGopticalSim::plane_reflect(\
+	double Nx,\
+	double Ny,\
+	double Nz,\
+	double D,\
+	double &x,\
+	double &y,\
+	double &z,\
+	double &dx,\
+	double &dy,\
+	double &dz,\
+	double &dt)
+{
+	//Could use this in the Wedge, but would loose some speed
+
+	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
+	double n_dot_v0 = (Nx*x + Ny*y + Nz*z);
+  
+	dt = (D - n_dot_v0)/n_dot_v;
+	
+	x += dt*dx;
+	y += dt*dy;
+	z += dt*dz;
+	
+	dx -= 2*n_dot_v*Nx;
+	dy -= 2*n_dot_v*Ny;
+	dz -= 2*n_dot_v*Nz;
+}
+double DircGopticalSim::get_z_intercept(\
+	double Nx,\
+	double Ny,\
+	double Nz,\
+	double D,\
+	double x,\
+	double y,\
+	double z,\
+	double dx,\
+	double dy,\
+	double dz)
+{
+	//Could use this in the Wedge, but would loose some speed
+	
+	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
+	double n_dot_v0 = (Nx*x + Ny*y + Nz*z);
+	double dt;//optimized by math compression?
+	dt = (D - n_dot_v0)/n_dot_v;
+	
+// 	printf("x: %8.04f   y: %8.04f   z: %8.04f   dx: %8.04f    dy: %8.04f    dz: %8.04f   n_dot_v0: %8.04f tz: %8.04f\n",x,y,z,dx,dy,dz,n_dot_v0,z+dz*dt);
+	
+	return z + dt*dz;
+}
+double DircGopticalSim::three_seg_reflect(\
+		  double &x,\
+		  double &y,\
+		  double &z,\
+		  double &dx,\
+		  double &dy,\
+		  double &dz)
+{
+	double rval = 0;
+	//definitely losing time here - combuting the n_dot_v and n_dot_v0 and dt twice for the chosen plane
+	//TODO fix this once the code is correct
+	
+	double tz = 0;
+	
+	//check first seg (again, loop this if we go more than 3)
+	tz = get_z_intercept(\
+		threeSeg1Nx,\
+		threeSeg1Ny,\
+		threeSeg1Nz,\
+		threeSeg1D,\
+		x,\
+		y,\
+		z,\
+		dx,\
+		dy,\
+		dz);
+// 	printf("tz1: %12.04f\n",tz);
+	if (tz > threeSeg2Z && tz < 0)
+	{//reflect off mirror closest to box
+		plane_reflect(\
+			threeSeg1Nx,\
+			threeSeg1Ny,\
+			threeSeg1Nz,\
+			threeSeg1D,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
+			rval);
+		return rval;
+	}
+	
+	tz = get_z_intercept(\
+		threeSeg2Nx,\
+		threeSeg2Ny,\
+		threeSeg2Nz,\
+		threeSeg2D,\
+		x,\
+		y,\
+		z,\
+		dx,\
+		dy,\
+		dz);
+// 	printf("tz2: %12.04f\n",tz);
+	if (tz > threeSeg3Z && tz < 0)
+	{//reflect off middle mirror
+		plane_reflect(\
+			threeSeg2Nx,\
+			threeSeg2Ny,\
+			threeSeg2Nz,\
+			threeSeg2D,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
+			rval);
+		return rval;
+	}
+	
+	tz = get_z_intercept(\
+		threeSeg3Nx,\
+		threeSeg3Ny,\
+		threeSeg3Nz,\
+		threeSeg3D,\
+		x,\
+		y,\
+		z,\
+		dx,\
+		dy,\
+		dz);
+// 	printf("tz3: %12.04f\n",tz);
+	if (tz > -focMirrorZDim && tz < 0)
+	{//reflect off mirror closest to box
+		plane_reflect(\
+			threeSeg3Nx,\
+			threeSeg3Ny,\
+			threeSeg3Nz,\
+			threeSeg3D,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
+			rval);
+		return rval;
+	}
+	//reflects off of nothing :(
+	z = 1337;
+	return -1;
 }

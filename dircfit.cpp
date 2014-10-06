@@ -72,10 +72,10 @@ int main(int nargs, char* argv[])
 	
 	double particle_x = 0;
 	double particle_y = 0;
-	double particle_theta = 4;
-	double particle_phi = 40;
+	double particle_theta = 0;
+	double particle_phi = 0;
 	
-	int num_runs = 10;
+	int num_runs = 0;
 	
 	int n_sim_phots = 40;
 	
@@ -119,11 +119,11 @@ int main(int nargs, char* argv[])
 	
 	double overlap_x = -1;
 	
-	bool three_seg_mirror = false;
+	bool three_seg_mirror = true;
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
-	double liquid_index = 1.47;
+	double liquid_index = 1.33;
 	
 	bool coverage_plot = false;
 	int num_cov = 100000;
@@ -223,7 +223,7 @@ int main(int nargs, char* argv[])
 	
 	dirc_model->set_pmt_offset(pmt_offset);
 	
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 10; i++)
 	{
 // 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 // 		dirc_model->set_bar_box_angle(bar_box_box_angle);
@@ -241,7 +241,7 @@ int main(int nargs, char* argv[])
 			ckov_unc/pdf_unc_red_fac,\
 			pion_beta,\
 			up_down_sep);
-
+		
 		hit_points_kaon = dirc_model->sim_reg_n_photons(\
 			n_phi_phots,\
 			n_z_phots,\
@@ -257,6 +257,7 @@ int main(int nargs, char* argv[])
 			kaon_beta,\
 			up_down_sep);
 	}
+	
 
 // 	DircProbabilitySpread* pdf_pion = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_pion);
 // 	DircProbabilitySpread* pdf_kaon = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_kaon);

@@ -50,12 +50,20 @@ private:
 	
 	
 	double focMirrorBottom;
+	double focMirrorTop;
 	double focMirrorZDim;
 	//Multiseg?  probably not.  If it goes up again, use arrays
 	double threeSeg1Nx,threeSeg1Ny,threeSeg1Nz,threeSeg1D;
 	double threeSeg2Nx,threeSeg2Ny,threeSeg2Nz,threeSeg2D;
 	double threeSeg3Nx,threeSeg3Ny,threeSeg3Nz,threeSeg3D;
 	
+	double threeSeg1_2dny,threeSeg1_2dnz,threeSeg1_2dd;
+	double threeSeg2_2dny,threeSeg2_2dnz,threeSeg2_2dd;
+	double threeSeg3_2dny,threeSeg3_2dnz,threeSeg3_2dd;
+	
+	double threeSeg1Y,threeSeg1Z;
+	double threeSeg2Y,threeSeg2Z;
+	double threeSeg3Y,threeSeg3Z;
 	
 	bool upperWedgeNonUniform;
 	double upperWedgeNonUniformSpread;
@@ -189,6 +197,38 @@ private:
 		double &dy,\
 		double &dz,\
 		double dt);
+	double three_seg_reflect(\
+		  double &x,\
+		  double &y,\
+		  double &z,\
+		  double &dx,\
+		  double &dy,\
+		  double &dz);
+	//Utility function - should definitely be inlined
+	void plane_reflect(\
+		  double Nx,\
+		  double Ny,\
+		  double Nz,\
+		  double D,\
+		  double &x,\
+		  double &y,\
+		  double &z,\
+		  double &dx,\
+		  double &dy,\
+		  double &dz,\
+		  double &dt);
+	//Utility function - should combine this with above for some speed
+	double get_z_intercept(\
+		  double Nx,\
+		  double Ny,\
+		  double Nz,\
+		  double D,\
+		  double x,\
+		  double y,\
+		  double z,\
+		  double dx,\
+		  double dy,\
+		  double dz);
 public:
 	void set_sidemirror(double ixr, double ixl);
 	void set_three_seg_mirror(bool itsm);
