@@ -73,6 +73,8 @@ private:
 	double sensPlaneY;
 	double sensPlaneZ;
 	
+	double sensPlaneYdistConversion;
+	
 	bool upperWedgeNonUniform;
 	double upperWedgeNonUniformSpread;
 	
@@ -160,7 +162,7 @@ private:
 		double beta /* = -1*/,\
 		double check_dir /* = 0 */);
 	void fill_reg_phi(\
-		Sys::SourceRays &srcrays,\
+		std::vector<dirc_point> &fill_points,\
 		int n_photons_phi, \
 		int n_photons_z,\
 		double ckov_theta /*= 47*/, \
@@ -188,7 +190,7 @@ private:
 		double &dy,\
 		double &dz,\
 		double critical_angle);
-	void warp_wedge(\
+	double warp_wedge(\
 		double &x,\
 		double &y,\
 		double &z,\
@@ -242,8 +244,8 @@ private:
 		double dx,\
 		double dy,\
 		double dz);
-	//yet another inlinable utility function
-	void get_intercept_plane(\
+	//yet another inlinable utility function (make a second with not return?)
+	double get_intercept_plane(\
 		double Nx,\
 		double Ny,\
 		double Nz,\
@@ -264,6 +266,15 @@ private:
 		double &dz);
 	//The compiler should be inlining this without our help
 	double sgn(double val);
+	//Technically one of the "warped functions, but can and should be optimized somehow
+	double warp_sens_plane(\
+		dirc_point &fill_val,\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz);
 public:
 	void set_sidemirror(double ixr, double ixl);
 	void set_three_seg_mirror(bool itsm);

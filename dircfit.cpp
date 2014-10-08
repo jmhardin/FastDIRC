@@ -52,10 +52,14 @@ int main(int nargs, char* argv[])
 	
 	double resx = 6;
 	double resy = 6;
+	double rest = 1;
 	double minx = -8000;
 	double maxx = -minx;
 	double miny = -800;
 	double maxy = -miny;
+	double mint = 0;
+	double maxt = 1000;
+	
 	
 	double rad_to_deg = 57.2958;
 	
@@ -175,6 +179,13 @@ int main(int nargs, char* argv[])
 	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH2F *kaon_dist_xy = new TH2F("kaon_dist_xy","xy val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 
+	TH2F *pion_dist_xt = new TH2F("pion_dist_xt","xt val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxt-mint)/(res_enhance*rest),mint,maxt);
+	TH2F *kaon_dist_xt = new TH2F("kaon_dist_xt","xt val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxt-mint)/(res_enhance*rest),mint,maxt);
+
+	TH2F *pion_dist_yt = new TH2F("pion_dist_yt","yt val of intercepted points - pion",(maxy-miny)/(res_enhance*resy),miny,maxy,(maxt-mint)/(res_enhance*rest),mint,maxt);
+	TH2F *kaon_dist_yt = new TH2F("kaon_dist_yt","yt val of intercepted points - kaon",(maxy-miny)/(res_enhance*resy),miny,maxy,(maxt-mint)/(res_enhance*rest),mint,maxt);
+
+	
 	maxy *= 5;
 	
 	TH2F *pion_coverage_xy = new TH2F("pion_coverage_xy","xy val of generated points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
@@ -223,7 +234,7 @@ int main(int nargs, char* argv[])
 	
 	dirc_model->set_pmt_offset(pmt_offset);
 	
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 30; i++)
 	{
 // 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 // 		dirc_model->set_bar_box_angle(bar_box_box_angle);
@@ -448,13 +459,17 @@ int main(int nargs, char* argv[])
 	}
 	
 	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
-	double x,y;
+	double x,y,t_ns;
 	for (unsigned int i = 0; i < hit_points_pion.size(); i++)
 	{
 		x = hit_points_pion[i].x;
 		y = hit_points_pion[i].y;
+		t_ns = hit_points_pion[i].t;
 // 		if (hit_points_pion[i].t > 0) continue;
 		pion_dist_xy->Fill(x,y);
+		pion_dist_xt->Fill(x,t_ns);
+		pion_dist_yt->Fill(y,t_ns);
+	  
 	}
 	
 	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());
@@ -462,8 +477,11 @@ int main(int nargs, char* argv[])
 	{
 		x = hit_points_kaon[i].x;
 		y = hit_points_kaon[i].y;
+		t_ns = hit_points_kaon[i].t;
 // 		if (hit_points_pion[i].t > 0) continue;
 		kaon_dist_xy->Fill(x,y);
+		kaon_dist_xt->Fill(x,t_ns);
+		kaon_dist_yt->Fill(y,t_ns);
 	}
 	
 	std::vector<double> dist_traveled = dirc_model->get_dist_traveled();
@@ -537,6 +555,10 @@ int main(int nargs, char* argv[])
 	
 	pion_dist_xy->Write();
 	kaon_dist_xy->Write();
+	pion_dist_xt->Write();
+	kaon_dist_xt->Write();
+	pion_dist_yt->Write();
+	kaon_dist_yt->Write();
 	ll_diff_pion->Write();
 	ll_diff_kaon->Write();
 	phot_found_pion->Write();

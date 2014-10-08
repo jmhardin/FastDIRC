@@ -114,8 +114,8 @@ DircGopticalSim::DircGopticalSim(
 	upperWedgeFarPlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeFarPlaneNy;
 	
 	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
-	fill_threeseg_plane_vecs();
-	fill_foc_mirror_vecs();
+	
+
 	
 	
 	
@@ -142,6 +142,10 @@ DircGopticalSim::DircGopticalSim(
 	boxCloseZ = -614;
 	
 	reflOff = 9;
+	
+	fill_threeseg_plane_vecs();
+	fill_foc_mirror_vecs();
+	fill_sens_plane_vecs();
 	
 	three_seg_mirror = false;
 	
@@ -200,22 +204,28 @@ DircGopticalSim::DircGopticalSim(
 }
 void DircGopticalSim::fill_sens_plane_vecs()
 {
+	double adjusted_sens_size = 312;
+  
+    
 	sensPlaneNx = 0;
 	sensPlaneNy = sin(sens_rot/57.3);
 	sensPlaneNz = cos(sens_rot/57.3);
 	
-	sensPlaneY = -sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
+	sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
 	sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
+	
+	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
+	
+	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
+	printf("ydist conv: %12.04f\n",sensPlaneYdistConversion);
 }
 void DircGopticalSim::fill_foc_mirror_vecs()
 {
 	//is off by pi/2 to reduce rounding errors and such
 	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
-	printf("fca: %12.04f f_rot: %12.04f acos: %12.04f ratio: %12.04f\n",foc_center_ang*57.3,foc_rot,acos(-foc_mirror_size/(2*foc_r))*57.3);
 	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
 	focMirrorZ = foc_r*sin(foc_center_ang);
 	
-	printf("focMirrorY: %12.04f foxMirrorZ: %12.04f\n",focMirrorY,focMirrorZ);
 }
 void DircGopticalSim::fill_threeseg_plane_vecs()
 {
@@ -332,8 +342,8 @@ void DircGopticalSim::rotate_2d(double &x, double &y, double cval, double sval)
 	//Only store one variable for speed
 	//Sin should be actual sin (not negative sin)
 	double tx = x;
-	x = cval * tx - sval * y;
-	y = -sval * tx + cval * y;
+	x = cval*tx - sval*y;
+	y = sval*tx + cval*y;
 }
 void DircGopticalSim::set_bar_box_angle(double ang)
 {
@@ -702,7 +712,7 @@ double DircGopticalSim::get_beta(double E, double m)
 	double gam = E/m;
 	if (gam > 5)
 	{
-		//Approximate and possibly save 
+		//Approximate and possibly save time
 		return 1-1/(2*gam*gam);
 	}
 	else
@@ -815,87 +825,25 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 	double beta /* = -1*/,\
 	bool check_dir /*= false*/)
 {
-	if (check_dir == false)
-	{
-		Sys::SourceRays srcrays(Math::Vector<3>(0,0,0));
-		fill_reg_phi(\
-			srcrays,\
-			n_photons_phi,\
-			n_photons_z,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			0,\
-			beta);
-	
-		
-		return trace_source_rays(srcrays,outspot,outframe);
-	}
-	else
-	{
-		//Slow way for now, faster once goptical is gone
-		std::vector<dirc_point> rval;
-		std::vector<dirc_point> tval;
-		
-		Sys::SourceRays upsrcrays(Math::Vector<3>(0,0,0));
-		Sys::SourceRays downsrcrays(Math::Vector<3>(0,0,0));
-		fill_reg_phi(\
-			upsrcrays,\
-			n_photons_phi,\
-			n_photons_z,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			1,\
-			beta);
-		fill_reg_phi(\
-			downsrcrays,\
-			n_photons_phi,\
-			n_photons_z,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			-1,\
-			beta);
-		
-		
-		
-		tval = trace_source_rays(upsrcrays,outspot,outframe);
-		for (unsigned int i = 0; i < tval.size(); i++)
-		{
-			dirc_point tpoint;
-			tpoint.x = tval[i].x;
-			tpoint.y = tval[i].y;
-			tpoint.t = 1;
-			tpoint.weight = tval[i].weight;
-			rval.push_back(tpoint);
-		}
-		tval = trace_source_rays(downsrcrays,outspot,outframe);
-		for (unsigned int i = 0; i < tval.size(); i++)
-		{
-			dirc_point tpoint;
-			tpoint.x = tval[i].x;
-			tpoint.y = tval[i].y;
-			tpoint.t = -1;
-			tpoint.weight = tval[i].weight;
-			rval.push_back(tpoint);
-		}
-		return rval;
-	}
-		
-}
+
+// 	Sys::SourceRays srcrays(Math::Vector<3>(0,0,0));
+	std::vector<dirc_point> out_points;
+	fill_reg_phi(\
+		out_points,\
+		n_photons_phi,\
+		n_photons_z,\
+		ckov_theta,\
+		particle_x,\
+		particle_y,\
+		particle_theta,\
+		particle_phi,\
+		phi_theta_unc,\
+		ckov_theta_unc,\
+		0,\
+		beta);
+
+	return out_points;
+  }
 void DircGopticalSim::fill_rand_phi(\
 	Sys::SourceRays &srcrays,\
 	int n_photons, \
@@ -1195,7 +1143,7 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 }
 
 void DircGopticalSim::fill_reg_phi(\
-	Sys::SourceRays &srcrays,\
+	std::vector<dirc_point> &ovals,\
 	int n_photons_phi, \
 	int n_photons_z,\
 	double ckov_theta /*= 47*/, \
@@ -1223,20 +1171,26 @@ void DircGopticalSim::fill_reg_phi(\
 	
 // 	srcrays.set_position(Math::Vector<3>(sourcex,sourcey,sourcez));
 	//Need to hand absolute positions to warp_ray
-	srcrays.set_position(Math::Vector<3>(0,0,0));
-	srcrays.set_material(oil);
+// 	srcrays.set_position(Math::Vector<3>(0,0,0));
+// 	srcrays.set_material(oil);
 	
 	double sourceOff,regPhi;
-	
-	Math::Transform3 trans;
-	trans.reset();
-	trans.linear_rotation(Math::Vector3(particle_theta,0,0));
-	trans.linear_rotation(Math::Vector3(0,0,particle_phi));
 
 	int num_through = 0;
 	double temit;
 	double rand_add;
 	double wavelength = 400;
+	
+	double x,y,z,dx,dy,dz;
+	
+	double cos_ptheta = cos(particle_theta/57.3);
+	double sin_ptheta = sin(particle_theta/57.3);
+	double cos_pphi = cos(particle_phi/57.3);
+	double sin_pphi = sin(particle_phi/57.3);
+	
+	double mm_index = 0;
+	double c_mm_ns = 300;
+	
 	for (int i = 0; i < n_photons_z; i++)
 	{
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
@@ -1254,97 +1208,96 @@ void DircGopticalSim::fill_reg_phi(\
 			{
 				temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 			}
-				
+			
+			mm_index = (sourceOff - barDepth)*1.47;
+			
+			x = 0;
+			y = 0;
+			z = sourceOff;
+			
+			dx = sin(temit/57.3)*cos(regPhi);
+			dy = sin(temit/57.3)*sin(regPhi);
+			dz = cos(temit/57.3);
+			
+			rotate_2d(z,y,cos_ptheta,sin_ptheta);
+			rotate_2d(x,y,cos_pphi,sin_pphi);
+			
+// 			printf("pre nogop: %8.04f %8.04f %8.04f pre gop: %8.04f %8.04f %8.04f\n",dx,dy,dz,dir_ray.x(),dir_ray.y(),dir_ray.z());
+			
+			rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
+			rotate_2d(dy,dx,cos_pphi,sin_pphi);
+			
+			z -= barDepth;
+			x += particle_x;
+			y += particle_y;
 			
 			
-			Math::Vector3 start_ray(0,0,sourceOff);
-			Math::Vector3 dir_ray(\
-				sin(temit/57.3)*cos(regPhi),\
-				sin(temit/57.3)*sin(regPhi),\
-				cos(temit/57.3));
-			
-			start_ray = trans.transform_linear(start_ray);
-			start_ray.z() -= barDepth;
-			dir_ray = trans.transform_linear(dir_ray);	
-			
-			start_ray.x() = start_ray.x() + particle_x;
-			start_ray.y() = start_ray.y() + particle_y;
-			
-			Math::VectorPair3 new_ray(\
-				start_ray.x(),\
-				start_ray.y(),\
-				start_ray.z(),\
-				dir_ray.x(),\
-				dir_ray.y(),\
-				dir_ray.z());
-			
-			if (dir_ray.y() * check_dir < -.00001)
-			{
-			//Get all rays in one direction or the other.
-			//check_dir = 0 sidesteps this
-				continue;
-			}
-			
-			warp_ray(\
-				new_ray.x0(),\
-				new_ray.y0(),\
-				new_ray.z0(),\
-				new_ray.x1(),\
-				new_ray.y1(),\
-				new_ray.z1(),\
+			mm_index += warp_ray(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz,\
 				asin(1/1.47));
 			
-			if (new_ray.z0() > 0)
+			if (z > 0)
 			{
 				continue;
 			}
 			
 			spread_wedge_mirror();
 			
-			warp_wedge(\
-				new_ray.x0(),\
-				new_ray.y0(),\
-				new_ray.z0(),\
-				new_ray.x1(),\
-				new_ray.y1(),\
-				new_ray.z1());
-			
-// 			printf("dz: %12.04f\n",new_ray.z1());
+			mm_index += warp_wedge(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
 			
 			//account (quickly) for the bar box having a different angle than the readout
-			rotate_2d(new_ray.y1(),new_ray.z1(),box_angle_off_cval,box_angle_off_sval);
+			rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 			
-// 			printf("%12.04f %12.04f %12.04f :: %12.04f %12.04f %12.04f\n",new_ray.x0(),new_ray.y0(),new_ray.z0(),new_ray.x1(),new_ray.y1(),new_ray.z1());
-			
-			if (new_ray.z0() > 0)
+			if (z > 0)
 			{
 				continue;
 			}
 			
-			warp_box(\
-				new_ray.x0(),\
-				new_ray.y0(),\
-				new_ray.z0(),\
-				new_ray.x1(),\
-				new_ray.y1(),\
-				new_ray.z1());
+			mm_index += warp_box(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
 			
-			if (new_ray.z0() > 0)
+			if (z > 0)
 			{
 				continue;
 			}
 			
 			//check absorbtion
-			if (!(absorbtion_mc(new_ray.x1(),new_ray.y1())))
+			if (!(absorbtion_mc(dx,dy)))
 			{
 				continue;
 			}
-// 			printf("%d\n",num_through++);
-			srcrays.add_rays(new_ray,&srcrays);
+			
+			dirc_point out_val;
+			mm_index += warp_sens_plane(\
+				out_val,\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+			
+			//should be threading time information into this soon
+			out_val.t = mm_index/(c_mm_ns);
+			ovals.push_back(out_val);
 		}
 	}
-// 	srcrays.rotate(particle_theta,0,0);
-// 	srcrays.rotate(0,0,particle_phi);
 }
 std::vector<dirc_point> DircGopticalSim::trace_source_rays(\
 	Sys::SourceRays &srcrays, \
@@ -1493,19 +1446,13 @@ double DircGopticalSim::warp_ray(\
 	}*/
 	
 	//deterimines if particle is going left or right
-	if (dx < 0)
-	{
-		lrx = -1;
-	}
-	else
-	{
-		lrx = 1;
-	}
+
+	lrx = sgn(dx);
 	
 	delx = fabs(dely*dx/dy) - lrx*(barWidth/2-x);
 	delz = fabs(dely*dz/dy) + z;
 	
-	rval += delx*delx + delx*delx;
+	rval += delx*delx + delz*delz;
 	
 	if (dz < 0) printf("dz: %12.04f : Negative and confusing\n",dz);
 
@@ -1542,9 +1489,9 @@ double DircGopticalSim::warp_ray(\
 		z = remainderz-barDepth;
 	}
 	
-	return sqrt(rval);
+	return sqrt(rval)*quartzIndex;
 }
-void DircGopticalSim::warp_wedge(\
+double DircGopticalSim::warp_wedge(\
 	double &x,\
 	double &y,\
 	double &z,\
@@ -1557,6 +1504,7 @@ void DircGopticalSim::warp_wedge(\
 	//may have to rotate after to the mirror
 	//Starts y at 0
 	
+	double mm_index = 0;
 	bool passed_interface = false;
 // 	double x0 = x;
 	double dt = 0; //dummy variable representing parametric line
@@ -1581,6 +1529,7 @@ void DircGopticalSim::warp_wedge(\
 			
 			//Will always be true - just use for propagation (short circuit var?)
 			
+			mm_index += dt*quartzIndex;
 			x_wedge_coerce_check(x,y,z,dx,dy,dz,dt);
 			
 			
@@ -1589,30 +1538,31 @@ void DircGopticalSim::warp_wedge(\
 		}
 		else
 		{
-// 			printf("IM HERE REFLECTING AND SUCH\n");
-// 			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
-// 			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
-// 		
-// 			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
-// 			//never reached??? probably not  can possibly remove if statement
-// 			//No bottom wedge, try top
-// 			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
-// 			{
-// 				//Does pass through optical interface
-// // 				if (dt*dy
-// 				
-// 				//Following statement performs the propagation if it does not fail
-// 				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
-// 				{
-// 					//Goes out the window, fail and return
-// 					z = 1337;
-// 					return;
-// 				}
-// 				
-// 				//Reflect off top wedge			
-// 				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
-// 				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
-// 			}
+			printf("IM HERE REFLECTING AND SUCH\n");
+			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
+			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
+		
+			dt = -(upperWedgeFarPlaneD+n_dot_v0)/n_dot_v;
+			//never reached??? probably not  can possibly remove if statement
+			//No bottom wedge, try top
+			if (dt*dy < upperWedgeTop)//Should always be true... I hope (remove later?)
+			{
+				//Does pass through optical interface
+// 				if (dt*dy
+				
+				//Following statement performs the propagation if it does not fail
+				mm_index += dt*quartzIndex;
+				if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
+				{
+					//Goes out the window, fail and return
+					z = 1337;
+					return -1;
+				}
+				
+				//Reflect off top wedge			
+				dy += 2*n_dot_v*upperWedgeFarPlaneNy;
+				dz += 2*n_dot_v*upperWedgeFarPlaneNz;
+			}
 		}
 	}
 	//Now dz < 0 or we have a new starting vector.  Either way, we intersect with the "close" wedge now
@@ -1631,11 +1581,12 @@ void DircGopticalSim::warp_wedge(\
 		//reflect it off bottom wedge
 		
 		//Again, always true
+		mm_index += dt*quartzIndex;
 		if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 		{
 			//Goes out the window, fail and return
 			z = 1337;
-			return;
+			return -1;
 		}
 		
 		dy += 2*n_dot_v*wedgeClosePlaneNy;
@@ -1647,11 +1598,12 @@ void DircGopticalSim::warp_wedge(\
 		//passed interface before reflection
 		//get dt to propagate to interface
 		dt = (quartzLiquidY + barLength/2 - y)/dy;
+		mm_index += dt*quartzIndex;
 		if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 		{
 			//Goes out the window, fail and return
 			z = 1337;
-			return;
+			return -1;
 		}
 		//correct ordering below - interface is xz plane, so dx and dz go first
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
@@ -1667,11 +1619,12 @@ void DircGopticalSim::warp_wedge(\
 		
 		if (dt*dy + y < upperWedgeTop + barLength/2)
 		{
+			mm_index += dt*liquidIndex;
 			if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 			{
 				//Goes out the window, fail and return
 				z = 1337;
-				return;
+				return -1;
 			}
 			
 			dx += 2*n_dot_v*upperWedgeClosePlaneNx;
@@ -1683,11 +1636,12 @@ void DircGopticalSim::warp_wedge(\
 		{
 			//refracted such that it no longer bounces
 			dt = (upperWedgeTop + barLength/2 - y)/dy;
+			mm_index += dt*liquidIndex;
 			if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 			{
 				//Goes out the window, fail and return
 				z = 1337;
-				return;
+				return -1;
 			}
 		}
 
@@ -1696,7 +1650,7 @@ void DircGopticalSim::warp_wedge(\
 	{
 		//out the window
 		z = 1337;
-		return;
+		return -1;
 	}
 
 // 	printf("aw: %12.04f %12.04f %12.04f :: %12.04f %12.04f %12.04f dt: %12.04f\n",x,y,z,dx,dy,dz,dt);
@@ -1707,11 +1661,12 @@ void DircGopticalSim::warp_wedge(\
 	{
 		//Will go through the interface now before it hits the top
 		dt = (quartzLiquidY + barLength/2 - y)/dy;
+		mm_index += dt*quartzIndex;
 		if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 		{
 			//Goes out the window, fail and return
 			z = 1337;
-			return;
+			return -1;
 		}
 		//correct ordering below - interface is xz plane, so dx and dz go first
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
@@ -1721,16 +1676,20 @@ void DircGopticalSim::warp_wedge(\
 	//Now we just finish
 	
 	dt = (upperWedgeTop + barLength/2 - y)/dy;
+	mm_index += dt*liquidIndex;
 	if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)))
 	{
 		//I'm not sure if it can go out the window at this point, but just in case
 		//Goes out the window, fail and return
 		z = 1337;
-		return;
+		return -1;
 	}
-// 	printf("%12.04f %12.04f %12.04f :: %12.04f %12.04f %12.04f dt: %12.04f\n",x,y,z,dx,dy,dz,dt);
-
+	
+	
 	//and we're done.  Everything should be correct now with the ray at the top of the wedge
+	//return the distance traveled times the index it traveled in
+	return mm_index;
+  
 }
 //Possibly inline these or something for speed, but right now, leave them for sanity
 bool DircGopticalSim::optical_interface_z(\
@@ -1909,6 +1868,8 @@ double DircGopticalSim::warp_box(\
 			y += dy*dt;
 			z += dz*dt;
 			
+			rval += dt*liquidIndex;
+			
 			//Abuse the fact that this vector is normalized and hope it stays that way
 			dz = -dz;
 			rval += dt;
@@ -2011,7 +1972,7 @@ double DircGopticalSim::get_z_intercept(\
 	
 	return z + dt*dz;
 }
-void DircGopticalSim::get_intercept_plane(\
+double DircGopticalSim::get_intercept_plane(\
 	double Nx,\
 	double Ny,\
 	double Nz,\
@@ -2025,6 +1986,7 @@ void DircGopticalSim::get_intercept_plane(\
 {
 	//Just intersects a plane (modifying x,y,z)
 	//Could use this in the Wedge, but would loose some speed
+	//Non returning verion for speed when needed?
 	
 	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
 	double n_dot_v0 = (Nx*x + Ny*y + Nz*z);
@@ -2036,14 +1998,16 @@ void DircGopticalSim::get_intercept_plane(\
 	x += dx*dt;
 	y += dy*dt;
 	z += dz*dt;
+	
+	return dt;
 }
 double DircGopticalSim::three_seg_reflect(\
-		  double &x,\
-		  double &y,\
-		  double &z,\
-		  double &dx,\
-		  double &dy,\
-		  double &dz)
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz)
 {
 	//Intersects and reflects the three segment plane
 	double rval = 0;
@@ -2081,7 +2045,7 @@ double DircGopticalSim::three_seg_reflect(\
 			dy,\
 			dz,\
 			rval);
-		return rval;
+		return rval*liquidIndex;
 	}
 	
 	tz = get_z_intercept(\
@@ -2110,7 +2074,7 @@ double DircGopticalSim::three_seg_reflect(\
 			dy,\
 			dz,\
 			rval);
-		return rval;
+		return rval*liquidIndex;
 	}
 	
 	tz = get_z_intercept(\
@@ -2139,7 +2103,7 @@ double DircGopticalSim::three_seg_reflect(\
 			dy,\
 			dz,\
 			rval);
-		return rval;
+		return rval*liquidIndex;
 	}
 	//reflects off of nothing :(
 	z = 1337;
@@ -2150,12 +2114,12 @@ double DircGopticalSim::sgn(double val)
     return (0 < val) - (val < 0);
 }
 double DircGopticalSim::cylindrical_reflect(\
-		  double &x,\
-		  double &y,\
-		  double &z,\
-		  double &dx,\
-		  double &dy,\
-		  double &dz)
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz)
 {
 	//intersects and reflects the focusing cylinder
 	//Pretending the cylinder has no Nx for intersection purposes
@@ -2222,5 +2186,36 @@ double DircGopticalSim::cylindrical_reflect(\
 	
 // 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
 	
-	return rval;
+	return rval*liquidIndex;
+}
+
+double DircGopticalSim::warp_sens_plane(\
+		dirc_point &fill_val,\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz)
+{
+	//don't strictly need to modify the z, could be sped up
+	double rval =\
+		get_intercept_plane(\
+			sensPlaneNx,\
+			sensPlaneNy,\
+			sensPlaneNz,\
+			sensPlaneD,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+	
+	fill_val.x = x;
+	fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
+	
+// 	printf("Nx: %12.04f Ny: %12.04f Nz: %12.04f xfound: %12.04f yfound: %12.04f\n",sensPlaneNx,sensPlaneNy,sensPlaneNz,fill_val.x,fill_val.y);
+	
+	return rval*liquidIndex;
 }
