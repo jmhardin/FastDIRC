@@ -72,8 +72,8 @@ int main(int nargs, char* argv[])
 	
 	double particle_x = 0;
 	double particle_y = 0;
-	double particle_theta = 0;
-	double particle_phi = 0;
+	double particle_theta = 4;
+	double particle_phi = 40;
 	
 	int num_runs = 0;
 	
@@ -119,7 +119,7 @@ int main(int nargs, char* argv[])
 	
 	double overlap_x = -1;
 	
-	bool three_seg_mirror = true;
+	bool three_seg_mirror = false;
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;

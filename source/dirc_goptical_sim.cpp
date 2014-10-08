@@ -113,9 +113,9 @@ DircGopticalSim::DircGopticalSim(
 	
 	upperWedgeFarPlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeFarPlaneNy;
 	
-	
+	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
 	fill_threeseg_plane_vecs();
-	
+	fill_foc_mirror_vecs();
 	
 	
 	
@@ -198,12 +198,30 @@ DircGopticalSim::DircGopticalSim(
 	}
 	build_system();
 }
+void DircGopticalSim::fill_sens_plane_vecs()
+{
+	sensPlaneNx = 0;
+	sensPlaneNy = sin(sens_rot/57.3);
+	sensPlaneNz = cos(sens_rot/57.3);
+	
+	sensPlaneY = -sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
+	sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
+}
+void DircGopticalSim::fill_foc_mirror_vecs()
+{
+	//is off by pi/2 to reduce rounding errors and such
+	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
+	printf("fca: %12.04f f_rot: %12.04f acos: %12.04f ratio: %12.04f\n",foc_center_ang*57.3,foc_rot,acos(-foc_mirror_size/(2*foc_r))*57.3);
+	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
+	focMirrorZ = foc_r*sin(foc_center_ang);
+	
+	printf("focMirrorY: %12.04f foxMirrorZ: %12.04f\n",focMirrorY,focMirrorZ);
+}
 void DircGopticalSim::fill_threeseg_plane_vecs()
 {
-	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
 	focMirrorTop = focMirrorBottom + foc_mirror_size*cos(foc_rot/57.3);
 	focMirrorZDim = foc_mirror_size*sin(foc_rot/57.3);
-	
+	printf("MirrorZDim: %12.04f MirrorSize: %12.04f\n",focMirrorZDim,foc_mirror_size);
 	//If we ever go to more than 3 segments, use a loop
 	
 	double theta_m = foc_rot/57.3;//radians of rotation to go through
@@ -422,7 +440,7 @@ void DircGopticalSim::build_system()
 	if (three_seg_mirror == false)
 	{
 	  focRot = foc_rot;
-	  focMirrorSize = mirrorDepth;
+	  focMirrorSize = foc_mirror_size;
 	  
 	  double focz = -focMirrorSize*sin(focRot/57.3)/2;
 	  double focy = focMirrorSize*cos(focRot/57.3)/2;
@@ -446,7 +464,7 @@ void DircGopticalSim::build_system()
 			  oil);
 	  focMirror->rotate(focRot,0,0);
 	  focMirror->rotate(0,foc_yrot,0);
-	  sys.add(*focMirror);
+// 	  sys.add(*focMirror);
 	}
 	else if (three_seg_mirror == true)//condition not needed obviously
 	{
@@ -1164,9 +1182,9 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 	
 	for (unsigned int i = 0; i < refraction_before.size(); i++)
 	{
-// 	  printf("filling vector %d\n",i);
-	  before_interface.push_back(refraction_before[i]);
-	  after_interface.push_back(refraction_after[i]);
+      // 	printf("filling vector %d\n",i);
+		before_interface.push_back(refraction_before[i]);
+		after_interface.push_back(refraction_after[i]);
 	}
 	
 	store_refraction = false;
@@ -1869,11 +1887,12 @@ double DircGopticalSim::warp_box(\
 	double &dy,\
 	double &dz)
 {
+  //propagates light from the top of the wedge until just after bouncing off of the focusing mirrors
   //Consider branch profiling or some such other optimizations
   //Also, Fast Math, but don't tell the people in the penthouse
-  
-//does not currently include x bouncing off the side - need to add that later
-//possibly in the last "warp to plane" bit
+ 
+  //does not currently include x bouncing off the side - need to add that later
+  //possibly in the last "warp to plane" bit
 	double rval = 0; //distance traveled
 
 //first reflect off the back of the bar
@@ -1908,17 +1927,17 @@ double DircGopticalSim::warp_box(\
 		  dx,\
 		  dy,\
 		  dz);
-	}/*
+	}
 	else
 	{
-		 trval = focus_reflect(\
+		 trval = cylindrical_reflect(\
 		  x,\
 		  y,\
 		  z,\
 		  dx,\
 		  dy,\
 		  dz);
-	}*/
+	}
 	
 	if (trval < 0)
 	{
@@ -1927,6 +1946,7 @@ double DircGopticalSim::warp_box(\
 	}
 
 	//short propagate in front of the mirrors:
+	//TODO remove later for speed
 	x += .1*dx;
 	y += .1*dy;
 	z += .1*dz;
@@ -1951,6 +1971,7 @@ void DircGopticalSim::plane_reflect(\
 	double &dz,\
 	double &dt)
 {
+	//Propagate to the intercept and reflects off a plane
 	//Could use this in the Wedge, but would loose some speed
 
 	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
@@ -1978,6 +1999,7 @@ double DircGopticalSim::get_z_intercept(\
 	double dy,\
 	double dz)
 {
+	//finds z intercept (without modifying x y and z)
 	//Could use this in the Wedge, but would loose some speed
 	
 	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
@@ -1989,6 +2011,32 @@ double DircGopticalSim::get_z_intercept(\
 	
 	return z + dt*dz;
 }
+void DircGopticalSim::get_intercept_plane(\
+	double Nx,\
+	double Ny,\
+	double Nz,\
+	double D,\
+	double &x,\
+	double &y,\
+	double &z,\
+	double dx,\
+	double dy,\
+	double dz)
+{
+	//Just intersects a plane (modifying x,y,z)
+	//Could use this in the Wedge, but would loose some speed
+	
+	double n_dot_v = (Nx*dx + Ny*dy + Nz*dz);
+	double n_dot_v0 = (Nx*x + Ny*y + Nz*z);
+	double dt;//optimized by math compression?
+	dt = (D - n_dot_v0)/n_dot_v;
+	
+// 	printf("x: %8.04f   y: %8.04f   z: %8.04f   dx: %8.04f    dy: %8.04f    dz: %8.04f   n_dot_v0: %8.04f tz: %8.04f\n",x,y,z,dx,dy,dz,n_dot_v0,z+dz*dt);
+	
+	x += dx*dt;
+	y += dy*dt;
+	z += dz*dt;
+}
 double DircGopticalSim::three_seg_reflect(\
 		  double &x,\
 		  double &y,\
@@ -1997,9 +2045,12 @@ double DircGopticalSim::three_seg_reflect(\
 		  double &dy,\
 		  double &dz)
 {
+	//Intersects and reflects the three segment plane
 	double rval = 0;
 	//definitely losing time here - combuting the n_dot_v and n_dot_v0 and dt twice for the chosen plane
 	//TODO fix this once the code is correct
+	
+	//I hope there's a fast way to do these reflections
 	
 	double tz = 0;
 	
@@ -2093,4 +2144,83 @@ double DircGopticalSim::three_seg_reflect(\
 	//reflects off of nothing :(
 	z = 1337;
 	return -1;
+}
+double DircGopticalSim::sgn(double val) 
+{//stolen from http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    return (0 < val) - (val < 0);
+}
+double DircGopticalSim::cylindrical_reflect(\
+		  double &x,\
+		  double &y,\
+		  double &z,\
+		  double &dx,\
+		  double &dy,\
+		  double &dz)
+{
+	//intersects and reflects the focusing cylinder
+	//Pretending the cylinder has no Nx for intersection purposes
+	//Should be a valid approximation, and saves a ton of speed
+	//could be implemented on the threeseg mirror (at least the branching part
+  
+	double rval = 0;
+  
+	double dydz_norm = sqrt(dz*dz+dy*dy);
+	double dy_norm = dy/dydz_norm;
+	double dz_norm = dz/dydz_norm;
+	
+	double localNx = 0;
+	double localNy = 0;
+	double localNz = 0;
+	
+	//there's gotta be a faster way to do all of this
+	//different than plane intercept D.  Took this algorithm from internet (wolfram Mathworld)
+	//Parametric intercept sucks
+	double D = (z - focMirrorZ)*dy_norm - (y - focMirrorY)*dz_norm;
+	double detD = sqrt(foc_r*foc_r - D*D);
+	
+	//dy > 0 always (or should be.  Remove sgn and fabs function calls after confirming)
+	double zrel = D*dy_norm + sgn(dy_norm)*dz_norm*detD;
+	double yrel = -D*dz_norm + fabs(dy_norm)*detD;
+	
+	double newy = yrel + focMirrorY;
+	double newz = zrel + focMirrorZ;
+	
+	double ydiff = newy - y;
+	double zdiff = newz - z;
+	
+	rval += sqrt((ydiff*ydiff+zdiff*zdiff))/dydz_norm;
+	
+	x += dx*rval;
+	y = newy;
+	z = newz;
+	
+	//combine later to save speed
+	localNy = yrel;
+	localNz = zrel;
+	
+	
+	
+	double norm_loc = sqrt(localNy*localNy + localNz*localNz);//there's gotta be a better way to normalize this
+	
+// 	printf("new R: %12.04f dy_norm: %12.04f dz_norm: %12.04f\n",norm_loc,dy_norm,dz_norm);
+	
+	localNy /= norm_loc;
+	localNz /= norm_loc;
+	
+// 	printf("y: %12.04f z: %12.04f lny: %12.04f lnz: %12.04f\n",y,z,localNy,localNz);
+	
+	//remove for speed in ideal case
+// 	rotate_2d(localNx,localNz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
+	
+	double n_dot_v = -(dx*localNx + dy*localNy + dz*localNz);
+	
+// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
+	
+	dx += 2*n_dot_v*localNx;
+	dy += 2*n_dot_v*localNy;
+	dz += 2*n_dot_v*localNz;
+	
+// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
+	
+	return rval;
 }

@@ -57,6 +57,7 @@ private:
 	double threeSeg2Nx,threeSeg2Ny,threeSeg2Nz,threeSeg2D;
 	double threeSeg3Nx,threeSeg3Ny,threeSeg3Nz,threeSeg3D;
 	
+	//Not yet used - implement to branch faster on the threeseg
 	double threeSeg1_2dny,threeSeg1_2dnz,threeSeg1_2dd;
 	double threeSeg2_2dny,threeSeg2_2dnz,threeSeg2_2dd;
 	double threeSeg3_2dny,threeSeg3_2dnz,threeSeg3_2dd;
@@ -64,6 +65,13 @@ private:
 	double threeSeg1Y,threeSeg1Z;
 	double threeSeg2Y,threeSeg2Z;
 	double threeSeg3Y,threeSeg3Z;
+	
+	double sensPlaneNx;
+	double sensPlaneNy;
+	double sensPlaneNz;
+	double sensPlaneD;
+	double sensPlaneY;
+	double sensPlaneZ;
 	
 	bool upperWedgeNonUniform;
 	double upperWedgeNonUniformSpread;
@@ -82,6 +90,9 @@ private:
 	
 	double boxCloseZ;
 	double reflOff;
+	
+	double focMirrorY;
+	double focMirrorZ;
 	
 	bool three_seg_mirror;
 	
@@ -125,7 +136,9 @@ private:
 	
 	void build_system();
 	void clear_system();
+	void fill_sens_plane_vecs();
 	void fill_threeseg_plane_vecs();
+	void fill_foc_mirror_vecs();
 	void sidemirror_reflect_points(std::vector<dirc_point> &points);
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
@@ -198,37 +211,59 @@ private:
 		double &dz,\
 		double dt);
 	double three_seg_reflect(\
-		  double &x,\
-		  double &y,\
-		  double &z,\
-		  double &dx,\
-		  double &dy,\
-		  double &dz);
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz);
 	//Utility function - should definitely be inlined
 	void plane_reflect(\
-		  double Nx,\
-		  double Ny,\
-		  double Nz,\
-		  double D,\
-		  double &x,\
-		  double &y,\
-		  double &z,\
-		  double &dx,\
-		  double &dy,\
-		  double &dz,\
-		  double &dt);
+		double Nx,\
+		double Ny,\
+		double Nz,\
+		double D,\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz,\
+		double &dt);
 	//Utility function - should combine this with above for some speed
 	double get_z_intercept(\
-		  double Nx,\
-		  double Ny,\
-		  double Nz,\
-		  double D,\
-		  double x,\
-		  double y,\
-		  double z,\
-		  double dx,\
-		  double dy,\
-		  double dz);
+		double Nx,\
+		double Ny,\
+		double Nz,\
+		double D,\
+		double x,\
+		double y,\
+		double z,\
+		double dx,\
+		double dy,\
+		double dz);
+	//yet another inlinable utility function
+	void get_intercept_plane(\
+		double Nx,\
+		double Ny,\
+		double Nz,\
+		double D,\
+		double &x,\
+		double &y,\
+		double &z,\
+		double dx,\
+		double dy,\
+		double dz);
+	//yet another inlinable utility function
+	double cylindrical_reflect(\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz);
+	//The compiler should be inlining this without our help
+	double sgn(double val);
 public:
 	void set_sidemirror(double ixr, double ixl);
 	void set_three_seg_mirror(bool itsm);
