@@ -7,46 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-
-// #include <Goptical/Analysis/Spot>
 // 
-// #include <Goptical/Math/Vector>
-// #include <Goptical/Math/VectorPair>
-// 
-// #include <Goptical/Sys/Element>
-// #include <Goptical/Sys/Container>
-// #include <Goptical/Sys/System>
-// #include <Goptical/Sys/SourcePoint>
-// #include <Goptical/Sys/SourceRays>
-// #include <Goptical/Sys/Source>
-// #include <Goptical/Sys/Group>
-// #include <Goptical/Design/Telescope/Newton>
-// #include <Goptical/Sys/Image>
-// #include <Goptical/Sys/Lens>
-// #include <Goptical/Sys/OpticalSurface>
-// #include <Goptical/Sys/Mirror>
-// #include <Goptical/Sys/Mirror>
-// #include <Goptical/Data/Plot>
-// #include <Goptical/Data/PlotData>
-// #include <Goptical/Data/Set>
-// 
-// #include <Goptical/Trace/Tracer>
-// #include <Goptical/Trace/Result>
-// #include <Goptical/Trace/Distribution>
-// #include <Goptical/Trace/Sequence>
-// #include <Goptical/Trace/Params>
-// #include <Goptical/Trace/Ray>
-// 
-// #include <Goptical/Light/Ray>
-// #include <Goptical/Light/SpectralLine>
-// #include "Goptical/common.hh"
-// 
-// #include <Goptical/Io/RendererSvg>
-// #include <Goptical/Io/Rgb>
-// #include <Goptical/Io/RendererViewport>
-// 
-// #include <Goptical/Math/Transform>
-
 #include <stdlib.h>
 #include <math.h>
 
@@ -143,10 +104,6 @@ DircGopticalSim::DircGopticalSim(
 	
 	reflOff = 9;
 	
-	fill_threeseg_plane_vecs();
-	fill_foc_mirror_vecs();
-	fill_sens_plane_vecs();
-	
 	three_seg_mirror = false;
 	
 	rand_gen = new TRandom3(rand_seed);
@@ -200,13 +157,15 @@ DircGopticalSim::DircGopticalSim(
 	{
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
+	fill_threeseg_plane_vecs();
+	fill_foc_mirror_vecs();
+	fill_sens_plane_vecs();
 	build_system();
 }
 void DircGopticalSim::fill_sens_plane_vecs()
 {
 	double adjusted_sens_size = 312;
   
-    
 	sensPlaneNx = 0;
 	sensPlaneNy = sin(sens_rot/57.3);
 	sensPlaneNz = cos(sens_rot/57.3);
@@ -273,42 +232,40 @@ void DircGopticalSim::fill_threeseg_plane_vecs()
 }
 void DircGopticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points)
 {
-  double tmpx = 0;
-  for (unsigned int i = 0; i < points.size(); i++)
-  {
-    tmpx = points[i].x;
-    while (tmpx < sidemirror_xl || tmpx > sidemirror_xr)
-    {
-      if (tmpx < sidemirror_xl)
-      {
-	tmpx = 2*sidemirror_xl - tmpx;
-      }
-      if (tmpx > sidemirror_xr)
-      {
-	tmpx = 2*sidemirror_xr - tmpx;
-      }
-    }
-    points[i].x = tmpx;
-  }
+	double tmpx = 0;
+	for (unsigned int i = 0; i < points.size(); i++)
+	{
+		tmpx = points[i].x;
+		while (tmpx < sidemirror_xl || tmpx > sidemirror_xr)
+		{
+			if (tmpx < sidemirror_xl)
+			{
+				tmpx = 2*sidemirror_xl - tmpx;
+			}
+			if (tmpx > sidemirror_xr)
+			{
+				tmpx = 2*sidemirror_xr - tmpx;
+			}
+		}
+		points[i].x = tmpx;
+	}
 }
 void DircGopticalSim::set_sidemirror(double ixr, double ixl)
 {
-  sidemirror_xr = ixr;
-  sidemirror_xl = ixl;
+	sidemirror_xr = ixr;
+	sidemirror_xl = ixl;
 }
 void DircGopticalSim::set_three_seg_mirror(bool itsm)
 {
-  if (three_seg_mirror != itsm)
-  {
-    three_seg_mirror = itsm;
-    clear_system();
-    build_system();
-  }
+	if (three_seg_mirror != itsm)
+	{
+		three_seg_mirror = itsm;
+		build_system();
+	}
 }
 void DircGopticalSim::set_pmt_offset(double r)
 {
   //positive r increases path length
-	clear_system();
     	boxCloseZ = -614 - r*cos(sens_rot/57.3);
 	reflOff = 9 + r*sin(sens_rot/57.3);
 	build_system();
@@ -367,25 +324,14 @@ void DircGopticalSim::set_upper_wedge_angle_diff(double rads, double rads_y)
 	
 	upperWedgeFarPlaneD = upperWedgeBottom*upperWedgeFarPlaneNy;
 }
-void DircGopticalSim::clear_system()
-{
-// 	Sys::Container::element_list_t elements = sys.get_element_list();
-// 	Sys::Container::element_list_t::const_iterator iterator;
-// 	for (iterator = elements.begin(); iterator != elements.end(); ++iterator)
-// 	{
-// 		sys.remove(**iterator);
-// 	}
-}
 void DircGopticalSim::set_focus_mirror_angle(double ang,double yang)
 {
-	clear_system();
 	foc_rot = ang;
 	foc_yrot = yang;
 	build_system();
 }
 void DircGopticalSim::set_pmt_angle(double ang)
 {
-	clear_system();
 	sens_rot = ang;
 	build_system();
 }
@@ -419,204 +365,7 @@ void DircGopticalSim::spread_wedge_mirror()
 	
 void DircGopticalSim::build_system()
 {
-	//**********************************************************************
-	// Optical system definition
 
-// // 	double size = 2200;//overall System scale 13.1 deg = 10+3.1 at 4m
-// 	double size = 4400;
-// // 	size = 500;
-// 	double testSize = 1800;
-// 
-// 	double focR = foc_r;
-// 	double focMirrorSize = foc_mirror_size;
-// 	double focRot = foc_rot;
-// 	double sensSize = sens_size;
-// 	double sensRot = sens_rot;
-// 	
-// 	double testy = barLength/2+1000;
-// 	
-// 	
-// 	
-// //Must add all elements as "ref<X>", otherwise they will descope and the system won't work after this function call
-// 	ref<Curve::Flat> flatCurve = ref<Curve::Flat>::create();
-// 	
-// 	//Box
-// 	//Focus Mirror
-// 	
-// 	double boxSize = size;
-// 	double mirrorDepth = focMirrorZDim;//I would not really call this the mirror depth any more - more like the head on height
-// 	double focYoff = focMirrorBottom;
-// 	
-// 	if (three_seg_mirror == false)
-// 	{
-// 	  focRot = foc_rot;
-// 	  focMirrorSize = foc_mirror_size;
-// 	  
-// 	  double focz = -focMirrorSize*sin(focRot/57.3)/2;
-// 	  double focy = focMirrorSize*cos(focRot/57.3)/2;
-// 	  
-// 	  
-// 	  
-// 	  double fx,fy,fz;
-// 	  fx = 0;
-// 	  fy = focy + focYoff;
-// 	  fz = focz;
-// 	  
-// 	  ref<Shape::Rectangle> focMirrorShape = ref<Shape::Rectangle>::create(boxSize,focMirrorSize);
-// 	  ref<cylinderY> focCylinder = ref<cylinderY>::create(-focR);
-// 	  ref<Sys::Mirror> focMirror = \
-// 		  ref<Sys::Mirror>::create(\
-// 			  Math::Vector<3>(fx,fy,fz),\
-// 			  focCylinder,\
-// 			  focMirrorShape,\
-// 			  true,\
-// 			  Material::mirror,\
-// 			  oil);
-// 	  focMirror->rotate(focRot,0,0);
-// 	  focMirror->rotate(0,foc_yrot,0);
-// // 	  sys.add(*focMirror);
-// 	}
-// 	else if (three_seg_mirror == true)//condition not needed obviously
-// 	{
-// 	  double fx,fy,fz; //serve as holding variables for the 3 mirror positions;
-// 	  fx = 0;
-// 	  fy = 0;
-// 	  fz = 0;
-// 	  
-// 	  double theta_m = foc_rot/57.3;//radians of rotation to go through
-// 	  double theta_c = fabs(2*asin(mirrorDepth/(2*focR)));//angle subtended by the mirror
-// 	  double seg_h = fabs(2*focR*sin(theta_c/6));//length of each segment;
-// 	  
-// 	  
-// 	  
-// 	  ref<Shape::Rectangle> segMirrorShape = ref<Shape::Rectangle>::create(boxSize,seg_h);
-// 	  ref<Curve::Flat> segMirrorCurve = ref<Curve::Flat>::create();
-// 	  
-// 	  //I had to do some geometry and algebra to get these numbers, but in hindsight, it's obvious.  Always that way.
-// 	  double theta_1 = theta_m - theta_c/3;
-// 	  double theta_2 = theta_m;
-// 	  double theta_3 = theta_m + theta_c/3;
-// 	  
-// 	  fy = focYoff + seg_h*cos(theta_1)/2;
-// 	  fz = -seg_h*sin(theta_1)/2;
-// 	  
-// // 	  printf("tm = %12.04f tc = %12.04f fy = %12.04f seg_h = %12.04f focy = %12.04f\n",theta_m,theta_c,fy,seg_h,seg_h*cos(theta_1)/2);
-// 	  
-// 	  ref<Sys::Mirror> segMirror1 = \
-// 		  ref<Sys::Mirror>::create(\
-// 			  Math::Vector<3>(fx,fy,fz),\
-// 			  segMirrorCurve,\
-// 			  segMirrorShape,\
-// 			  true,\
-// 			  Material::mirror,\
-// 			  oil);
-// 	  
-// 	  segMirror1->rotate(0,foc_yrot,0);
-// 	  segMirror1->rotate(theta_1*57.3,0,0);
-// 	  
-// 	  
-// // 	  sys.add(*segMirror1);
-// 
-// 	  fy += seg_h*cos(theta_1)/2 + seg_h*cos(theta_2)/2;//update these by moving the centers
-// 	  fz += -seg_h*sin(theta_1)/2 - seg_h*sin(theta_2)/2;
-// 	  
-// 	  ref<Sys::Mirror> segMirror2 = \
-// 		  ref<Sys::Mirror>::create(\
-// 			  Math::Vector<3>(fx,fy,fz),\
-// 			  segMirrorCurve,\
-// 			  segMirrorShape,\
-// 			  true,\
-// 			  Material::mirror,\
-// 			  oil);
-// 	  
-// 	  segMirror2->rotate(0,foc_yrot,0);
-// 	  segMirror2->rotate(theta_2*57.3,0,0);
-// 	  
-// 	  
-// // 	  sys.add(*segMirror2);
-// 
-// 	  fy += seg_h*cos(theta_2)/2 + seg_h*cos(theta_3)/2;
-// 	  fz += -seg_h*sin(theta_2)/2 - seg_h*sin(theta_3)/2;
-// 	  
-// 	  ref<Sys::Mirror> segMirror3 = \
-// 		  ref<Sys::Mirror>::create(\
-// 			  Math::Vector<3>(fx,fy,fz),\
-// 			  segMirrorCurve,\
-// 			  segMirrorShape,\
-// 			  true,\
-// 			  Material::mirror,\
-// 			  oil);
-// 	  
-// 	  segMirror3->rotate(0,foc_yrot,0);
-// 	  segMirror3->rotate(theta_3*57.3,0,0);
-// 	  
-// // 	  sys.add(*segMirror3);
-// 	  
-// 	}
-// 	//Image Plane
-// 	
-// 	sensSize = 312;
-// 	//sensSize = 600;
-// 	sensRot = sens_rot;
-// 
-// 	double backFlatYSize = sensSize/2;
-// 	
-// 	double sx,sy,sz;
-// 	sx = 0;
-// 	sy = -sensSize*sin(sensRot/57.3)/2-reflOff+barLength/2;
-// 	sz = boxCloseZ + sensSize*cos(sensRot/57.3)/2;
-// 	
-// 	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,3*sensSize);
-// 	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
-// // 	declared in header for calling later
-// 	boxImage = \
-// 		ref<Sys::Image>::create(\
-// 			Math::Vector<3>(sx,sy,sz),\
-// 			boxImageCurve,\
-// 			boxImageShape);
-// 	boxImage->rotate(sensRot,0,0);
-// 	sys.add(*boxImage);
-// 	
-// 	
-// 	//Below is how we'd do it if there was no focusing mirror
-// 	//500 is the 2.5mrad point at the normal parameters
-// // 	sx = 0;
-// // 	sy = barLength/2 + upperWedgeTop + 500;
-// // 	sz = 0;
-// // 	
-// // 	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,8*sensSize);
-// // 	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
-// // 	boxImage = \
-// // 		ref<Sys::Image>::create(\
-// // 			Math::Vector<3>(sx,sy,sz),\
-// // 			boxImageCurve,\
-// // 			boxImageShape);
-// // 	boxImage->rotate(90,0,0);
-// // 	sys.add(*boxImage);
-// // 	
-// //End no mirror code
-// 	
-// 	ref<Shape::Rectangle> blockShape = ref<Shape::Rectangle>::create(boxSize,backFlatYSize);
-// 	ref<Sys::Mirror> backFlatMirror = \
-// 		ref<Sys::Mirror>::create(\
-// 			Math::Vector<3>(0,barLength/2+upperWedgeTop + backFlatYSize/2,0),\
-// 			flatCurve,\
-// 			blockShape,\
-// 			true,\
-// 			Material::mirror,\
-// 			oil);
-// // 	sys.add(*backFlatMirror);
-// 	
-// 	ref<Curve::Flat> imgCurve = ref<Curve::Flat>::create();
-// 	ref<Shape::Rectangle> imgShape = ref<Shape::Rectangle>::create(size/0.5,testSize*2);
-// 	ref<Sys::Image> testImage = \
-// 		ref<Sys::Image>::create(\
-// 			Math::VectorPair<3>(0,testy,0,0,0,0),\
-// 			imgCurve,\
-// 			imgShape);
-// 	testImage->rotate(90,0,0);
-// // 	sys.add(*testImage);
-// 	
 }
 double DircGopticalSim::get_quartz_n(double lambda)
 {
@@ -758,8 +507,6 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 	double ckov_theta_unc /* = 0*/,\
 	double beta /* = -1*/)
 {
-
-// 	Sys::SourceRays srcrays(Math::Vector<3>(0,0,0));
 	std::vector<dirc_point> out_points;
 	fill_reg_phi(\
 		out_points,\

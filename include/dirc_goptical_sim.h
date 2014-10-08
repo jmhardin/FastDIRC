@@ -5,13 +5,8 @@
 #include "dirc_point.h"
 #include "dirc_optical_components.h"
 
-// #include <Goptical/Sys/System>
-
-
-
 #ifndef DIRC_GOPTICAL_SIM
 #define DIRC_GOPTICAL_SIM 
-using namespace Goptical;
 class DircGopticalSim
 {
 private:
@@ -137,7 +132,6 @@ private:
 	
 	
 	void build_system();
-	void clear_system();
 	void fill_sens_plane_vecs();
 	void fill_threeseg_plane_vecs();
 	void fill_foc_mirror_vecs();
@@ -145,10 +139,7 @@ private:
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
 	bool absorbtion_mc(double dx, double dy);
-// 	std::vector<dirc_point> trace_source_rays(\
-		Sys::SourceRays &srcrays, \
-		bool outspot, \
-		bool outframe);
+
 	void fill_rand_phi(\
 		std::vector<dirc_point> &ovals,\
 		int n_photons, \
