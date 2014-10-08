@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "include/dirc_goptical_sim.h"
+#include "include/dirc_optical_sim.h"
 #include "include/dirc_point.h"
 #include "include/dirc_probability_spread.h"
 #include "include/dirc_probability_separation.h"
@@ -21,11 +21,6 @@
 #include <TH1.h>
 #include <TRandom3.h>
 
-#include <Goptical/Math/Vector>
-#include <Goptical/Math/VectorPair>
-#include <Goptical/Math/Transform>
-
-using namespace Goptical;
 
 std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
 {
@@ -87,9 +82,7 @@ int main(int nargs, char* argv[])
 	
 	int n_phi_phots = 100000;
 // 	int n_phi_phots =2;
-	int n_z_phots = 4;	
-// 	double sfunc_m = 25;
-// 	double sfunc_r = 35;
+	int n_z_phots = 4;
 	double sfunc_sig = 6;
 	
 	bool out_layout = false;
@@ -98,10 +91,6 @@ int main(int nargs, char* argv[])
 	  n_phi_phots = 100;
 	  n_z_phots = 4;
 	}
-	
-	//20k,Fold_x, 6, and 1.5 result in .8935 - 3.3 mrad or better
-	
-	//Good perpendicular version needs up_down_sep=false
 	
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
@@ -139,7 +128,7 @@ int main(int nargs, char* argv[])
 	TRandom3 spread_ang(rseed+3);
 	
 	
-	DircGopticalSim *dirc_model = new DircGopticalSim(\
+	DircOpticalSim *dirc_model = new DircOpticalSim(\
 		rseed,\
 		-1200 + mirror_r_difference,\
 		300.38,\
