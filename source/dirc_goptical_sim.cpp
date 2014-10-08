@@ -8,44 +8,44 @@
 #include <vector>
 #include <algorithm>
 
-#include <Goptical/Analysis/Spot>
-
-#include <Goptical/Math/Vector>
-#include <Goptical/Math/VectorPair>
-
-#include <Goptical/Sys/Element>
-#include <Goptical/Sys/Container>
-#include <Goptical/Sys/System>
-#include <Goptical/Sys/SourcePoint>
-#include <Goptical/Sys/SourceRays>
-#include <Goptical/Sys/Source>
-#include <Goptical/Sys/Group>
-#include <Goptical/Design/Telescope/Newton>
-#include <Goptical/Sys/Image>
-#include <Goptical/Sys/Lens>
-#include <Goptical/Sys/OpticalSurface>
-#include <Goptical/Sys/Mirror>
-#include <Goptical/Sys/Mirror>
-#include <Goptical/Data/Plot>
-#include <Goptical/Data/PlotData>
-#include <Goptical/Data/Set>
-
-#include <Goptical/Trace/Tracer>
-#include <Goptical/Trace/Result>
-#include <Goptical/Trace/Distribution>
-#include <Goptical/Trace/Sequence>
-#include <Goptical/Trace/Params>
-#include <Goptical/Trace/Ray>
-
-#include <Goptical/Light/Ray>
-#include <Goptical/Light/SpectralLine>
-#include "Goptical/common.hh"
-
-#include <Goptical/Io/RendererSvg>
-#include <Goptical/Io/Rgb>
-#include <Goptical/Io/RendererViewport>
-
-#include <Goptical/Math/Transform>
+// #include <Goptical/Analysis/Spot>
+// 
+// #include <Goptical/Math/Vector>
+// #include <Goptical/Math/VectorPair>
+// 
+// #include <Goptical/Sys/Element>
+// #include <Goptical/Sys/Container>
+// #include <Goptical/Sys/System>
+// #include <Goptical/Sys/SourcePoint>
+// #include <Goptical/Sys/SourceRays>
+// #include <Goptical/Sys/Source>
+// #include <Goptical/Sys/Group>
+// #include <Goptical/Design/Telescope/Newton>
+// #include <Goptical/Sys/Image>
+// #include <Goptical/Sys/Lens>
+// #include <Goptical/Sys/OpticalSurface>
+// #include <Goptical/Sys/Mirror>
+// #include <Goptical/Sys/Mirror>
+// #include <Goptical/Data/Plot>
+// #include <Goptical/Data/PlotData>
+// #include <Goptical/Data/Set>
+// 
+// #include <Goptical/Trace/Tracer>
+// #include <Goptical/Trace/Result>
+// #include <Goptical/Trace/Distribution>
+// #include <Goptical/Trace/Sequence>
+// #include <Goptical/Trace/Params>
+// #include <Goptical/Trace/Ray>
+// 
+// #include <Goptical/Light/Ray>
+// #include <Goptical/Light/SpectralLine>
+// #include "Goptical/common.hh"
+// 
+// #include <Goptical/Io/RendererSvg>
+// #include <Goptical/Io/Rgb>
+// #include <Goptical/Io/RendererViewport>
+// 
+// #include <Goptical/Math/Transform>
 
 #include <stdlib.h>
 #include <math.h>
@@ -369,12 +369,12 @@ void DircGopticalSim::set_upper_wedge_angle_diff(double rads, double rads_y)
 }
 void DircGopticalSim::clear_system()
 {
-	Sys::Container::element_list_t elements = sys.get_element_list();
-	Sys::Container::element_list_t::const_iterator iterator;
-	for (iterator = elements.begin(); iterator != elements.end(); ++iterator)
-	{
-		sys.remove(**iterator);
-	}
+// 	Sys::Container::element_list_t elements = sys.get_element_list();
+// 	Sys::Container::element_list_t::const_iterator iterator;
+// 	for (iterator = elements.begin(); iterator != elements.end(); ++iterator)
+// 	{
+// 		sys.remove(**iterator);
+// 	}
 }
 void DircGopticalSim::set_focus_mirror_angle(double ang,double yang)
 {
@@ -422,201 +422,201 @@ void DircGopticalSim::build_system()
 	//**********************************************************************
 	// Optical system definition
 
-// 	double size = 2200;//overall System scale 13.1 deg = 10+3.1 at 4m
-	double size = 4400;
-// 	size = 500;
-	double testSize = 1800;
-
-	double focR = foc_r;
-	double focMirrorSize = foc_mirror_size;
-	double focRot = foc_rot;
-	double sensSize = sens_size;
-	double sensRot = sens_rot;
-	
-	double testy = barLength/2+1000;
-	
-	
-	
-//Must add all elements as "ref<X>", otherwise they will descope and the system won't work after this function call
-	ref<Curve::Flat> flatCurve = ref<Curve::Flat>::create();
-	
-	//Box
-	//Focus Mirror
-	
-	double boxSize = size;
-	double mirrorDepth = focMirrorZDim;//I would not really call this the mirror depth any more - more like the head on height
-	double focYoff = focMirrorBottom;
-	
-	if (three_seg_mirror == false)
-	{
-	  focRot = foc_rot;
-	  focMirrorSize = foc_mirror_size;
-	  
-	  double focz = -focMirrorSize*sin(focRot/57.3)/2;
-	  double focy = focMirrorSize*cos(focRot/57.3)/2;
-	  
-	  
-	  
-	  double fx,fy,fz;
-	  fx = 0;
-	  fy = focy + focYoff;
-	  fz = focz;
-	  
-	  ref<Shape::Rectangle> focMirrorShape = ref<Shape::Rectangle>::create(boxSize,focMirrorSize);
-	  ref<cylinderY> focCylinder = ref<cylinderY>::create(-focR);
-	  ref<Sys::Mirror> focMirror = \
-		  ref<Sys::Mirror>::create(\
-			  Math::Vector<3>(fx,fy,fz),\
-			  focCylinder,\
-			  focMirrorShape,\
-			  true,\
-			  Material::mirror,\
-			  oil);
-	  focMirror->rotate(focRot,0,0);
-	  focMirror->rotate(0,foc_yrot,0);
-// 	  sys.add(*focMirror);
-	}
-	else if (three_seg_mirror == true)//condition not needed obviously
-	{
-	  double fx,fy,fz; //serve as holding variables for the 3 mirror positions;
-	  fx = 0;
-	  fy = 0;
-	  fz = 0;
-	  
-	  double theta_m = foc_rot/57.3;//radians of rotation to go through
-	  double theta_c = fabs(2*asin(mirrorDepth/(2*focR)));//angle subtended by the mirror
-	  double seg_h = fabs(2*focR*sin(theta_c/6));//length of each segment;
-	  
-	  
-	  
-	  ref<Shape::Rectangle> segMirrorShape = ref<Shape::Rectangle>::create(boxSize,seg_h);
-	  ref<Curve::Flat> segMirrorCurve = ref<Curve::Flat>::create();
-	  
-	  //I had to do some geometry and algebra to get these numbers, but in hindsight, it's obvious.  Always that way.
-	  double theta_1 = theta_m - theta_c/3;
-	  double theta_2 = theta_m;
-	  double theta_3 = theta_m + theta_c/3;
-	  
-	  fy = focYoff + seg_h*cos(theta_1)/2;
-	  fz = -seg_h*sin(theta_1)/2;
-	  
-// 	  printf("tm = %12.04f tc = %12.04f fy = %12.04f seg_h = %12.04f focy = %12.04f\n",theta_m,theta_c,fy,seg_h,seg_h*cos(theta_1)/2);
-	  
-	  ref<Sys::Mirror> segMirror1 = \
-		  ref<Sys::Mirror>::create(\
-			  Math::Vector<3>(fx,fy,fz),\
-			  segMirrorCurve,\
-			  segMirrorShape,\
-			  true,\
-			  Material::mirror,\
-			  oil);
-	  
-	  segMirror1->rotate(0,foc_yrot,0);
-	  segMirror1->rotate(theta_1*57.3,0,0);
-	  
-	  
-// 	  sys.add(*segMirror1);
-
-	  fy += seg_h*cos(theta_1)/2 + seg_h*cos(theta_2)/2;//update these by moving the centers
-	  fz += -seg_h*sin(theta_1)/2 - seg_h*sin(theta_2)/2;
-	  
-	  ref<Sys::Mirror> segMirror2 = \
-		  ref<Sys::Mirror>::create(\
-			  Math::Vector<3>(fx,fy,fz),\
-			  segMirrorCurve,\
-			  segMirrorShape,\
-			  true,\
-			  Material::mirror,\
-			  oil);
-	  
-	  segMirror2->rotate(0,foc_yrot,0);
-	  segMirror2->rotate(theta_2*57.3,0,0);
-	  
-	  
-// 	  sys.add(*segMirror2);
-
-	  fy += seg_h*cos(theta_2)/2 + seg_h*cos(theta_3)/2;
-	  fz += -seg_h*sin(theta_2)/2 - seg_h*sin(theta_3)/2;
-	  
-	  ref<Sys::Mirror> segMirror3 = \
-		  ref<Sys::Mirror>::create(\
-			  Math::Vector<3>(fx,fy,fz),\
-			  segMirrorCurve,\
-			  segMirrorShape,\
-			  true,\
-			  Material::mirror,\
-			  oil);
-	  
-	  segMirror3->rotate(0,foc_yrot,0);
-	  segMirror3->rotate(theta_3*57.3,0,0);
-	  
-// 	  sys.add(*segMirror3);
-	  
-	}
-	//Image Plane
-	
-	sensSize = 312;
-	//sensSize = 600;
-	sensRot = sens_rot;
-
-	double backFlatYSize = sensSize/2;
-	
-	double sx,sy,sz;
-	sx = 0;
-	sy = -sensSize*sin(sensRot/57.3)/2-reflOff+barLength/2;
-	sz = boxCloseZ + sensSize*cos(sensRot/57.3)/2;
-	
-	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,3*sensSize);
-	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
-// 	declared in header for calling later
-	boxImage = \
-		ref<Sys::Image>::create(\
-			Math::Vector<3>(sx,sy,sz),\
-			boxImageCurve,\
-			boxImageShape);
-	boxImage->rotate(sensRot,0,0);
-	sys.add(*boxImage);
-	
-	
-	//Below is how we'd do it if there was no focusing mirror
-	//500 is the 2.5mrad point at the normal parameters
-// 	sx = 0;
-// 	sy = barLength/2 + upperWedgeTop + 500;
-// 	sz = 0;
+// // 	double size = 2200;//overall System scale 13.1 deg = 10+3.1 at 4m
+// 	double size = 4400;
+// // 	size = 500;
+// 	double testSize = 1800;
+// 
+// 	double focR = foc_r;
+// 	double focMirrorSize = foc_mirror_size;
+// 	double focRot = foc_rot;
+// 	double sensSize = sens_size;
+// 	double sensRot = sens_rot;
 // 	
-// 	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,8*sensSize);
+// 	double testy = barLength/2+1000;
+// 	
+// 	
+// 	
+// //Must add all elements as "ref<X>", otherwise they will descope and the system won't work after this function call
+// 	ref<Curve::Flat> flatCurve = ref<Curve::Flat>::create();
+// 	
+// 	//Box
+// 	//Focus Mirror
+// 	
+// 	double boxSize = size;
+// 	double mirrorDepth = focMirrorZDim;//I would not really call this the mirror depth any more - more like the head on height
+// 	double focYoff = focMirrorBottom;
+// 	
+// 	if (three_seg_mirror == false)
+// 	{
+// 	  focRot = foc_rot;
+// 	  focMirrorSize = foc_mirror_size;
+// 	  
+// 	  double focz = -focMirrorSize*sin(focRot/57.3)/2;
+// 	  double focy = focMirrorSize*cos(focRot/57.3)/2;
+// 	  
+// 	  
+// 	  
+// 	  double fx,fy,fz;
+// 	  fx = 0;
+// 	  fy = focy + focYoff;
+// 	  fz = focz;
+// 	  
+// 	  ref<Shape::Rectangle> focMirrorShape = ref<Shape::Rectangle>::create(boxSize,focMirrorSize);
+// 	  ref<cylinderY> focCylinder = ref<cylinderY>::create(-focR);
+// 	  ref<Sys::Mirror> focMirror = \
+// 		  ref<Sys::Mirror>::create(\
+// 			  Math::Vector<3>(fx,fy,fz),\
+// 			  focCylinder,\
+// 			  focMirrorShape,\
+// 			  true,\
+// 			  Material::mirror,\
+// 			  oil);
+// 	  focMirror->rotate(focRot,0,0);
+// 	  focMirror->rotate(0,foc_yrot,0);
+// // 	  sys.add(*focMirror);
+// 	}
+// 	else if (three_seg_mirror == true)//condition not needed obviously
+// 	{
+// 	  double fx,fy,fz; //serve as holding variables for the 3 mirror positions;
+// 	  fx = 0;
+// 	  fy = 0;
+// 	  fz = 0;
+// 	  
+// 	  double theta_m = foc_rot/57.3;//radians of rotation to go through
+// 	  double theta_c = fabs(2*asin(mirrorDepth/(2*focR)));//angle subtended by the mirror
+// 	  double seg_h = fabs(2*focR*sin(theta_c/6));//length of each segment;
+// 	  
+// 	  
+// 	  
+// 	  ref<Shape::Rectangle> segMirrorShape = ref<Shape::Rectangle>::create(boxSize,seg_h);
+// 	  ref<Curve::Flat> segMirrorCurve = ref<Curve::Flat>::create();
+// 	  
+// 	  //I had to do some geometry and algebra to get these numbers, but in hindsight, it's obvious.  Always that way.
+// 	  double theta_1 = theta_m - theta_c/3;
+// 	  double theta_2 = theta_m;
+// 	  double theta_3 = theta_m + theta_c/3;
+// 	  
+// 	  fy = focYoff + seg_h*cos(theta_1)/2;
+// 	  fz = -seg_h*sin(theta_1)/2;
+// 	  
+// // 	  printf("tm = %12.04f tc = %12.04f fy = %12.04f seg_h = %12.04f focy = %12.04f\n",theta_m,theta_c,fy,seg_h,seg_h*cos(theta_1)/2);
+// 	  
+// 	  ref<Sys::Mirror> segMirror1 = \
+// 		  ref<Sys::Mirror>::create(\
+// 			  Math::Vector<3>(fx,fy,fz),\
+// 			  segMirrorCurve,\
+// 			  segMirrorShape,\
+// 			  true,\
+// 			  Material::mirror,\
+// 			  oil);
+// 	  
+// 	  segMirror1->rotate(0,foc_yrot,0);
+// 	  segMirror1->rotate(theta_1*57.3,0,0);
+// 	  
+// 	  
+// // 	  sys.add(*segMirror1);
+// 
+// 	  fy += seg_h*cos(theta_1)/2 + seg_h*cos(theta_2)/2;//update these by moving the centers
+// 	  fz += -seg_h*sin(theta_1)/2 - seg_h*sin(theta_2)/2;
+// 	  
+// 	  ref<Sys::Mirror> segMirror2 = \
+// 		  ref<Sys::Mirror>::create(\
+// 			  Math::Vector<3>(fx,fy,fz),\
+// 			  segMirrorCurve,\
+// 			  segMirrorShape,\
+// 			  true,\
+// 			  Material::mirror,\
+// 			  oil);
+// 	  
+// 	  segMirror2->rotate(0,foc_yrot,0);
+// 	  segMirror2->rotate(theta_2*57.3,0,0);
+// 	  
+// 	  
+// // 	  sys.add(*segMirror2);
+// 
+// 	  fy += seg_h*cos(theta_2)/2 + seg_h*cos(theta_3)/2;
+// 	  fz += -seg_h*sin(theta_2)/2 - seg_h*sin(theta_3)/2;
+// 	  
+// 	  ref<Sys::Mirror> segMirror3 = \
+// 		  ref<Sys::Mirror>::create(\
+// 			  Math::Vector<3>(fx,fy,fz),\
+// 			  segMirrorCurve,\
+// 			  segMirrorShape,\
+// 			  true,\
+// 			  Material::mirror,\
+// 			  oil);
+// 	  
+// 	  segMirror3->rotate(0,foc_yrot,0);
+// 	  segMirror3->rotate(theta_3*57.3,0,0);
+// 	  
+// // 	  sys.add(*segMirror3);
+// 	  
+// 	}
+// 	//Image Plane
+// 	
+// 	sensSize = 312;
+// 	//sensSize = 600;
+// 	sensRot = sens_rot;
+// 
+// 	double backFlatYSize = sensSize/2;
+// 	
+// 	double sx,sy,sz;
+// 	sx = 0;
+// 	sy = -sensSize*sin(sensRot/57.3)/2-reflOff+barLength/2;
+// 	sz = boxCloseZ + sensSize*cos(sensRot/57.3)/2;
+// 	
+// 	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,3*sensSize);
 // 	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
+// // 	declared in header for calling later
 // 	boxImage = \
 // 		ref<Sys::Image>::create(\
 // 			Math::Vector<3>(sx,sy,sz),\
 // 			boxImageCurve,\
 // 			boxImageShape);
-// 	boxImage->rotate(90,0,0);
+// 	boxImage->rotate(sensRot,0,0);
 // 	sys.add(*boxImage);
 // 	
-//End no mirror code
-	
-	ref<Shape::Rectangle> blockShape = ref<Shape::Rectangle>::create(boxSize,backFlatYSize);
-	ref<Sys::Mirror> backFlatMirror = \
-		ref<Sys::Mirror>::create(\
-			Math::Vector<3>(0,barLength/2+upperWedgeTop + backFlatYSize/2,0),\
-			flatCurve,\
-			blockShape,\
-			true,\
-			Material::mirror,\
-			oil);
-// 	sys.add(*backFlatMirror);
-	
-	ref<Curve::Flat> imgCurve = ref<Curve::Flat>::create();
-	ref<Shape::Rectangle> imgShape = ref<Shape::Rectangle>::create(size/0.5,testSize*2);
-	ref<Sys::Image> testImage = \
-		ref<Sys::Image>::create(\
-			Math::VectorPair<3>(0,testy,0,0,0,0),\
-			imgCurve,\
-			imgShape);
-	testImage->rotate(90,0,0);
-// 	sys.add(*testImage);
-	
+// 	
+// 	//Below is how we'd do it if there was no focusing mirror
+// 	//500 is the 2.5mrad point at the normal parameters
+// // 	sx = 0;
+// // 	sy = barLength/2 + upperWedgeTop + 500;
+// // 	sz = 0;
+// // 	
+// // 	ref<Shape::Rectangle> boxImageShape = ref<Shape::Rectangle>::create(boxSize,8*sensSize);
+// // 	ref<Curve::Flat> boxImageCurve = ref<Curve::Flat>::create();
+// // 	boxImage = \
+// // 		ref<Sys::Image>::create(\
+// // 			Math::Vector<3>(sx,sy,sz),\
+// // 			boxImageCurve,\
+// // 			boxImageShape);
+// // 	boxImage->rotate(90,0,0);
+// // 	sys.add(*boxImage);
+// // 	
+// //End no mirror code
+// 	
+// 	ref<Shape::Rectangle> blockShape = ref<Shape::Rectangle>::create(boxSize,backFlatYSize);
+// 	ref<Sys::Mirror> backFlatMirror = \
+// 		ref<Sys::Mirror>::create(\
+// 			Math::Vector<3>(0,barLength/2+upperWedgeTop + backFlatYSize/2,0),\
+// 			flatCurve,\
+// 			blockShape,\
+// 			true,\
+// 			Material::mirror,\
+// 			oil);
+// // 	sys.add(*backFlatMirror);
+// 	
+// 	ref<Curve::Flat> imgCurve = ref<Curve::Flat>::create();
+// 	ref<Shape::Rectangle> imgShape = ref<Shape::Rectangle>::create(size/0.5,testSize*2);
+// 	ref<Sys::Image> testImage = \
+// 		ref<Sys::Image>::create(\
+// 			Math::VectorPair<3>(0,testy,0,0,0,0),\
+// 			imgCurve,\
+// 			imgShape);
+// 	testImage->rotate(90,0,0);
+// // 	sys.add(*testImage);
+// 	
 }
 double DircGopticalSim::get_quartz_n(double lambda)
 {
@@ -723,8 +723,6 @@ double DircGopticalSim::get_beta(double E, double m)
 }
 std::vector<dirc_point> DircGopticalSim::sim_rand_n_photons(\
 	int n_photons, \
-	bool outspot /*= false*/, \
-	bool outframe /*= false*/, \
 	double ckov_theta /*= 47*/, \
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
@@ -732,89 +730,25 @@ std::vector<dirc_point> DircGopticalSim::sim_rand_n_photons(\
 	double particle_phi /*= 0*/,\
 	double phi_theta_unc /*= .0015*57.3*/,\
 	double ckov_theta_unc /* = .0055*57.3*/,\
-	double beta /* = -1*/,\
-	bool check_dir /*= false*/)
+	double beta /* = -1*/)
 {
-	if (check_dir == false)
-	{
-		Sys::SourceRays srcrays(Math::Vector<3>(0,0,0));
-		
-		fill_rand_phi(\
-			srcrays,\
-			n_photons,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			0,\
-			beta);
-		return trace_source_rays(srcrays,outspot,outframe);
-	}
-	else
-	{
-		//Slow way for now, faster once goptical is gone
-		std::vector<dirc_point> rval;
-		std::vector<dirc_point> tval;
-		
-		Sys::SourceRays upsrcrays(Math::Vector<3>(0,0,0));
-		Sys::SourceRays downsrcrays(Math::Vector<3>(0,0,0));
-		fill_rand_phi(\
-			upsrcrays,\
-			n_photons,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			1,\
-			beta);
-		fill_rand_phi(\
-			downsrcrays,\
-			n_photons,\
-			ckov_theta,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			phi_theta_unc,\
-			ckov_theta_unc,\
-			-1,\
-			beta);
-		
-		tval = trace_source_rays(upsrcrays,outspot,outframe);
-		for (unsigned int i = 0; i < tval.size(); i++)
-		{
-			dirc_point tpoint;
-			tpoint.x = tval[i].x;
-			tpoint.y = tval[i].y;
-			tpoint.t = 1;
-			tpoint.weight = tval[i].weight;
-			rval.push_back(tpoint);
-		}
-		tval = trace_source_rays(downsrcrays,outspot,outframe);
-		for (unsigned int i = 0; i < tval.size(); i++)
-		{
-			dirc_point tpoint;
-			tpoint.x = tval[i].x;
-			tpoint.y = tval[i].y;
-			tpoint.t = -1;
-			tpoint.weight = tval[i].weight;
-			rval.push_back(tpoint);
-		}
-		return rval;
-	}
-
+	std::vector<dirc_point> out_points;
+	fill_rand_phi(\
+		out_points,\
+		n_photons,\
+		ckov_theta,\
+		particle_x,\
+		particle_y,\
+		particle_theta,\
+		particle_phi,\
+		phi_theta_unc,\
+		ckov_theta_unc,\
+		beta);
+	return out_points;
 }
 std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 	int n_photons_phi, \
 	int n_photons_z,\
-	bool outspot /*= false*/, \
-	bool outframe /*= false*/, \
 	double ckov_theta /*= 47*/, \
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
@@ -822,8 +756,7 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 	double particle_phi /*= 0*/,\
 	double phi_theta_unc /*= 0*/,\
 	double ckov_theta_unc /* = 0*/,\
-	double beta /* = -1*/,\
-	bool check_dir /*= false*/)
+	double beta /* = -1*/)
 {
 
 // 	Sys::SourceRays srcrays(Math::Vector<3>(0,0,0));
@@ -839,13 +772,12 @@ std::vector<dirc_point> DircGopticalSim::sim_reg_n_photons(\
 		particle_phi,\
 		phi_theta_unc,\
 		ckov_theta_unc,\
-		0,\
 		beta);
 
 	return out_points;
-  }
+}
 void DircGopticalSim::fill_rand_phi(\
-	Sys::SourceRays &srcrays,\
+	std::vector<dirc_point> &ovals,\
 	int n_photons, \
 	double ckov_theta /*= 47*/, \
 	double particle_x /*= 0*/, \
@@ -854,7 +786,6 @@ void DircGopticalSim::fill_rand_phi(\
 	double particle_phi /*= 0*/,\
 	double phi_theta_unc, /*= .0015*57.3*/
 	double ckov_theta_unc /* = .0055*57.3*/,\
-	double check_dir /* = 0*/,\
 	double beta/* = -1*/)
 {
 // 	double sDepth = .95*barDepth;
@@ -872,20 +803,27 @@ void DircGopticalSim::fill_rand_phi(\
 	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
 	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
 	
-// 	srcrays.set_position(Math::Vector<3>(sourcex,sourcey,sourcez));
 	//Need to hand absolute positions to warp_ray
-	srcrays.set_position(Math::Vector<3>(0,0,0));
-	srcrays.set_material(oil);
 	
 	double sourceOff,randPhi;
 	
-	Math::Transform3 trans;
-	trans.reset();
-	trans.linear_rotation(Math::Vector3(particleTheta,0,0));
-	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
+// 	Math::Transform3 trans;
+// 	trans.reset();
+// 	trans.linear_rotation(Math::Vector3(particleTheta,0,0));
+// 	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
 	
 	double temit, rand_add;
 	double wavelength = 400;
+	
+	double x,y,z,dx,dy,dz;
+	
+	double cos_ptheta = cos(particle_theta/57.3);
+	double sin_ptheta = sin(particle_theta/57.3);
+	double cos_pphi = cos(particle_phi/57.3);
+	double sin_pphi = sin(particle_phi/57.3);
+	
+	double mm_index = 0;
+	double c_mm_ns = 300;
 	
 	for (int i = 0; i < numPhots; i++)
 	{ 
@@ -901,74 +839,93 @@ void DircGopticalSim::fill_rand_phi(\
 		{
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
-		Math::Vector3 start_ray(0,0,sourceOff);
-		Math::Vector3 dir_ray(\
-			sin(temit/57.3)*cos(randPhi),\
-			sin(temit/57.3)*sin(randPhi),\
-			cos(temit/57.3));
+		mm_index = (sourceOff - barDepth)*1.47;
 		
-		start_ray = trans.transform_linear(start_ray);
-		dir_ray = trans.transform_linear(dir_ray);	
+		x = 0;
+		y = 0;
+		z = sourceOff;
 		
-		start_ray.x() = start_ray.x() + particle_x;
-		start_ray.y() = start_ray.y() + particle_y;
+		dx = sin(temit/57.3)*cos(randPhi);
+		dy = sin(temit/57.3)*sin(randPhi);
+		dz = cos(temit/57.3);
 		
-		Math::VectorPair3 new_ray(\
-			start_ray.x(),\
-			start_ray.y(),\
-			start_ray.z(),\
-			dir_ray.x(),\
-			dir_ray.y(),\
-			dir_ray.z());
+		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+		rotate_2d(x,y,cos_pphi,sin_pphi);
 		
-		if (dir_ray.y() * check_dir < -.00001)
-		{
-			//Get all rays in one direction or the other.
-			//check_dir = 0 sidesteps this
-			continue;
-		}
+// 			printf("pre nogop: %8.04f %8.04f %8.04f pre gop: %8.04f %8.04f %8.04f\n",dx,dy,dz,dir_ray.x(),dir_ray.y(),dir_ray.z());
+		
+		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
+		rotate_2d(dy,dx,cos_pphi,sin_pphi);
+		
+		z -= barDepth;
+		x += particle_x;
+		y += particle_y;
 		
 		
-		warp_ray(\
-			new_ray.x0(),\
-			new_ray.y0(),\
-			new_ray.z0(),\
-			new_ray.x1(),\
-			new_ray.y1(),\
-			new_ray.z1(),\
+		mm_index += warp_ray(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
 			asin(1/1.47));
-		if (new_ray.z0() > 0)
+		
+		if (z > 0)
 		{
 			continue;
 		}
 		
 		spread_wedge_mirror();
-			
-		warp_wedge(\
-			new_ray.x0(),\
-			new_ray.y0(),\
-			new_ray.z0(),\
-			new_ray.x1(),\
-			new_ray.y1(),\
-			new_ray.z1());
+		
+		mm_index += warp_wedge(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
 		
 		//account (quickly) for the bar box having a different angle than the readout
-		rotate_2d(new_ray.y1(),new_ray.z1(),box_angle_off_cval,box_angle_off_sval);
+		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 		
-		if (new_ray.z0() > 0)
+		if (z > 0)
+		{
+			continue;
+		}
+		
+		mm_index += warp_box(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+		
+		if (z > 0)
 		{
 			continue;
 		}
 		
 		//check absorbtion
-		if (!(absorbtion_mc(new_ray.x1(),new_ray.y1())))
+		if (!(absorbtion_mc(dx,dy)))
 		{
 			continue;
 		}
 		
-// 			printf("%d\n",num_through++);
+		dirc_point out_val;
+		mm_index += warp_sens_plane(\
+			out_val,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
 		
-		srcrays.add_rays(new_ray,&srcrays);
+		//should be threading time information into this soon
+		out_val.t = mm_index/(c_mm_ns);
+		ovals.push_back(out_val);
 	}
 }
 std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(\
@@ -982,7 +939,6 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 	double particle_phi /*= 0*/,\
 	double phi_theta_unc, /*= .0015*57.3*/
 	double ckov_theta_unc /* = .0055*57.3*/,\
-	double check_dir /* = 0*/,\
 	double beta/* = -1*/)
 {
 	//returns theta versus cerenkov phi_theta_unc
@@ -1016,13 +972,23 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 	
 	double sourceOff,randPhi;
 	
-	Math::Transform3 trans;
-	trans.reset();
-	trans.linear_rotation(Math::Vector3(particleTheta,0,0));
-	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
+// 	Math::Transform3 trans;
+// 	trans.reset();
+// 	trans.linear_rotation(Math::Vector3(particleTheta,0,0));
+// 	trans.linear_rotation(Math::Vector3(0,0,particlePhi));
 	
 	double temit, rand_add;
 	double wavelength = 400;
+	
+	double x,y,z,dx,dy,dz;
+	
+	double cos_ptheta = cos(particle_theta/57.3);
+	double sin_ptheta = sin(particle_theta/57.3);
+	double cos_pphi = cos(particle_phi/57.3);
+	double sin_pphi = sin(particle_phi/57.3);
+	
+	double mm_index = 0;
+	double c_mm_ns = 300;
 	
 	for (int i = 0; i < numPhots; i++)
 	{ 
@@ -1039,88 +1005,93 @@ std::vector<std::pair<double,double> > DircGopticalSim::get_refraction_rand_phi(
 		{
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
-		Math::Vector3 start_ray(0,0,sourceOff);
-		Math::Vector3 dir_ray(\
-			sin(temit/57.3)*cos(randPhi),\
-			sin(temit/57.3)*sin(randPhi),\
-			cos(temit/57.3));
+		mm_index = (sourceOff - barDepth)*1.47;
 		
-		start_ray = trans.transform_linear(start_ray);
-		dir_ray = trans.transform_linear(dir_ray);	
+		x = 0;
+		y = 0;
+		z = sourceOff;
 		
-		start_ray.x() = start_ray.x() + particle_x;
-		start_ray.y() = start_ray.y() + particle_y;
+		dx = sin(temit/57.3)*cos(randPhi);
+		dy = sin(temit/57.3)*sin(randPhi);
+		dz = cos(temit/57.3);
 		
-		Math::VectorPair3 new_ray(\
-			start_ray.x(),\
-			start_ray.y(),\
-			start_ray.z(),\
-			dir_ray.x(),\
-			dir_ray.y(),\
-			dir_ray.z());
+		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+		rotate_2d(x,y,cos_pphi,sin_pphi);
 		
-		if (dir_ray.y() * check_dir < -.00001)
-		{
-			//Get all rays in one direction or the other.
-			//check_dir = 0 sidesteps this
-			continue;
-		}
+// 			printf("pre nogop: %8.04f %8.04f %8.04f pre gop: %8.04f %8.04f %8.04f\n",dx,dy,dz,dir_ray.x(),dir_ray.y(),dir_ray.z());
 		
-
+		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
+		rotate_2d(dy,dx,cos_pphi,sin_pphi);
 		
-		bar_dist_travelled = warp_ray(\
-			new_ray.x0(),\
-			new_ray.y0(),\
-			new_ray.z0(),\
-			new_ray.x1(),\
-			new_ray.y1(),\
-			new_ray.z1(),\
+		z -= barDepth;
+		x += particle_x;
+		y += particle_y;
+		
+		
+		mm_index += warp_ray(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
 			asin(1/1.47));
-		if (new_ray.z0() > 0)
+		
+		if (z > 0)
 		{
 			continue;
 		}
-		
-// 		if (bar_dist_travelled > 70000) continue;
-		
-		if (!quartz_transmission_mc(bar_dist_travelled,wavelength))
-		{
-		  //absorbed in bar
-		  continue;
-		}
-		
 		
 		spread_wedge_mirror();
 		
+		mm_index += warp_wedge(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
 		
-		warp_wedge(\
-			new_ray.x0(),\
-			new_ray.y0(),\
-			new_ray.z0(),\
-			new_ray.x1(),\
-			new_ray.y1(),\
-			new_ray.z1());
+		//account (quickly) for the bar box having a different angle than the readout
+		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 		
-		rotate_2d(new_ray.y1(),new_ray.z1(),box_angle_off_cval,box_angle_off_sval);
-		
-		if (new_ray.z0() > 0)
+		if (z > 0)
 		{
 			continue;
 		}
 		
-		warp_box(\
-			new_ray.x0(),\
-			new_ray.y0(),\
-			new_ray.z0(),\
-			new_ray.x1(),\
-			new_ray.y1(),\
-			new_ray.z1());
+		mm_index += warp_box(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
 		
-		if (new_ray.z0() > 0)
+		if (z > 0)
 		{
 			continue;
 		}
 		
+		//check absorbtion
+		//We have the distance now - should use the real version
+		if (!(absorbtion_mc(dx,dy)))
+		{
+			continue;
+		}
+		
+		dirc_point out_val;
+		mm_index += warp_sens_plane(\
+			out_val,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+		
+		//should be threading time information into this soon
+		out_val.t = mm_index/(c_mm_ns);
 		std::pair<double, double> add_val;
 // 		printf("adding: %12.04f %12.04f\n",randPhi,refraction_before[refraction_before.size() - 1]);
 		add_val.first = randPhi;
@@ -1153,7 +1124,6 @@ void DircGopticalSim::fill_reg_phi(\
 	double particle_phi /*= 0*/,\
 	double phi_theta_unc /*= 0*/,\
 	double ckov_theta_unc /* = 0*/,\
-	double check_dir /* =0 */,\
 	double beta /* = -1*/)
 {
 	double sDepth = .95*barDepth;
@@ -1299,75 +1269,75 @@ void DircGopticalSim::fill_reg_phi(\
 		}
 	}
 }
-std::vector<dirc_point> DircGopticalSim::trace_source_rays(\
-	Sys::SourceRays &srcrays, \
-	bool outspot,\
-	bool outframe)
-{
-	sys.add(srcrays);
-
-	Trace::Tracer         tracer(sys);
-	tracer.get_params().set_max_bounce(5000);
-	tracer.get_trace_result().set_generated_save_state(srcrays);
-	tracer.get_trace_result().set_intercepted_save_state(*boxImage);
-	
-	tracer.trace();
-	std::vector<dirc_point> rval;
-	
-	_Goptical::Trace::rays_queue_t rays = tracer.get_trace_result().get_intercepted(*boxImage);
-	
-	double x, y;
-	for (unsigned int i = 0; i < rays.size(); i++)
-	{
-		x = ((Math::Vector3)rays[i]->get_intercept_point()).x();
-		y = ((Math::Vector3)rays[i]->get_intercept_point()).y();
-		
-		dirc_point add_point;
-		add_point.x = x;
-		add_point.y = y;
-		add_point.weight = 1;
-		
-		rval.push_back(add_point);
-	}
-	
-	if (outframe == true)
-	{
-		printf("Rendering 3d\n");
-		
-		Io::RendererSvg       svg_renderer("layout.svg", 1000, 700);
-		Io::RendererViewport  &renderer = svg_renderer;
-		// 3d system layout
-		
-		renderer.set_feature_size(20);
-		
-		renderer.set_perspective();
-		renderer.set_fov(45);	
-		
-		
-		sys.draw_3d_fit(renderer, 0);
-		renderer.set_camera_transform(renderer.get_camera_transform().linear_rotation(Math::Vector3(0,0,0)));
-		sys.draw_3d(renderer);
-		
-		tracer.get_trace_result().draw_3d(renderer);
-		
-		printf("rendered 3d\n");
-	}
-	if (outspot == true)
-	{
-		printf("Rendering Spot\n");
-		Analysis::Spot spot(sys);
-		spot.get_tracer().get_params().set_max_bounce(5000);
-		Io::RendererSvg renderSpot("spot.svg", 1000, 1000, Io::rgb_black);
-		
-		spot.draw_diagram(renderSpot);
-		printf("Rendered spot\n");
-	}
-	
-	sidemirror_reflect_points(rval);
-	sys.remove(srcrays);
-	
-	return rval;
-}
+// std::vector<dirc_point> DircGopticalSim::trace_source_rays(\
+// 	Sys::SourceRays &srcrays, \
+// 	bool outspot,\
+// 	bool outframe)
+// {
+// 	sys.add(srcrays);
+// 
+// 	Trace::Tracer         tracer(sys);
+// 	tracer.get_params().set_max_bounce(5000);
+// 	tracer.get_trace_result().set_generated_save_state(srcrays);
+// 	tracer.get_trace_result().set_intercepted_save_state(*boxImage);
+// 	
+// 	tracer.trace();
+// 	std::vector<dirc_point> rval;
+// 	
+// 	_Goptical::Trace::rays_queue_t rays = tracer.get_trace_result().get_intercepted(*boxImage);
+// 	
+// 	double x, y;
+// 	for (unsigned int i = 0; i < rays.size(); i++)
+// 	{
+// 		x = ((Math::Vector3)rays[i]->get_intercept_point()).x();
+// 		y = ((Math::Vector3)rays[i]->get_intercept_point()).y();
+// 		
+// 		dirc_point add_point;
+// 		add_point.x = x;
+// 		add_point.y = y;
+// 		add_point.weight = 1;
+// 		
+// 		rval.push_back(add_point);
+// 	}
+// 	
+// 	if (outframe == true)
+// 	{
+// 		printf("Rendering 3d\n");
+// 		
+// 		Io::RendererSvg       svg_renderer("layout.svg", 1000, 700);
+// 		Io::RendererViewport  &renderer = svg_renderer;
+// 		// 3d system layout
+// 		
+// 		renderer.set_feature_size(20);
+// 		
+// 		renderer.set_perspective();
+// 		renderer.set_fov(45);	
+// 		
+// 		
+// 		sys.draw_3d_fit(renderer, 0);
+// 		renderer.set_camera_transform(renderer.get_camera_transform().linear_rotation(Math::Vector3(0,0,0)));
+// 		sys.draw_3d(renderer);
+// 		
+// 		tracer.get_trace_result().draw_3d(renderer);
+// 		
+// 		printf("rendered 3d\n");
+// 	}
+// 	if (outspot == true)
+// 	{
+// 		printf("Rendering Spot\n");
+// 		Analysis::Spot spot(sys);
+// 		spot.get_tracer().get_params().set_max_bounce(5000);
+// 		Io::RendererSvg renderSpot("spot.svg", 1000, 1000, Io::rgb_black);
+// 		
+// 		spot.draw_diagram(renderSpot);
+// 		printf("Rendered spot\n");
+// 	}
+// 	
+// 	sidemirror_reflect_points(rval);
+// 	sys.remove(srcrays);
+// 	
+// 	return rval;
+// }
 
 // void DircGopticalSim::warp_ray(\
 // 	Math::VectorPair3 &ray,\

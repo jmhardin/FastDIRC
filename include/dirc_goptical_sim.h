@@ -5,7 +5,7 @@
 #include "dirc_point.h"
 #include "dirc_optical_components.h"
 
-#include <Goptical/Sys/System>
+// #include <Goptical/Sys/System>
 
 
 
@@ -123,7 +123,7 @@ private:
 	int num_transmittance;
 	std::vector<double> quartz_transmittance;
 	
-	Sys::System sys;
+// 	Sys::System sys;
 // 	Sys::SourceRays srcrays;
 	
 	ref<qwartzCrystal> qwartz;
@@ -145,12 +145,12 @@ private:
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
 	bool absorbtion_mc(double dx, double dy);
-	std::vector<dirc_point> trace_source_rays(\
+// 	std::vector<dirc_point> trace_source_rays(\
 		Sys::SourceRays &srcrays, \
 		bool outspot, \
 		bool outframe);
 	void fill_rand_phi(\
-		Sys::SourceRays &srcrays,\
+		std::vector<dirc_point> &ovals,\
 		int n_photons, \
 		double ckov_theta /*= 47*/, \
 		double particle_x /*= 0*/, \
@@ -159,8 +159,7 @@ private:
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= .0015*57.3*/,\
 		double ckov_theta_unc /* = .0055*57.3*/,\
-		double beta /* = -1*/,\
-		double check_dir /* = 0 */);
+		double beta /* = -1*/);
 	void fill_reg_phi(\
 		std::vector<dirc_point> &fill_points,\
 		int n_photons_phi, \
@@ -172,8 +171,7 @@ private:
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc, /*= 0*/
 		double ckov_theta_unc /* = 0*/,\
-		double beta /* = -1*/,\
-		double check_dir /* = 0 */);
+		double beta /* = -1*/);
 	
 	double get_quartz_n(double lambda);
 	bool optical_interface_z(\
@@ -308,12 +306,9 @@ public:
 		double particle_phi = 0,\
 		double phi_theta_unc = .0015*57.3,\
 		double ckov_theta_unc = .0055*57.3,\
-		double check_dir = 0,\
 		double beta = -1);
 	std::vector<dirc_point> sim_rand_n_photons(\
 		int n_photons,\
-		bool outspot = false, \
-		bool outframe = false, \
 		double ckov_theta = 47, \
 		double particle_x = 0, \
 		double particle_y = 0, \
@@ -321,13 +316,10 @@ public:
 		double particle_phi = 0,\
 		double phi_theta_unc = .08594,\
 		double ckov_theta_unc = .3151,\
-		double beta = -1,\
-		bool check_dir = false);	
+		double beta = -1);	
 	std::vector<dirc_point> sim_reg_n_photons(\
 		int n_photons_phi,\
 		int n_photons_z,\
-		bool outfile = false, \
-		bool outframe = false, \
 		double ckov_theta = 47, \
 		double particle_x = 0, \
 		double particle_y = 0, \
@@ -335,7 +327,6 @@ public:
 		double particle_phi = 0,\
 		double phi_theta_unc = 0,\
 		double ckov_theta_unc = 0,\
-		double beta = -1,\
-		bool check_dir = false);	
+		double beta = -1);	
 };
 #endif

@@ -1,4 +1,4 @@
-CFLAGS_BASE = -O3 -Wno-comment -L./lib/ -lgsl -lgslcblas `root-config --cflags` `root-config --glibs` 
+CFLAGS_BASE = -Ofast -Wno-comment -L./lib/ -lgsl -lgslcblas `root-config --cflags` `root-config --glibs` 
 INCLUDE = -I./include/ -I${HOME}/srcinstall/dlib-18.7
 goptical_BASEDIR = ${HOME}/srcinstall/goptical-1.0
 goptical_LIBDIR = $(goptical_BASEDIR)/goptical_core/src/.libs

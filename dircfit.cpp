@@ -79,7 +79,7 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 0;
+	int num_runs = 1000;
 	
 	int n_sim_phots = 40;
 	
@@ -123,7 +123,7 @@ int main(int nargs, char* argv[])
 	
 	double overlap_x = -1;
 	
-	bool three_seg_mirror = false;
+	bool three_seg_mirror = true;
 	
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
@@ -234,15 +234,13 @@ int main(int nargs, char* argv[])
 	
 	dirc_model->set_pmt_offset(pmt_offset);
 	
-	for (int i = 0; i < 30; i++)
+	for (int i = 0; i < 1; i++)
 	{
 // 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 // 		dirc_model->set_bar_box_angle(bar_box_box_angle);
 		hit_points_pion = dirc_model->sim_reg_n_photons(\
 			n_phi_phots,\
 			n_z_phots,\
-			false,\
-			out_layout,\
 			pion_angle,\
 			particle_x,\
 			particle_y,\
@@ -250,14 +248,11 @@ int main(int nargs, char* argv[])
 			particle_phi,\
 			0,\
 			ckov_unc/pdf_unc_red_fac,\
-			pion_beta,\
-			up_down_sep);
+			pion_beta);
 		
 		hit_points_kaon = dirc_model->sim_reg_n_photons(\
 			n_phi_phots,\
 			n_z_phots,\
-			false,\
-			out_layout,\
 			kaon_angle,
 			particle_x,\
 			particle_y,\
@@ -265,8 +260,7 @@ int main(int nargs, char* argv[])
 			particle_phi,\
 			0,\
 			ckov_unc/pdf_unc_red_fac,\
-			kaon_beta,\
-			up_down_sep);
+			kaon_beta);
 	}
 	
 
@@ -313,8 +307,6 @@ int main(int nargs, char* argv[])
 		{
 			confound_points = dirc_model->sim_rand_n_photons(\
 			      n_sim_phots,\
-			      false,\
-			      false,\
 			      pion_angle,\
 			      particle_x,\
 			      particle_y,\
@@ -322,8 +314,7 @@ int main(int nargs, char* argv[])
 			      particle_phi,\
 			      tracking_unc,\
 			      ckov_unc,\
-			      1,\
-			      up_down_sep);
+			      1);
 			//assume electrom has v=c
 			
 			for (unsigned int i = 0; i < confound_points.size(); i++)
@@ -336,8 +327,6 @@ int main(int nargs, char* argv[])
 		fflush(stdout);
 		sim_points = dirc_model->sim_rand_n_photons(\
 			n_sim_phots,\
-			false,\
-			false,\
 			pion_angle ,
 			particle_x,\
 			particle_y,\
@@ -345,8 +334,7 @@ int main(int nargs, char* argv[])
 			particle_phi,\
 			tracking_unc,\
 			ckov_unc,\
-			pion_beta,\
-			up_down_sep);
+			pion_beta);
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
 			sim_points.push_back(confound_points[i]);
@@ -363,8 +351,6 @@ int main(int nargs, char* argv[])
 		
 		sim_points = dirc_model->sim_rand_n_photons(\
 			n_sim_phots,\
-			false,\
-			false,\
 			kaon_angle,\
 			particle_x,\
 			particle_y,\
@@ -372,8 +358,7 @@ int main(int nargs, char* argv[])
 			particle_phi,\
 			tracking_unc,\
 			ckov_unc,\
-			kaon_beta,\
-			up_down_sep);
+			kaon_beta);
 		
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
@@ -412,8 +397,6 @@ int main(int nargs, char* argv[])
 			
 			sim_points = dirc_model->sim_rand_n_photons(\
 				n_sim_phots,\
-				false,\
-				false,\
 				pion_angle ,
 				particle_x,\
 				particle_y,\
@@ -421,8 +404,7 @@ int main(int nargs, char* argv[])
 				particle_phi,\
 				tracking_unc,\
 				ckov_unc,\
-				pion_beta,\
-				up_down_sep);
+				pion_beta);
 			
 			for (unsigned int j = 0; j < sim_points.size(); j++)
 			{
@@ -431,8 +413,6 @@ int main(int nargs, char* argv[])
 			
 			sim_points = dirc_model->sim_rand_n_photons(\
 				n_sim_phots,\
-				false,\
-				false,\
 				pion_angle ,
 				particle_x,\
 				particle_y,\
@@ -440,8 +420,7 @@ int main(int nargs, char* argv[])
 				particle_phi,\
 				tracking_unc,\
 				ckov_unc,\
-				kaon_beta,\
-				up_down_sep);
+				kaon_beta);
 			
 			for (unsigned int j = 0; j < sim_points.size(); j++)
 			{
@@ -511,7 +490,6 @@ int main(int nargs, char* argv[])
 		particle_phi,\
 		tracking_unc,\
 		ckov_unc,\
-		0,\
 		pion_beta);
 	  
 	  
@@ -536,7 +514,6 @@ int main(int nargs, char* argv[])
 		particle_phi,\
 		tracking_unc,\
 		ckov_unc,\
-		0,\
 		kaon_beta);
 	  
 	  
