@@ -9,17 +9,19 @@
 class DircSpreadGaussian
 {
 private:
-	double lin_slope, r_trans, sigma2, max_val;
+	double x_sig2inv,y_sig2inv,t_sig2inv;
+	double lin_slope, r_trans, sigma2, sigma2inv,max_val;
 	TRandom3 *rand_gen;
 	std::vector<dirc_point> support_points;
-	bool test_time_dir;
 	double get_weight(dirc_point inpoint);
 public:
 	//by reference - later for speed
 	DircSpreadGaussian(\
 		double isigma, \
 		std::vector<dirc_point> isupport,\
-		bool itest_time_dir = true);
+		double x_unc,\
+		double y_unc,\
+		double t_unc);
 	void support_spread(double spread_sig);
 	void support_x_weight();
 
@@ -29,7 +31,7 @@ public:
 	{
 		if (r2 < 5*sigma2)
 		{
-			return exp(-r2/sigma2);
+			return exp(-r2*sigma2inv);
 // 	  		return std::max(0.0,(1-r2/(sigma2))); //Epanechnikov
 	  // 		return std::max(0.0,(1-r*r/sigma2)*(1-r*r/sigma2)); //quartic
 			  // 		return std::min(sqrt(sigma2),sqrt(sigma2)/r);
@@ -41,12 +43,14 @@ public:
 	};
 	inline double support_spread_function(dirc_point support, dirc_point test)__attribute__((always_inline))
 	{
-		double dx2,dy2;
+		double dx2,dy2,dt2;
 		dx2 = support.x - test.x;
 		dx2 *= dx2;
 		dy2 = support.y - test.y;
 		dy2 *= dy2;
-		return radius_spread_function(dx2+dy2);
+		dt2 = support.t - test.t;
+		dt2 *= dt2;
+		return radius_spread_function(dx2*x_sig2inv+dy2*y_sig2inv+dt2*t_sig2inv);
 	};
 
 	double get_single_log_likelihood(dirc_point inpoint);

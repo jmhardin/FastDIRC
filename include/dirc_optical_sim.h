@@ -170,7 +170,7 @@ private:
 		double &dx,\
 		double &dy,\
 		double &dz,\
-		double critical_angle);
+		double cos_critical_angle);
 	double warp_wedge(\
 		double &x,\
 		double &y,\

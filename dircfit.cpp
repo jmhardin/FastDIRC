@@ -54,6 +54,7 @@ int main(int nargs, char* argv[])
 	double maxy = -miny;
 	double mint = 0;
 	double maxt = 1000;
+	double t_unc = 1;
 	
 	
 	double rad_to_deg = 57.2958;
@@ -74,7 +75,7 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 1000;
+	int num_runs = 10000;
 	
 	int n_sim_phots = 40;
 	
@@ -83,14 +84,12 @@ int main(int nargs, char* argv[])
 	int n_phi_phots = 100000;
 // 	int n_phi_phots =2;
 	int n_z_phots = 4;
-	double sfunc_sig = 6;
+	double s_func_x = 6;
+	double s_func_y = s_func_x;
+	double s_func_t = 2;
+	double sfunc_sig = 1;
 	
-	bool out_layout = false;
-	if (out_layout == true)
-	{
-	  n_phi_phots = 100;
-	  n_z_phots = 4;
-	}
+	bool out_csv = false;
 	
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
@@ -142,8 +141,8 @@ int main(int nargs, char* argv[])
 	double pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
 	double kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
 	
-	printf("Pion emission angle nominal: %12.02f\n",pion_angle);
-	printf("Kaon emission angle nominal: %12.02f\n",kaon_angle);
+	printf("Pion emission angle nominal: %12.02f  beta: %12.06f\n",pion_angle,pion_beta);
+	printf("Kaon emission angle nominal: %12.02f  beta: %12.06f\n",kaon_angle,kaon_beta);
 	
 	
 	char* rootfilename = new char[256];
@@ -162,6 +161,10 @@ int main(int nargs, char* argv[])
 	TH1F *ref_pion_after = new TH1F("ref_pion_after","Angle of Pion Photons going out of interface", 9000,0,90);
 	TH1F *ref_kaon_after = new TH1F("ref_kaon_after","Angle of Kaon Photons going out of interface", 9000,0,90);
 
+	TH1F *pion_dist_t = new TH1F("pion_dist_t","t val of intercepted points - pion",(maxt-mint)/(res_enhance*rest),mint,maxt);
+	TH1F *kaon_dist_t = new TH1F("kaon_dist_t","t val of intercepted points - kaon",(maxt-mint)/(res_enhance*rest),mint,maxt);
+
+	
 	TH2F *ref_theta_cphi_pion = new TH2F("ref_theta_cphi_pion","Emitted angle of Pion Photons versus angle into interface", 7200,0,360,1800,0,90);
 	TH2F *ref_theta_cphi_kaon = new TH2F("ref_theta_cphi_kaon","Emitted angle of Kaon Photons versus angle into interface", 7200,0,360,1800,0,90);
 	
@@ -207,7 +210,8 @@ int main(int nargs, char* argv[])
 		resx,\
 		miny,\
 		maxy,\
-		resy);
+		resy,\
+		t_unc);
 	std::vector<dirc_point> hit_points_pion;
 	std::vector<dirc_point> hit_points_kaon;
 	
@@ -253,22 +257,18 @@ int main(int nargs, char* argv[])
 	}
 	
 
-// 	DircProbabilitySpread* pdf_pion = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_pion);
-// 	DircProbabilitySpread* pdf_kaon = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_kaon);
-
-// 	DircProbabilitySpread* pdf_pion = new DircSpreadGaussian(sfunc_sig, hit_points_pion);
-// 	DircProbabilitySpread* pdf_kaon = new DircSpreadGaussian(sfunc_sig, hit_points_kaon);
-
-	DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(sfunc_sig, hit_points_pion);
-	DircSpreadGaussian* pdf_kaon = new DircSpreadGaussian(sfunc_sig, hit_points_kaon);
-
-	
-	// 	
-	//Digitizing and linear is eqivalent to "counting," but slower
-// 	digitizer.digitize_points(hit_points_pion);
-// 	digitizer.digitize_points(hit_points_kaon);
-// 	DircProbabilitySpread* pdf_pion = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_pion);
-//  DircProbabilitySpread* pdf_kaon = new DircSpreadLinearSoft(sfunc_m, sfunc_r, sfunc_sig, hit_points_kaon);
+	DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(\
+		sfunc_sig,\
+		hit_points_pion,\
+		s_func_x,\
+		s_func_y,\
+		s_func_t);
+	DircSpreadGaussian* pdf_kaon = new DircSpreadGaussian(\
+		sfunc_sig,\
+		hit_points_kaon,\
+		s_func_x,\
+		s_func_y,\
+		s_func_t);
 
 	DircProbabilitySeparation* sep_pdfs = new DircProbabilitySeparation(pdf_kaon,pdf_pion);
 	
@@ -437,7 +437,7 @@ int main(int nargs, char* argv[])
 		pion_dist_xy->Fill(x,y);
 		pion_dist_xt->Fill(x,t_ns);
 		pion_dist_yt->Fill(y,t_ns);
-	  
+		pion_dist_t->Fill(t_ns);
 	}
 	
 	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());
@@ -450,8 +450,39 @@ int main(int nargs, char* argv[])
 		kaon_dist_xy->Fill(x,y);
 		kaon_dist_xt->Fill(x,t_ns);
 		kaon_dist_yt->Fill(y,t_ns);
+		kaon_dist_t->Fill(t_ns);
 	}
 	
+	if (out_csv == true)
+	{
+		ofstream pion_csv;
+		ofstream kaon_csv;
+		
+		pion_csv.open("pion_dist.csv");
+		kaon_csv.open("kaon_dist.csv");
+		char format_buffer[256];
+		
+		for (unsigned int i = 0; i < hit_points_pion.size(); i++)
+		{
+			x = hit_points_pion[i].x;
+			y = hit_points_pion[i].y;
+			t_ns = hit_points_pion[i].t;
+			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x,y,t_ns);
+			
+			pion_csv << format_buffer;
+		}
+		for (unsigned int i = 0; i < hit_points_kaon.size(); i++)
+		{
+			x = hit_points_kaon[i].x;
+			y = hit_points_kaon[i].y;
+			t_ns = hit_points_kaon[i].t;
+			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x,y,t_ns);
+			
+			kaon_csv << format_buffer;
+		}	
+		pion_csv.close();
+		kaon_csv.close();
+	}
 	std::vector<double> dist_traveled = dirc_model->get_dist_traveled();
 	for (unsigned int i = 0; i < dist_traveled.size(); i++)
 	{
@@ -525,6 +556,8 @@ int main(int nargs, char* argv[])
 	kaon_dist_xt->Write();
 	pion_dist_yt->Write();
 	kaon_dist_yt->Write();
+	pion_dist_t->Write();
+	kaon_dist_t->Write();
 	ll_diff_pion->Write();
 	ll_diff_kaon->Write();
 	phot_found_pion->Write();

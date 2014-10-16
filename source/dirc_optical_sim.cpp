@@ -172,7 +172,7 @@ void DircOpticalSim::fill_sens_plane_vecs()
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
 	
 	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
-	printf("ydist conv: %12.04f\n",sensPlaneYdistConversion);
+// 	printf("ydist conv: %12.04f\n",sensPlaneYdistConversion);
 }
 void DircOpticalSim::fill_foc_mirror_vecs()
 {
@@ -186,7 +186,7 @@ void DircOpticalSim::fill_threeseg_plane_vecs()
 {
 	focMirrorTop = focMirrorBottom + foc_mirror_size*cos(foc_rot/57.3);
 	focMirrorZDim = foc_mirror_size*sin(foc_rot/57.3);
-	printf("MirrorZDim: %12.04f MirrorSize: %12.04f\n",focMirrorZDim,foc_mirror_size);
+// 	printf("MirrorZDim: %12.04f MirrorSize: %12.04f\n",focMirrorZDim,foc_mirror_size);
 	//If we ever go to more than 3 segments, use a loop
 	
 	double theta_m = foc_rot/57.3;//radians of rotation to go through
@@ -410,6 +410,7 @@ double DircOpticalSim::get_cerenkov_angle_rand(double beta, double additional_sp
 			
 		//Test emission distribution, second b/c it's a less stringent cut
 		if (rand_gen->Uniform(0,1/(min_QE*min_QE)) > 1/(tmp_lam*tmp_lam)) continue;
+		
 				
 		n_lam = get_quartz_n(tmp_lam);
 		
@@ -423,10 +424,10 @@ double DircOpticalSim::get_cerenkov_angle_rand(double beta, double additional_sp
 }
 bool DircOpticalSim::quartz_transmission_mc(double R, double lambda)
 {
-	if (R > 10000)
-	{
+// 	if (R > 10000)
+// 	{
 // 	  printf("using R: %12.04f\n",R);
-	}
+// 	}
 	int ind_transmittance;
 	double above_ind;
 	double tmp_transmittance;
@@ -612,12 +613,12 @@ void DircOpticalSim::fill_rand_phi(\
 			dx,\
 			dy,\
 			dz,\
-			asin(1/1.47));
+			sqrt(1-1/(1.47*1.47)));
 		
-		if (z > 0)
-		{
-			continue;
-		}
+// 		if (z > 0)
+// 		{
+// 			continue;
+// 		}
 		
 		spread_wedge_mirror();
 		
@@ -904,6 +905,12 @@ void DircOpticalSim::fill_reg_phi(\
 	double mm_index = 0;
 	double c_mm_ns = 300;
 	
+	double sin_emit;
+	double cos_emit;
+	double sin_regphi;
+	double cos_regphi;
+	
+	
 	for (int i = 0; i < n_photons_z; i++)
 	{
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
@@ -928,9 +935,19 @@ void DircOpticalSim::fill_reg_phi(\
 			y = 0;
 			z = sourceOff;
 			
-			dx = sin(temit/57.3)*cos(regPhi);
-			dy = sin(temit/57.3)*sin(regPhi);
-			dz = cos(temit/57.3);
+			//save some time ~30ms per 400k
+			//could compute sin even faster with a taylor series
+			sin_emit = sin(temit/57.2957795131);
+			cos_emit = sqrt(1-sin_emit*sin_emit);
+			cos_regphi = cos(regPhi);
+			sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
+			
+// 			sincos(temit/57.2957795131,&sin_emit,&cos_emit);
+// 			sincos(regPhi,&sin_regphi,&cos_regphi);
+			
+			dx = sin_emit*cos_regphi;
+			dy = sin_emit*sin_regphi;
+			dz = cos_emit;
 			
 			rotate_2d(z,y,cos_ptheta,sin_ptheta);
 			rotate_2d(x,y,cos_pphi,sin_pphi);
@@ -952,7 +969,7 @@ void DircOpticalSim::fill_reg_phi(\
 				dx,\
 				dy,\
 				dz,\
-				asin(1/1.47));
+				sqrt(1-1/(1.47*1.47)));
 			
 			if (z > 0)
 			{
@@ -1019,7 +1036,7 @@ double DircOpticalSim::warp_ray(\
 	double &dx,\
 	double &dy,\
 	double &dz,\
-	double critical_angle)
+	double cos_critical_angle)
 {
 //Implemented to avoid total internal reflection computations
 //Expects ray to be "prerotated" by particle theta and phi - just propagates the vectors
@@ -1051,11 +1068,12 @@ double DircOpticalSim::warp_ray(\
 	
 	y = barLength*(.5-grace_room);
 	
-	if (acos(fabs(dz)) < critical_angle ||\
-		acos(fabs(dx)) < critical_angle ||\
-		(dy < 0 && acos(fabs(dy)) < critical_angle) ||
+	if (fabs(dz) > cos_critical_angle ||\
+		fabs(dx) > cos_critical_angle ||\
+		(dy < 0 && fabs(dy) > cos_critical_angle) ||
 		dy*dy < 1e-4)
 	{
+// 		printf("coscrit: %12.04f %12.04f %12.04f %12.04f\n",cos_critical_angle,dx,dy,dz);
 		//If it's not totally internally reflected, assume it escapes	
 		//also assume failure if it isn't going up fast enough (absorbed)
 		//Positive z origin signals fail
@@ -1094,7 +1112,7 @@ double DircOpticalSim::warp_ray(\
 	
 	rval += delx*delx + delz*delz;
 	
-	if (dz < 0) printf("dz: %12.04f : Negative and confusing\n",dz);
+// 	if (dz < 0) printf("dz: %12.04f : Negative and confusing\n",dz);
 
 	
 	nbouncesx = delx/barWidth + 1;
@@ -1343,8 +1361,8 @@ bool DircOpticalSim::optical_interface_z(\
 	//Assume that it's going through the z plane
 	//(this will change the ordering when called in our current geometry)
   
-	double before_ang = acos(dz);
-	double after_ang = 0;
+// 	double before_ang = acos(dz);
+// 	double after_ang = 0;
 	
 	
 	double n12rat = n1/n2;
@@ -1353,20 +1371,20 @@ bool DircOpticalSim::optical_interface_z(\
 	//takes care of trig
 	dz = sqrt(1-n12rat2*(1-dz*dz));
 	
-	if (dz != dz) return false;//total internal reflection
+// 	if (dz != dz) return false;//total internal reflection
 	
 	//simpler expression than I expected
 	dx *= n12rat;
 	dy *= n12rat;
 	
 // 	printf("in optical interface store_refraction: %s\n",store_refraction ? "true" : "false");
-	if (store_refraction == true)
-	{
-// 	  printf("storing refraction\n");
-	  after_ang = acos(dz);
-	  refraction_before.push_back(before_ang);
-	  refraction_after.push_back(after_ang);
-	}
+// 	if (store_refraction == true)
+// 	{
+// // 	  printf("storing refraction\n");
+// 	  after_ang = acos(dz);
+// 	  refraction_before.push_back(before_ang);
+// 	  refraction_after.push_back(after_ang);
+// 	}
 	
 	return true;
 }

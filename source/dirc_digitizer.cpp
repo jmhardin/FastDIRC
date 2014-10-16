@@ -7,7 +7,8 @@ DircDigitizer::DircDigitizer(\
 		double iresx,\
 		double iminy,\
 		double imaxy,\
-		double iresy)
+		double iresy,\
+		double it_unc)
 {
 	minx = iminx;
 	maxx = imaxx;
@@ -15,6 +16,9 @@ DircDigitizer::DircDigitizer(\
 	miny = iminy;
 	maxy = imaxy;
 	resy = iresy;
+	t_unc = it_unc;
+	
+	dig_rand = new TRandom3();
 }
 void DircDigitizer::digitize_point(dirc_point &pt)
 {
@@ -47,6 +51,7 @@ void DircDigitizer::digitize_point(dirc_point &pt)
 	
 	pt.x = xout;
 	pt.y = yout;
+	pt.t += dig_rand->Gaus(0,t_unc);
 }
 void DircDigitizer::digitize_points(std::vector<dirc_point> &points)
 {

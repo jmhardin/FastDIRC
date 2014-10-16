@@ -1,4 +1,6 @@
 CFLAGS_BASE = -Ofast -Wno-comment -L./lib/ -lgsl -lgslcblas `root-config --cflags` `root-config --glibs` 
+CFLAGS_OPT = -g
+CFLAGS_BASE += $(CFLAGS_OPT)
 INCLUDE = -I./include/
 
 CFLAGS = $(CFLAGS_BASE) $(goptical_CPPFLAGS)
@@ -30,5 +32,12 @@ all: dircfit.cpp $(OBJFILES)
 
 .PHONY : clean
 clean:
-	rm lib/*
+	rm lib/*.o
 	rm $(OUT)
+	
+.PHONY : cleanall
+cleanall:
+	rm lib/*
+	rm *.gcda
+	rm $(OUT)
+	
