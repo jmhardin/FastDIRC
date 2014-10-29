@@ -1,28 +1,44 @@
-typerun=ang440_3GeV_nplat
+typerun=ang440_threeseg_mainmirror_unc
 
 mkdir ${typerun}
 
-amount=100000
+amount=0.01
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=20000
+amount=0.02
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=40000
+amount=0.04
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=60000
+amount=0.07
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=80000
+amount=0.1
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 
-amount=10000
+amount=0.2
+time ./dircfit ${amount}
+mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
+
+amount=0.4
+time ./dircfit ${amount}
+mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
+
+amount=0.7
+time ./dircfit ${amount}
+mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
+
+amount=1
+time ./dircfit ${amount}
+mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
+
+amount=2
 time ./dircfit ${amount}
 mv fitdirc.root ${typerun}/fitdirc_${typerun}_${amount}.root
 

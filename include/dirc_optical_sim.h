@@ -61,6 +61,10 @@ private:
 	double threeSeg2Y,threeSeg2Z;
 	double threeSeg3Y,threeSeg3Z;
 	
+	bool nonUniformFocMirror;
+	double foc_mirror_nonuni;
+	
+	
 	double sensPlaneNx;
 	double sensPlaneNy;
 	double sensPlaneNz;
@@ -212,7 +216,8 @@ private:
 		double &dx,\
 		double &dy,\
 		double &dz,\
-		double &dt);
+		double &dt,\
+		double offang = 0);
 	//Utility function - should combine this with above for some speed
 	double get_z_intercept(\
 		double Nx,\
@@ -257,6 +262,7 @@ private:
 		double &dy,\
 		double &dz);
 public:
+	void set_focmirror_nonuniformity(double nonuni_deg);
 	void set_sidemirror(double ixr, double ixl);
 	void set_three_seg_mirror(bool itsm);
 	void set_pmt_offset(double r);

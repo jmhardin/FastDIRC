@@ -153,6 +153,7 @@ DircOpticalSim::DircOpticalSim(
 	{
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
+	set_focmirror_nonuniformity(0);
 	fill_threeseg_plane_vecs();
 	fill_foc_mirror_vecs();
 	fill_sens_plane_vecs();
@@ -180,7 +181,6 @@ void DircOpticalSim::fill_foc_mirror_vecs()
 	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
 	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
 	focMirrorZ = foc_r*sin(foc_center_ang);
-	
 }
 void DircOpticalSim::fill_threeseg_plane_vecs()
 {
@@ -224,7 +224,11 @@ void DircOpticalSim::fill_threeseg_plane_vecs()
 	rotate_2d(threeSeg3Nx,threeSeg3Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
 	threeSeg3D = threeSeg3Ny*threeSeg3Y + threeSeg3Nz*threeSeg3Z;//Use point x=0 as reference
 	
-	
+}
+void DircOpticalSim::set_focmirror_nonuniformity(double nonuni_deg)
+{
+	foc_mirror_nonuni = nonuni_deg;
+	nonUniformFocMirror = (fabs(nonuni_deg) > .001);
 }
 void DircOpticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points)
 {
@@ -358,7 +362,6 @@ void DircOpticalSim::spread_wedge_mirror()
 		upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
 	}
 }
-	
 void DircOpticalSim::build_system()
 {
 
@@ -1588,7 +1591,8 @@ void DircOpticalSim::plane_reflect(\
 	double &dx,\
 	double &dy,\
 	double &dz,\
-	double &dt)
+	double &dt,\
+	double offang /*=0*/)
 {
 	//Propagate to the intercept and reflects off a plane
 	//Could use this in the Wedge, but would loose some speed
@@ -1601,6 +1605,11 @@ void DircOpticalSim::plane_reflect(\
 	x += dt*dx;
 	y += dt*dy;
 	z += dt*dz;
+	
+	if (fabs(offang) > 1e-8)
+	{//remove for speed obviously
+		rotate_2d(Nz,Ny,cos(offang),sin(offang));
+	}
 	
 	dx -= 2*n_dot_v*Nx;
 	dy -= 2*n_dot_v*Ny;
@@ -1626,8 +1635,6 @@ double DircOpticalSim::get_z_intercept(\
 	double dt;//optimized by math compression?
 	dt = (D - n_dot_v0)/n_dot_v;
 	
-// 	printf("x: %8.04f   y: %8.04f   z: %8.04f   dx: %8.04f    dy: %8.04f    dz: %8.04f   n_dot_v0: %8.04f tz: %8.04f\n",x,y,z,dx,dy,dz,n_dot_v0,z+dz*dt);
-	
 	return z + dt*dz;
 }
 double DircOpticalSim::get_intercept_plane(\
@@ -1650,8 +1657,6 @@ double DircOpticalSim::get_intercept_plane(\
 	double n_dot_v0 = (Nx*x + Ny*y + Nz*z);
 	double dt;//optimized by math compression?
 	dt = (D - n_dot_v0)/n_dot_v;
-	
-// 	printf("x: %8.04f   y: %8.04f   z: %8.04f   dx: %8.04f    dy: %8.04f    dz: %8.04f   n_dot_v0: %8.04f tz: %8.04f\n",x,y,z,dx,dy,dz,n_dot_v0,z+dz*dt);
 	
 	x += dx*dt;
 	y += dy*dt;
@@ -1689,8 +1694,14 @@ double DircOpticalSim::three_seg_reflect(\
 		dy,\
 		dz);
 // 	printf("tz1: %12.04f\n",tz);
+	double offang = 0;
 	if (tz > threeSeg2Z && tz < 0)
 	{//reflect off mirror closest to box
+		if (nonUniformFocMirror == true)
+		{//obviously not in the real run
+			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
+// 			rotate_2d(threeSeg1Nz,threeSeg1Ny,cos(offang),sin(offang));
+		}
 		plane_reflect(\
 			threeSeg1Nx,\
 			threeSeg1Ny,\
@@ -1702,7 +1713,8 @@ double DircOpticalSim::three_seg_reflect(\
 			dx,\
 			dy,\
 			dz,\
-			rval);
+			rval,\
+			offang);
 		return rval*liquidIndex;
 	}
 	
@@ -1720,6 +1732,11 @@ double DircOpticalSim::three_seg_reflect(\
 // 	printf("tz2: %12.04f\n",tz);
 	if (tz > threeSeg3Z && tz < 0)
 	{//reflect off middle mirror
+		if (nonUniformFocMirror == true)
+		{//obviously not in the real run
+			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
+// 			rotate_2d(threeSeg2Nz,threeSeg2Ny,cos(offang),sin(offang));
+		}
 		plane_reflect(\
 			threeSeg2Nx,\
 			threeSeg2Ny,\
@@ -1731,7 +1748,8 @@ double DircOpticalSim::three_seg_reflect(\
 			dx,\
 			dy,\
 			dz,\
-			rval);
+			rval,\
+			offang);
 		return rval*liquidIndex;
 	}
 	
@@ -1749,6 +1767,12 @@ double DircOpticalSim::three_seg_reflect(\
 // 	printf("tz3: %12.04f\n",tz);
 	if (tz > -focMirrorZDim && tz < 0)
 	{//reflect off mirror closest to box
+		if (nonUniformFocMirror == true)
+		{//obviously not in the real run
+			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
+// 			printf("%12.04e\n",offang);
+// 			rotate_2d(threeSeg3Nz,threeSeg3Ny,cos(offang),sin(offang));
+		}
 		plane_reflect(\
 			threeSeg3Nx,\
 			threeSeg3Ny,\
@@ -1760,7 +1784,8 @@ double DircOpticalSim::three_seg_reflect(\
 			dx,\
 			dy,\
 			dz,\
-			rval);
+			rval,\
+			offang);
 		return rval*liquidIndex;
 	}
 	//reflects off of nothing :(
@@ -1820,6 +1845,11 @@ double DircOpticalSim::cylindrical_reflect(\
 	localNy = yrel;
 	localNz = zrel;
 	
+	if (nonUniformFocMirror == true)
+	{//obviously not in the real run
+		double offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
+		rotate_2d(localNz,localNy,cos(offang),sin(offang));
+	}
 	
 	
 	double norm_loc = sqrt(localNy*localNy + localNz*localNz);//there's gotta be a better way to normalize this

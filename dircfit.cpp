@@ -55,6 +55,7 @@ int main(int nargs, char* argv[])
 	double mint = 0;
 	double maxt = 1000;
 	double t_unc = 1;
+// 	double t_unc = .05;
 	
 	
 	double rad_to_deg = 57.2958;
@@ -66,7 +67,7 @@ int main(int nargs, char* argv[])
 	double ckov_unc = .003*57.3; //transport = 3mrad
 
 	
-	double energy = 5.0;
+	double energy =5.0;
 	double kmass = .4937;
 	double pimass = .1396;
 	
@@ -75,7 +76,7 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	int num_runs = 10000;
+	int num_runs = 5000;
 	
 	int n_sim_phots = 40;
 	
@@ -87,9 +88,21 @@ int main(int nargs, char* argv[])
 	double s_func_x = 6;
 	double s_func_y = s_func_x;
 	double s_func_t = 2;
+// 	double s_func_t = .3;
 	double sfunc_sig = 1;
 	
 	bool out_csv = false;
+	double outcsv_x,outcsv_y,outcsv_t;
+	outcsv_x = 0*35;//bars are 35mm wide
+	outcsv_y = 0;//mm
+	outcsv_t = 0;//ns
+	
+	if (out_csv == true)
+	{
+		n_phi_phots = 4000;
+		n_z_phots = 8;
+		particle_y += outcsv_y;
+	}
 	
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
@@ -99,9 +112,10 @@ int main(int nargs, char* argv[])
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
-	double mirror_r_difference = 0;
+	double mirror_r_difference = -400;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
+	double main_mirror_nonuniformity = 0;
 	
 	double upper_wedge_yang_spread = 0;
 	int rseed = 0;
@@ -117,7 +131,7 @@ int main(int nargs, char* argv[])
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
 	
-	bool coverage_plot = false;
+	bool coverage_plot = true;
 	int num_cov = 100000;
 	
 	bool up_down_sep = false;
@@ -277,7 +291,7 @@ int main(int nargs, char* argv[])
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
 
-	
+	dirc_model->set_focmirror_nonuniformity(main_mirror_nonuniformity);
 	for (int i = 0; i < num_runs; i++)
 	{
 // // 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
@@ -467,7 +481,7 @@ int main(int nargs, char* argv[])
 			x = hit_points_pion[i].x;
 			y = hit_points_pion[i].y;
 			t_ns = hit_points_pion[i].t;
-			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x,y,t_ns);
+			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x+outcsv_x,y,t_ns+outcsv_t);
 			
 			pion_csv << format_buffer;
 		}
@@ -476,7 +490,7 @@ int main(int nargs, char* argv[])
 			x = hit_points_kaon[i].x;
 			y = hit_points_kaon[i].y;
 			t_ns = hit_points_kaon[i].t;
-			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x,y,t_ns);
+			sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x+outcsv_x,y,t_ns+outcsv_t);
 			
 			kaon_csv << format_buffer;
 		}	
