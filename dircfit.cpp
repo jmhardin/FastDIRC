@@ -67,7 +67,7 @@ int main(int nargs, char* argv[])
 	double ckov_unc = .003*57.3; //transport = 3mrad
 
 	
-	double energy =5.0;
+	double energy = 5.0;
 	double kmass = .4937;
 	double pimass = .1396;
 	
