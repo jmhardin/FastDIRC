@@ -364,7 +364,10 @@ void DircOpticalSim::spread_wedge_mirror()
 }
 void DircOpticalSim::build_system()
 {
-
+	fill_foc_mirror_vecs();
+	spread_wedge_mirror();
+	fill_threeseg_plane_vecs();
+	fill_sens_plane_vecs();
 }
 double DircOpticalSim::get_quartz_n(double lambda)
 {
