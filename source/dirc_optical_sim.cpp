@@ -1202,7 +1202,7 @@ double DircOpticalSim::warp_wedge(\
 		}
 		else
 		{
-			printf("IM HERE REFLECTING AND SUCH\n");
+			//printf("IM HERE REFLECTING AND SUCH\n");
 			n_dot_v = -(dy*upperWedgeFarPlaneNy + dz*upperWedgeFarPlaneNz);
 			n_dot_v0 = -(y*upperWedgeFarPlaneNy + z*upperWedgeFarPlaneNz);
 		
