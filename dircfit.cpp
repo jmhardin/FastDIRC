@@ -108,7 +108,7 @@ int main(int nargs, char* argv[])
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
-	double mirror_angle_change_unc = 0;
+	double mirror_angle_change_unc = in_num;
 	double mirror_angle_change_yunc = 0;
 	double box_rot = 0;
 	double box_rot_unc = 0;
@@ -116,7 +116,7 @@ int main(int nargs, char* argv[])
 	double mirror_r_difference = -400;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
-	double main_mirror_nonuniformity = in_num;
+	double main_mirror_nonuniformity = 0;
 	
 	double upper_wedge_yang_spread = 0;
 	int rseed = 0;
@@ -319,13 +319,20 @@ int main(int nargs, char* argv[])
         unsigned int r=0;
         while(f>>PID[r]>>BAR[r]>>x[r]>>y[r]>>t[r]>>theta[r]>>phi[r]>>E[r])
         {
-          //  std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r]<<std::endl; 
+         //  std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r]<<std::endl; 
             r++;
         }
         f.close();
         for(unsigned int n=0;n<r;n++){
              if(abs(PID[n])>7 && abs(PID[n])<13)//8 and 9 are pions, 11 and 12 are kaons
              {
+
+	    	    /*set to 0*/dirc_model->set_focus_mirror_angle(\
+			        spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+			        spread_ang.Gaus(0,mirror_angle_change_yunc));
+        		dirc_model->set_upper_wedge_angle_diff(\
+		        	spread_ang.Gaus(0,0),\
+		        	spread_ang.Gaus(0,0));
                 mc_tally++;
               //  printf("found PID=%i\n",PID[n]);
 	            pion_mc_beta = dirc_model->get_beta(E[n],pimass);
@@ -482,10 +489,9 @@ int main(int nargs, char* argv[])
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
 			sim_points.push_back(confound_points[i]);
-//            printf("\rpush back success, sim_points size:%lu",sim_points.size());
 		}
         }//end confounded point generation
-  //      printf("\rFound %i confounded events for event #%d \n",confounded_tally,n);
+            printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
 
         }
         else{continue;}
@@ -494,7 +500,7 @@ int main(int nargs, char* argv[])
 		llc = pdf_pion_mc->get_log_likelihood(sim_points);
 		llf = pdf_kaon_mc->get_log_likelihood(sim_points);
 		
-//printf("llc=%f  and   llf=%f\n",llc,llf);
+        printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
         if(abs(PID[n])==8||PID[n]==9){
 		ll_diff_pion->Fill(llc-llf);
         		
