@@ -107,7 +107,7 @@ int main(int nargs, char* argv[])
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
-	double mirror_angle_change_unc = in_num;
+	double mirror_angle_change_unc = 0;
 	double mirror_angle_change_yunc = 0;
 	double box_rot = 0;
 	double box_rot_unc = 0;
@@ -115,7 +115,7 @@ int main(int nargs, char* argv[])
 	double mirror_r_difference = -400;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
-	double main_mirror_nonuniformity = 0;
+	double main_mirror_nonuniformity = in_num;
 	
 	double upper_wedge_yang_spread = 0;
 	int rseed = 0;
