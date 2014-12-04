@@ -70,6 +70,7 @@ int main(int nargs, char* argv[])
 	double energy = 5.0;
 	double kmass = .4937;
 	double pimass = .1396;
+	double mumass = .1057;
 	
 	double particle_x = 0;
 	double particle_y = 0;
@@ -107,7 +108,7 @@ int main(int nargs, char* argv[])
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
-	double mirror_angle_change_unc = 0;
+	double mirror_angle_change_unc = in_num;
 	double mirror_angle_change_yunc = 0;
 	double box_rot = 0;
 	double box_rot_unc = 0;
@@ -115,7 +116,7 @@ int main(int nargs, char* argv[])
 	double mirror_r_difference = -400;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
-	double main_mirror_nonuniformity = in_num;
+	double main_mirror_nonuniformity = 0;
 	
 	double upper_wedge_yang_spread = 0;
 	int rseed = 0;
@@ -135,7 +136,7 @@ int main(int nargs, char* argv[])
 	int num_cov = 100000;
 	
 	bool up_down_sep = false;
-	bool inputfile =false;//to use "../montecarlo.csv" as input set this to true
+	bool inputfile =true;//to use "../montecarlo.csv" as input set this to true
 	int m=10000;//m=number of simulated mc events
     double time_window=50;
      //time window for compounded pmt hits, in ns	
@@ -150,9 +151,11 @@ int main(int nargs, char* argv[])
 		600,\
 		47.87 + box_rot);
 	
+	double muon_beta = dirc_model->get_beta(energy,mumass);
 	double pion_beta = dirc_model->get_beta(energy,pimass);
 	double kaon_beta = dirc_model->get_beta(energy,kmass);
 	
+	double muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
 	double pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
 	double kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
 	
@@ -316,16 +319,22 @@ int main(int nargs, char* argv[])
         unsigned int r=0;
         while(f>>PID[r]>>BAR[r]>>x[r]>>y[r]>>t[r]>>theta[r]>>phi[r]>>E[r])
         {
-            //cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r]<<endl; 
+         //  std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r]<<std::endl; 
             r++;
         }
-
         f.close();
         for(unsigned int n=0;n<r;n++){
-             if(abs(PID[n])==321 || abs(PID[n])==211)
+             if(abs(PID[n])>7 && abs(PID[n])<13)//8 and 9 are pions, 11 and 12 are kaons
              {
+
+	    	    /*set to 0*/dirc_model->set_focus_mirror_angle(\
+			        spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+			        spread_ang.Gaus(0,mirror_angle_change_yunc));
+        		dirc_model->set_upper_wedge_angle_diff(\
+		        	spread_ang.Gaus(0,0),\
+		        	spread_ang.Gaus(0,0));
                 mc_tally++;
-                printf("found PID=%12.i\n",PID[n]);
+              //  printf("found PID=%i\n",PID[n]);
 	            pion_mc_beta = dirc_model->get_beta(E[n],pimass);
 	            kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
 	            pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
@@ -379,13 +388,13 @@ int main(int nargs, char* argv[])
 		        	spread_ang.Gaus(0,upper_wedge_yang_spread));
                 
 		printf("\r                                                    ");
-		printf("\rRunning monte carlo event  %i ",mc_tally);
+		printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
 
 		fflush(stdout);
 
         //simulate pmt hits from primary mc event
         //
-        if(abs(PID[n])==211){
+        if(abs(PID[n])==8 || PID[n]==9 ){
 		sim_points = dirc_model->sim_rand_n_photons(\
 			n_sim_phots,\
 			pion_mc_angle,\
@@ -415,7 +424,7 @@ int main(int nargs, char* argv[])
  
         if(abs(t[n]-t[i])<time_window && i!=n){
            confounded_tally++; 
-            if(abs(PID[i])==11){
+            if(abs(PID[i])==2 ||PID[i]==3){
 
                confound_points=dirc_model->sim_rand_n_photons(\
                     n_sim_phots,\
@@ -428,7 +437,7 @@ int main(int nargs, char* argv[])
 	    		    ckov_unc,\
 	    		    1);
             }
-            else if(abs(PID[i])==211){
+            else if(abs(PID[i])==8||PID[i]==9){
                 pion_beta = dirc_model->get_beta(E[i],pimass);
                 pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
 
@@ -444,7 +453,7 @@ int main(int nargs, char* argv[])
 	    		    pion_beta);
             
             }
-            else if(abs(PID[i])==321){
+            else if(abs(PID[i])==11 || PID[i]==12){
                 kaon_beta = dirc_model->get_beta(E[i],kmass);
                 kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
 
@@ -460,13 +469,29 @@ int main(int nargs, char* argv[])
 	    		    kaon_beta);
             
             }
+            else if(abs(PID[i])==5 || PID[i]==6){
+                muon_beta = dirc_model->get_beta(E[i],mumass);
+                muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
+
+                confound_points=dirc_model->sim_rand_n_photons(\
+                    n_sim_phots,\
+                    muon_angle,\
+	    		    x[i],\
+	    	        y[i],\
+	    		    theta[i],\
+	    		    phi[i],\
+	    		    tracking_unc,\
+	    		    ckov_unc,\
+	    		    muon_beta);
+            
+            }
           }
-        printf("Found %i confounded events\n",confounded_tally);
 		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
 			sim_points.push_back(confound_points[i]);
 		}
         }//end confounded point generation
+            printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
 
         }
         else{continue;}
@@ -475,8 +500,8 @@ int main(int nargs, char* argv[])
 		llc = pdf_pion_mc->get_log_likelihood(sim_points);
 		llf = pdf_kaon_mc->get_log_likelihood(sim_points);
 		
-
-        if(abs(PID[n])==211){
+        printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
+        if(abs(PID[n])==8||PID[n]==9){
 		ll_diff_pion->Fill(llc-llf);
         		
 		phot_found_pion->Fill(sim_points.size()/(confounded_tally+1));//divide by tally+1 for an average number of photons per event? or do we want to know the total number of photons in the timewindow?

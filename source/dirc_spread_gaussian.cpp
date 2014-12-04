@@ -81,7 +81,7 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 		}
 		tprob /= support_points.size();
 		
-		rval += weight*log_mult*log(tprob);
+		rval += weight*log_mult*log(tprob+10e-3);
 	}
 	rval -= log(inpoints.size());
 	
