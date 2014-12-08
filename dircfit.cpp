@@ -825,5 +825,4 @@ int main(int nargs, char* argv[]) {
 
     int status = 0;
     return status;
->>>>>>> bdce963792e6f1175a505d55d73987a7f68ac189
 }
