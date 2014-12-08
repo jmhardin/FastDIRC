@@ -476,6 +476,7 @@ double DircOpticalSim::get_beta(double E, double m)
 std::vector<dirc_point> DircOpticalSim::sim_rand_n_photons(\
 	int n_photons, \
 	double ckov_theta /*= 47*/, \
+    double particle_bar /*=0*/, \
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
 	double particle_theta /*= 0*/, \
@@ -489,6 +490,7 @@ std::vector<dirc_point> DircOpticalSim::sim_rand_n_photons(\
 		out_points,\
 		n_photons,\
 		ckov_theta,\
+        particle_bar,\
 		particle_x,\
 		particle_y,\
 		particle_theta,\
@@ -502,6 +504,7 @@ std::vector<dirc_point> DircOpticalSim::sim_reg_n_photons(\
 	int n_photons_phi, \
 	int n_photons_z,\
 	double ckov_theta /*= 47*/, \
+    double particle_bar /*=0*/, \
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
 	double particle_theta /*= 0*/, \
@@ -516,6 +519,7 @@ std::vector<dirc_point> DircOpticalSim::sim_reg_n_photons(\
 		n_photons_phi,\
 		n_photons_z,\
 		ckov_theta,\
+        particle_bar,\
 		particle_x,\
 		particle_y,\
 		particle_theta,\
@@ -530,6 +534,7 @@ void DircOpticalSim::fill_rand_phi(\
 	std::vector<dirc_point> &ovals,\
 	int n_photons, \
 	double ckov_theta /*= 47*/, \
+    double particle_bar /*= 0*/, \
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
 	double particle_theta /*= 0*/, \
@@ -675,6 +680,10 @@ void DircOpticalSim::fill_rand_phi(\
 		
 		//should be threading time information into this soon
 		out_val.t = mm_index/(c_mm_ns);
+        //
+        //
+        //cdd shift the x value to account for bar number here, units in mm
+        out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;
 		ovals.push_back(out_val);
 	}
 }
@@ -868,6 +877,7 @@ void DircOpticalSim::fill_reg_phi(\
 	int n_photons_phi, \
 	int n_photons_z,\
 	double ckov_theta /*= 47*/, \
+    double particle_bar /*= 0*/,\
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
 	double particle_theta /*= 0*/, \
@@ -1030,6 +1040,8 @@ void DircOpticalSim::fill_reg_phi(\
 				dz);
 			
 			//should be threading time information into this soon
+            //
+            out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;
 			out_val.t = mm_index/(c_mm_ns);
 			ovals.push_back(out_val);
 		}
