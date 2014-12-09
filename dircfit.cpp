@@ -442,83 +442,85 @@ int main(int nargs, char* argv[])
 				confounded_tally=0;
 				for (unsigned int i =0; i< r;i++){
 			
-					if(abs(t[n]-t[i])<time_window && i!=n){
+					if(fabs(t[n]-t[i])<time_window && i!=n){
 						confounded_tally++; 
 						if(abs(PID[i])==2 ||PID[i]==3){
 
-						confound_points=dirc_model->sim_rand_n_photons(\
-							n_sim_phots,\
-							47.135,\
-							x[i],\
-							y[i],\
-							theta[i],\
-							phi[i],\
-							tracking_unc,\
-							ckov_unc,\
-							1);
-					}
-					else if(abs(PID[i])==8||PID[i]==9){
-						pion_beta = dirc_model->get_beta(E[i],pimass);
-						pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
+							confound_points=dirc_model->sim_rand_n_photons(\
+								n_sim_phots,\
+								47.135,\
+								x[i],\
+								y[i],\
+								theta[i],\
+								phi[i],\
+								tracking_unc,\
+								ckov_unc,\
+								1);
+						}
+						else if(abs(PID[i])==8||PID[i]==9){
+							pion_beta = dirc_model->get_beta(E[i],pimass);
+							pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
 
-						confound_points=dirc_model->sim_rand_n_photons(\
-							n_sim_phots,\
-							pion_angle,\
-							x[i],\
-							y[i],\
-							theta[i],\
-							phi[i],\
-							tracking_unc,\
-							ckov_unc,\
-							pion_beta);
-					  
-					}
-					else if(abs(PID[i])==11 || PID[i]==12){
-						kaon_beta = dirc_model->get_beta(E[i],kmass);
-						kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
+							confound_points=dirc_model->sim_rand_n_photons(\
+								n_sim_phots,\
+								pion_angle,\
+								x[i],\
+								y[i],\
+								theta[i],\
+								phi[i],\
+								tracking_unc,\
+								ckov_unc,\
+								pion_beta);
+						  
+						}
+						else if(abs(PID[i])==11 || PID[i]==12){
+							kaon_beta = dirc_model->get_beta(E[i],kmass);
+							kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
 
-						confound_points=dirc_model->sim_rand_n_photons(\
-							n_sim_phots,\
-							kaon_angle,\
-							x[i],\
-							y[i],\
-							theta[i],\
-							phi[i],\
-							tracking_unc,\
-							ckov_unc,\
-							kaon_beta);
-					  
-					}
-					else if(abs(PID[i])==5 || PID[i]==6){
-						muon_beta = dirc_model->get_beta(E[i],mumass);
-						muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
+							confound_points=dirc_model->sim_rand_n_photons(\
+								n_sim_phots,\
+								kaon_angle,\
+								x[i],\
+								y[i],\
+								theta[i],\
+								phi[i],\
+								tracking_unc,\
+								ckov_unc,\
+								kaon_beta);
+						  
+						}
+						else if(abs(PID[i])==5 || PID[i]==6){
+							muon_beta = dirc_model->get_beta(E[i],mumass);
+							muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
 
-						confound_points=dirc_model->sim_rand_n_photons(\
-							n_sim_phots,\
-							muon_angle,\
-							x[i],\
-							y[i],\
-							theta[i],\
-							phi[i],\
-							tracking_unc,\
-							ckov_unc,\
-							muon_beta);
+							confound_points=dirc_model->sim_rand_n_photons(\
+								n_sim_phots,\
+								muon_angle,\
+								x[i],\
+								y[i],\
+								theta[i],\
+								phi[i],\
+								tracking_unc,\
+								ckov_unc,\
+								muon_beta);
+						}
 					}
-				}
-				for (unsigned int i = 0; i < confound_points.size(); i++)
-				{
-					sim_points.push_back(confound_points[i]);
-				}
-			}//end confounded point generation
+					for (unsigned int i = 0; i < confound_points.size(); i++)
+					{
+						sim_points.push_back(confound_points[i]);
+					}
+					confound_points.clear();
+				}//end confounded point generation
 			
-			printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
+				printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
 
 			}
 			else{continue;}
-				digitizer.digitize_points(sim_points);
-				
-				llc = pdf_pion_mc->get_log_likelihood(sim_points);
-				llf = pdf_kaon_mc->get_log_likelihood(sim_points);
+			
+			digitizer.digitize_points(sim_points);
+			
+			llc = pdf_pion_mc->get_log_likelihood(sim_points);
+			llf = pdf_kaon_mc->get_log_likelihood(sim_points);
 				
 			printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
 			if(abs(PID[n])==8||PID[n]==9){
