@@ -372,7 +372,7 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					pion_mc_beta);
 				
-					hit_points_kaon_mc = dirc_model->sim_reg_n_photons(\
+				hit_points_kaon_mc = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
 					n_z_phots,\
 					kaon_mc_angle,
@@ -385,11 +385,11 @@ int main(int nargs, char* argv[])
 					kaon_mc_beta);
 
 				pdf_pion_mc = new DircSpreadGaussian(\
-				    sfunc_sig,\
-				    hit_points_pion_mc,\
-				    s_func_x,\
-				    s_func_y,\
-				    s_func_t);
+					sfunc_sig,\
+					hit_points_pion_mc,\
+					s_func_x,\
+					s_func_y,\
+					s_func_t);
 
 				pdf_kaon_mc = new DircSpreadGaussian(\
 					sfunc_sig,\
