@@ -32,9 +32,6 @@ public:
 		if (r2 < 5*sigma2)
 		{
 			return exp(-r2*sigma2inv);
-// 	  		return std::max(0.0,(1-r2/(sigma2))); //Epanechnikov
-	  // 		return std::max(0.0,(1-r*r/sigma2)*(1-r*r/sigma2)); //quartic
-			  // 		return std::min(sqrt(sigma2),sqrt(sigma2)/r);
 		}
 		else
 		{
@@ -54,6 +51,7 @@ public:
 	};
 
 	double get_single_log_likelihood(dirc_point inpoint);
-	double get_log_likelihood(std::vector<dirc_point> inpoints);
+	double get_log_likelihood(std::vector<dirc_point> &inpoints);
+	double get_log_likelihood_new_support(std::vector<dirc_point> &inpoints, std::vector<dirc_point> &t_support);
 };
 #endif

@@ -63,7 +63,7 @@ double DircSpreadGaussian::get_single_log_likelihood(dirc_point inpoint)
 	
 	return tprob;
 }
-double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
+double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> &inpoints)
 {
 	double tprob = 0;
 	double rval = 0;
@@ -80,6 +80,32 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 			eval_count++;
 		}
 		tprob /= support_points.size();
+		
+		rval += weight*log_mult*log(tprob+10e-3);
+	}
+	rval -= log(inpoints.size());
+	
+	return rval;
+}
+double DircSpreadGaussian::get_log_likelihood_new_support(std::vector<dirc_point> &inpoints, std::vector<dirc_point> &t_support)
+{
+  //Ideally, I find a way tp do this without replicating code....
+  //maybe change above func to call this
+	double tprob = 0;
+	double rval = 0;
+	int eval_count = 0;
+	double log_mult = 4;
+	double weight = 1;
+	for (unsigned int i = 0; i < inpoints.size(); i++)
+	{
+		tprob = 0;
+// 		weight = get_weight(inpoints[i]);
+		for (unsigned int j = 0; j < t_support.size(); j++)
+		{
+			tprob += support_spread_function(t_support[j],inpoints[i]);
+			eval_count++;
+		}
+		tprob /= t_support.size();
 		
 		rval += weight*log_mult*log(tprob+10e-3);
 	}

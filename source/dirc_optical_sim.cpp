@@ -878,7 +878,7 @@ void DircOpticalSim::fill_reg_phi(\
 	int n_photons_phi, \
 	int n_photons_z,\
 	double ckov_theta /*= 47*/, \
-    double particle_bar /*= 0*/,\
+	double particle_bar /*= 0*/,\
 	double particle_x /*= 0*/, \
 	double particle_y /*= 0*/, \
 	double particle_theta /*= 0*/, \
@@ -1043,6 +1043,9 @@ void DircOpticalSim::fill_reg_phi(\
 			//should be threading time information into this soon
             		//
             		//out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;
+			
+			//TODO - stick this in an inlided function to ensure consistency between reg and rand.
+			
 			out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
 			out_val.t = mm_index/(c_mm_ns);
 			ovals.push_back(out_val);
@@ -1924,3 +1927,4 @@ double DircOpticalSim::warp_sens_plane(\
 	
 	return rval*liquidIndex;
 }
+

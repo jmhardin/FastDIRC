@@ -47,12 +47,23 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
 int main(int nargs, char* argv[])
 {  
 	double in_num = 0; const char* in_str;bool inputfile =true;bool out_csv=false;
-    double time_window=10;//time window for compounded pmt hits, in ns	
-    printf("Arguments Passed=%d\n",nargs);
+	double time_window=10;//time window for compounded pmt hits, in ns	
+	printf("Arguments Passed=%d\n",nargs);
 
-    if(nargs==1){inputfile=false;out_csv=true;};
-    if(nargs==2){in_str = argv[1];printf("%s\n",in_str);printf("nargs=1");};
-    if(nargs==3){in_str = argv[1];time_window= atof(argv[2]);printf("Opening %s with time window of %fns\n",in_str,time_window);};
+	if(nargs==1){
+		  inputfile=false;
+		  out_csv=true;
+	};
+	if(nargs==2){
+		in_str = argv[1];
+		printf("%s\n",in_str);
+		printf("nargs=2\n");
+	};
+	if(nargs==3){
+		in_str = argv[1];
+		time_window= atof(argv[2]);
+		printf("Opening %s with time window of %fns\n",in_str,time_window);
+	};
 	
 	
 	double resx = 6;
@@ -108,10 +119,10 @@ int main(int nargs, char* argv[])
 	outcsv_t = 0;//ns
 	
 	
-    if(out_csv){
-        n_phi_phots = 4000;
-        n_z_phots = 8;
-        particle_y += outcsv_y;}
+	if(out_csv){
+	    n_phi_phots = 4000;
+	    n_z_phots = 8;
+	    particle_y += outcsv_y;}
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double refrac_index=1.47;
@@ -272,7 +283,7 @@ int main(int nargs, char* argv[])
 		num_runs=0;
 		coverage_plot=false;
 		std::ifstream f(in_str);
-	    if(!f.is_open()){printf("%s not found!",in_str);return -1;}	
+		if(!f.is_open()){printf("%s not found!",in_str);return -1;}	
 
 		int line_buf_size = 1000; 
 		char  s[line_buf_size];
@@ -397,7 +408,7 @@ int main(int nargs, char* argv[])
 					sim_points = dirc_model->sim_rand_n_photons(\
 						n_sim_phots,\
 						pion_mc_angle,\
-                        BAR[n],\
+						BAR[n],\
 						x[n],\
 						y[n],\
 						theta[n],\
