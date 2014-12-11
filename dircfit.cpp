@@ -20,28 +20,26 @@
 #include <TH2.h>
 #include <TH1.h>
 #include <TRandom3.h>
-    //
-    //
-    //
-    //
-    //
-	//cdd work on faster acos calculation, that is getting angle from beta (most of it comes out at 45 deg.....)
+//
+//
+//
+//
+//
+//cdd work on faster acos calculation, that is getting angle from beta (most of it comes out at 45 deg.....)
 
 //
 //
 //
 //
 //cdd move this fold_x(inpoints) to header?
-std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
-{
-	std::vector<dirc_point> outvec;
-	for (unsigned int i = 0; i < inpoints.size(); i++)
-	{
-		dirc_point tpoint = inpoints[i];
-		tpoint.x = fabs(tpoint.x);
-		outvec.push_back(tpoint);
-	}
-	return outvec;
+std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
+    std::vector<dirc_point> outvec;
+    for (unsigned int i = 0; i < inpoints.size(); i++) {
+        dirc_point tpoint = inpoints[i];
+        tpoint.x = fabs(tpoint.x);
+        outvec.push_back(tpoint);
+    }
+    return outvec;
 }
 
 int main(int nargs, char* argv[])
@@ -76,41 +74,43 @@ int main(int nargs, char* argv[])
 	double mint = 0;
 	double maxt = 1000;
 	double t_unc = 1;
+
 // 	double t_unc = .05;
-	
-	
-	double rad_to_deg = 57.2958;
-	
-	double res_enhance = 1;
 
-	double tracking_unc = .0000*57.3; //mrad
+
+    double rad_to_deg = 57.2958;
+
+    double res_enhance = 1;
+
+    double tracking_unc = .0000*57.3; //mrad
 // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
-	double ckov_unc = .003*57.3; //transport = 3mrad
+    double ckov_unc = .003*57.3; //transport = 3mrad
 
-	
-	double energy = 5.0;
-	double kmass = .4937;
-	double pimass = .1396;
-	double mumass = .1057;
-	
-	double particle_x = 0;
-	double particle_y = 0;
-	double particle_theta = 4;
-	double particle_phi = 40;
-	
-	int num_runs = 1000;
-	
-	int n_sim_phots = 40;
-	
-	int refraction_sim_n = 0;
-	
-	int n_phi_phots = 100000;
+
+    double energy = 5.0;
+    double kmass = .4937;
+    double pimass = .1396;
+    double mumass = .1057;
+
+    double particle_x = 0;
+    double particle_y = 0;
+    double particle_theta = 4;
+    double particle_phi = 40;
+
+    int num_runs = 1000;
+
+    int n_sim_phots = 40;
+
+    int refraction_sim_n = 0;
+
+    int n_phi_phots = 100000;
 // 	int n_phi_phots =2;
-	int n_z_phots = 4;
-	double s_func_x = 6;
-	double s_func_y = s_func_x;
-	double s_func_t = 2;
+    int n_z_phots = 4;
+    double s_func_x = 6;
+    double s_func_y = s_func_x;
+    double s_func_t = 2;
 // 	double s_func_t = .3;
+<<<<<<< HEAD
 	double sfunc_sig = 1;
 	
 	double outcsv_x,outcsv_y,outcsv_t;
@@ -322,27 +322,21 @@ int main(int nargs, char* argv[])
 			{
 				
 				mc_tally++;
-                //
-                //
-                //
-                //cdd set what to zero..... 
-		//aso this was a comment from our first meeting. Nothing is to be set to zero here
-		
-				dirc_model->set_focus_mirror_angle(\ 
+
+				dirc_model->set_focus_mirror_angle(\
 					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 					spread_ang.Gaus(0,mirror_angle_change_yunc));
 				dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,0),\
 					spread_ang.Gaus(0,0));
-                //
-                //and replace acos......
-                //cdd replace 1.47 with double refrac_index=1.47;
-		//aso done
+				//
+				//and replace acos......
+				//cdd replace 1.47 with double refrac_index=1.47;
 				pion_mc_beta = dirc_model->get_beta(E[n],pimass);
 				kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
-				pion_mc_angle = rad_to_deg*acos(1/(refrac_index*pion_mc_beta));
-				kaon_mc_angle = rad_to_deg*acos(1/(refrac_index*kaon_mc_beta));
-			      
+				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
+				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
+
 				hits_trk_is_pion = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
 					n_z_phots,\
@@ -355,7 +349,6 @@ int main(int nargs, char* argv[])
 					0,\
 					ckov_unc/pdf_unc_red_fac,\
 					pion_mc_beta);
-				
 
 				hits_trk_is_kaon = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
@@ -370,24 +363,35 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					kaon_mc_beta);
 
+				DircSpreadGaussian pdf_as_pion(\
+					sfunc_sig,\
+					hits_trk_is_pion,\
+					s_func_x,\
+					s_func_y,\
+					s_func_t);
 
-				pdf_as_pion = new DircSpreadGaussian(\
-				    sfunc_sig,\
-				    hits_trk_is_pion,\
-				    s_func_x,\
-				    s_func_y,\
-				    s_func_t);
-
-				pdf_as_kaon = new DircSpreadGaussian(\
+				DircSpreadGaussian pdf_as_kaon(\
 					sfunc_sig,\
 					hits_trk_is_kaon,\
 					s_func_x,\
 					s_func_y,\
 					s_func_t);
 
-				sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
+				//sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
 
-                //
+				dirc_model->set_focus_mirror_angle(\
+					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+					spread_ang.Gaus(0,mirror_angle_change_yunc));
+				dirc_model->set_upper_wedge_angle_diff(\
+					spread_ang.Gaus(0,wedge_uncertainty),\
+					spread_ang.Gaus(0,upper_wedge_yang_spread));
+				printf("\r  ");
+				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
+
+				fflush(stdout);
+
+				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
+				//
                 //
                 //
                 //cdd is this the same as above? does this need to be set using 0?
@@ -397,8 +401,8 @@ int main(int nargs, char* argv[])
 				dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,wedge_uncertainty),\
 					spread_ang.Gaus(0,upper_wedge_yang_spread));
-             printf("\r  ");
-             printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
+				printf("\r  ");
+				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
 
 				fflush(stdout);
 
@@ -841,4 +845,5 @@ int main(int nargs, char* argv[])
 	
 	int status = 0;
 	return status;
+
 }
