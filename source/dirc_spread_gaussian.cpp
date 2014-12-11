@@ -22,7 +22,10 @@ DircSpreadGaussian::DircSpreadGaussian(\
 	rand_gen = new TRandom3(123);
 	support_points = isupport;
 	
-	printf("presps: %u\n",support_points.size());
+}
+void DircSpreadGaussian::set_support(std::vector<dirc_point> isupport)
+{
+	support_points = isupport;
 }
 void DircSpreadGaussian::support_spread(double spread_sig)
 {
@@ -74,11 +77,9 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 	double weight = 1;
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
-		printf("LL loop %d\n",i);
 		tprob = 0;
 		for (unsigned int j = 0; j < support_points.size(); j++)
 		{
-			printf("LL inner loop %d\n",j);
 			tprob += support_spread_function(support_points[j],inpoints[i]);
 			eval_count++;
 		}

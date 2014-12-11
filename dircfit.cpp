@@ -298,7 +298,19 @@ int main(int nargs, char* argv[])
 		double pion_mc_beta,kaon_mc_beta,pion_mc_angle,kaon_mc_angle;
 		std::vector<dirc_point> hits_trk_is_pion;
 		std::vector<dirc_point> hits_trk_is_kaon;
-		DircSpreadGaussian * pdf_as_pion, * pdf_as_kaon;//could make this an array that is filled...
+		DircSpreadGaussian * pdf_as_pion = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hits_trk_is_pion,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t);
+		DircSpreadGaussian * pdf_as_kaon = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hits_trk_is_kaon,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t);//could make this an array that is filled...
+			//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
 
 		unsigned int r=0;
@@ -362,20 +374,23 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					kaon_mc_beta);
 
-				DircSpreadGaussian pdf_as_pion(\
-					sfunc_sig,\
-					hits_trk_is_pion,\
-					s_func_x,\
-					s_func_y,\
-					s_func_t);
-
+// 				pdf_as_pion = new DircSpreadGaussian(\
+// 					sfunc_sig,\
+// 					hits_trk_is_pion,\
+// 					s_func_x,\
+// 					s_func_y,\
+// 					s_func_t);
+// 
+// 				
+// 				pdf_as_kaon = new DircSpreadGaussian(\
+// 					sfunc_sig,\
+// 					hits_trk_is_kaon,\
+// 					s_func_x,\
+// 					s_func_y,\
+// 					s_func_t);
 				
-				DircSpreadGaussian pdf_as_kaon(\
-					sfunc_sig,\
-					hits_trk_is_kaon,\
-					s_func_x,\
-					s_func_y,\
-					s_func_t);
+				pdf_as_pion->set_support(hits_trk_is_pion);
+				pdf_as_kaon->set_support(hits_trk_is_kaon);
 
 				//sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
 
@@ -504,10 +519,10 @@ int main(int nargs, char* argv[])
 			
 			digitizer.digitize_points(sim_points);
 			
+			
 			llc = pdf_as_pion->get_log_likelihood(sim_points);
 			llf = pdf_as_kaon->get_log_likelihood(sim_points);
 			
-			printf("HERE\n");
 			//printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
 			if(abs(PID[n])==8||PID[n]==9){
 				ll_diff_pion->Fill(llc-llf);

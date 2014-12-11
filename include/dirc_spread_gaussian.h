@@ -24,6 +24,7 @@ public:
 		double t_unc);
 	void support_spread(double spread_sig);
 	void support_x_weight();
+	void set_support(std::vector<dirc_point> isupport);
 
 	
 	//I am so sorry.  I did this disgusting thing for speed
