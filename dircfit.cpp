@@ -110,7 +110,6 @@ int main(int nargs, char* argv[])
     double s_func_y = s_func_x;
     double s_func_t = 2;
 // 	double s_func_t = .3;
-<<<<<<< HEAD
 	double sfunc_sig = 1;
 	
 	double outcsv_x,outcsv_y,outcsv_t;
@@ -370,6 +369,7 @@ int main(int nargs, char* argv[])
 					s_func_y,\
 					s_func_t);
 
+				
 				DircSpreadGaussian pdf_as_kaon(\
 					sfunc_sig,\
 					hits_trk_is_kaon,\
@@ -392,22 +392,7 @@ int main(int nargs, char* argv[])
 
 				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
 				//
-                //
-                //
-                //cdd is this the same as above? does this need to be set using 0?
-				dirc_model->set_focus_mirror_angle(\
-					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
-					spread_ang.Gaus(0,mirror_angle_change_yunc));
-				dirc_model->set_upper_wedge_angle_diff(\
-					spread_ang.Gaus(0,wedge_uncertainty),\
-					spread_ang.Gaus(0,upper_wedge_yang_spread));
-				printf("\r  ");
-				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
 
-				fflush(stdout);
-
-				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
-				//
 				if(abs(PID[n])==8 || PID[n]==9 ){
 					sim_points = dirc_model->sim_rand_n_photons(\
 						n_sim_phots,\
@@ -436,8 +421,8 @@ int main(int nargs, char* argv[])
 				}
 				//simulate pmt hits from background events that occur within t ns of the primary event
 				confounded_tally=0;
-				for (unsigned int i =0; i< r;i++){
-			
+				for (unsigned int i =0; i < r;i++){
+					
 					if(fabs(t[n]-t[i])<time_window && i!=n){
 						confounded_tally++; 
 						if(abs(PID[i])==2 ||PID[i]==3){
@@ -521,7 +506,8 @@ int main(int nargs, char* argv[])
 			
 			llc = pdf_as_pion->get_log_likelihood(sim_points);
 			llf = pdf_as_kaon->get_log_likelihood(sim_points);
-				
+			
+			printf("HERE\n");
 			//printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
 			if(abs(PID[n])==8||PID[n]==9){
 				ll_diff_pion->Fill(llc-llf);

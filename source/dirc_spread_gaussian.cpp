@@ -21,6 +21,8 @@ DircSpreadGaussian::DircSpreadGaussian(\
 	
 	rand_gen = new TRandom3(123);
 	support_points = isupport;
+	
+	printf("presps: %u\n",support_points.size());
 }
 void DircSpreadGaussian::support_spread(double spread_sig)
 {
@@ -63,7 +65,7 @@ double DircSpreadGaussian::get_single_log_likelihood(dirc_point inpoint)
 	
 	return tprob;
 }
-double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> &inpoints)
+double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 {
 	double tprob = 0;
 	double rval = 0;
@@ -72,10 +74,11 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> &inpoints)
 	double weight = 1;
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
+		printf("LL loop %d\n",i);
 		tprob = 0;
-// 		weight = get_weight(inpoints[i]);
 		for (unsigned int j = 0; j < support_points.size(); j++)
 		{
+			printf("LL inner loop %d\n",j);
 			tprob += support_spread_function(support_points[j],inpoints[i]);
 			eval_count++;
 		}

@@ -51,7 +51,7 @@ public:
 	};
 
 	double get_single_log_likelihood(dirc_point inpoint);
-	double get_log_likelihood(std::vector<dirc_point> &inpoints);
+	double get_log_likelihood(std::vector<dirc_point> inpoints);
 	double get_log_likelihood_new_support(std::vector<dirc_point> &inpoints, std::vector<dirc_point> &t_support);
 };
 #endif

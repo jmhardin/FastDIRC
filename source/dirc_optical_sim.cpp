@@ -820,7 +820,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 }
 
 void DircOpticalSim::fill_reg_phi(\
-<<<<<<< HEAD
 	std::vector<dirc_point> &ovals,\
 	int n_photons_phi, \
 	int n_photons_z,\
@@ -839,25 +838,7 @@ void DircOpticalSim::fill_reg_phi(\
 	double particleTheta = particle_theta;
 	double particlePhi = particle_phi;
 	
-=======
-                                  std::vector<dirc_point> &ovals,\
-                                  int n_photons_phi, \
-                                  int n_photons_z,\
-                                  double ckov_theta /*= 47*/, \
-                                  double particle_bar /*= 0*/,\
-                                  double particle_x /*= 0*/, \
-                                  double particle_y /*= 0*/, \
-                                  double particle_theta /*= 0*/, \
-                                  double particle_phi /*= 0*/,\
-                                  double phi_theta_unc /*= 0*/,\
-                                  double ckov_theta_unc /* = 0*/,\
-                                  double beta /* = -1*/) {
-    double sDepth = .95*barDepth;
-    double emitAngle = ckov_theta;
-    double particleTheta = particle_theta;
-    double particlePhi = particle_phi;
 
->>>>>>> 81aa6a74a5dfb1ccd05ffa1ae76a367ea1ce392c
 // 	double sourcez = -sDepth;
     double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
     double sourcex = particle_x;
@@ -931,7 +912,6 @@ void DircOpticalSim::fill_reg_phi(\
             rotate_2d(x,y,cos_pphi,sin_pphi);
 
 // 			printf("pre nogop: %8.04f %8.04f %8.04f pre gop: %8.04f %8.04f %8.04f\n",dx,dy,dz,dir_ray.x(),dir_ray.y(),dir_ray.z());
-<<<<<<< HEAD
 			
 			rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
 			rotate_2d(dy,dx,cos_pphi,sin_pphi);
@@ -1013,83 +993,7 @@ void DircOpticalSim::fill_reg_phi(\
 			ovals.push_back(out_val);
 		}
 	}
-=======
 
-            rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
-            rotate_2d(dy,dx,cos_pphi,sin_pphi);
-
-            z -= barDepth;
-            x += particle_x;
-            y += particle_y;
-
-
-            mm_index += warp_ray(\
-                                 x,\
-                                 y,\
-                                 z,\
-                                 dx,\
-                                 dy,\
-                                 dz,\
-                                 sqrt(1-1/(1.47*1.47)));
-
-            if (z > 0) {
-                continue;
-            }
-
-            spread_wedge_mirror();
-
-            mm_index += warp_wedge(\
-                                   x,\
-                                   y,\
-                                   z,\
-                                   dx,\
-                                   dy,\
-                                   dz);
-
-            //account (quickly) for the bar box having a different angle than the readout
-            rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
-
-            if (z > 0) {
-                continue;
-            }
-
-            mm_index += warp_box(\
-                                 x,\
-                                 y,\
-                                 z,\
-                                 dx,\
-                                 dy,\
-                                 dz);
-
-            if (z > 0) {
-                continue;
-            }
-
-            //check absorbtion
-            if (!(absorbtion_mc(dx,dy))) {
-                continue;
-            }
-
-            dirc_point out_val;
-            mm_index += warp_sens_plane(\
-                                        out_val,\
-                                        x,\
-                                        y,\
-                                        z,\
-                                        dx,\
-                                        dy,\
-                                        dz);
-
-            //should be threading time information into this soon
-            //
-            out_val.t = mm_index/(c_mm_ns);
-
-            if(particle_bar>0) out_val.x += 150-0.5*barWidth+particle_bar*barWidth;
-            else out_val.x +=-150+0.5*barWidth+particle_bar*barWidth;
-            ovals.push_back(out_val);
-        }
-    }
->>>>>>> 81aa6a74a5dfb1ccd05ffa1ae76a367ea1ce392c
 }
 double DircOpticalSim::warp_ray(\
                                 double &x,\
