@@ -20,8 +20,18 @@
 #include <TH2.h>
 #include <TH1.h>
 #include <TRandom3.h>
+    //
+    //
+    //
+    //
+    //
+	//cdd work on faster acos calculation, that is getting angle from beta (most of it comes out at 45 deg.....)
 
-
+//
+//
+//
+//
+//cdd move this fold_x(inpoints) to header?
 std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
 {
 	std::vector<dirc_point> outvec;
@@ -35,15 +45,15 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints)
 }
 
 int main(int nargs, char* argv[])
-{
-	double in_num = 0;
-	
+{  
+	double in_num = 0; const char* in_str;bool inputfile =true;bool out_csv=false;
+    double time_window=10;//time window for compounded pmt hits, in ns	
+    printf("Arguments Passed=%d\n",nargs);
 
-	if (nargs > 1)
-	{
-		in_num = atof(argv[1]);
-		printf("in number: %12.04f\n",in_num);
-	}
+    if(nargs==1){inputfile=false;out_csv=true;};
+    if(nargs==2){in_str = argv[1];printf("%s\n",in_str);printf("nargs=1");};
+    if(nargs==3){in_str = argv[1];time_window= atof(argv[2]);printf("Opening %s with time window of %fns\n",in_str,time_window);};
+	
 	
 	double resx = 6;
 	double resy = 6;
@@ -92,19 +102,16 @@ int main(int nargs, char* argv[])
 // 	double s_func_t = .3;
 	double sfunc_sig = 1;
 	
-	bool out_csv = false;
 	double outcsv_x,outcsv_y,outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
 	outcsv_y = 0;//mm
 	outcsv_t = 0;//ns
 	
-	if (out_csv == true)
-	{
-		n_phi_phots = 4000;
-		n_z_phots = 8;
-		particle_y += outcsv_y;
-	}
 	
+    if(out_csv){
+        n_phi_phots = 4000;
+        n_z_phots = 8;
+        particle_y += outcsv_y;}
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double mirror_angle_change = 0;
@@ -136,14 +143,6 @@ int main(int nargs, char* argv[])
 	int num_cov = 100000;
 	
 	bool up_down_sep = false;
-	bool inputfile = true;//to use "../montecarlo.csv" as input set this to true
-// 	int m=10000;//m=number of simulated mc events
-    
-    
-	double time_window=50;
-     
-	
-	//time window for compounded pmt hits, in ns	
 	TRandom3 spread_ang(rseed+3);
 	
 	
@@ -154,27 +153,17 @@ int main(int nargs, char* argv[])
 		74.11 + mirror_angle_change,\
 		600,\
 		47.87 + box_rot);
-	
-	double muon_beta = dirc_model->get_beta(energy,mumass);
-	double pion_beta = dirc_model->get_beta(energy,pimass);
-	double kaon_beta = dirc_model->get_beta(energy,kmass);
-	
-	double muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
-	double pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
-	double kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
-	
-	printf("Pion emission angle nominal: %12.02f  beta: %12.06f\n",pion_angle,pion_beta);
-	printf("Kaon emission angle nominal: %12.02f  beta: %12.06f\n",kaon_angle,kaon_beta);
-	
+    	
+	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
+	double muon_angle, pion_angle, kaon_angle;
 	
 	char* rootfilename = new char[256];
 	sprintf(rootfilename,"fitdirc.root");	
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
 	
-	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","difference of log likelihood real = pion",8000,-1000,1000);
-	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","difference of log likelihood real = kaon",8000,-1000,1000);
-	
+	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",12000,-1500,1500);
+	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",12000,-1500,1500);
 	TH1F *phot_found_pion = new TH1F("phot_found_pion","number of photons found on pion angle", 1001,-.5,1000.5);
 	TH1F *phot_found_kaon = new TH1F("phot_found_kaon","number of photons found on kaon angle", 1001,-.5,1000.5);
 	
@@ -214,7 +203,7 @@ int main(int nargs, char* argv[])
 	TH1F *liquid_dist = new TH1F("liquid_dist","distance travelled in liquid (mm)",1500,0,1500);
 	dirc_model ->set_store_traveled(true);
 	
-	for (int i = 0; i < 1000000; i++)
+/*	for (int i = 0; i < 1000000; i++)
 	{
 		double tmp;
 		pion_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(pion_beta,ckov_unc, tmp));
@@ -222,7 +211,7 @@ int main(int nargs, char* argv[])
 		kaon_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(kaon_beta,ckov_unc, tmp));
 		kaon_lambda->Fill(tmp);
 	}
-
+//*/
 	
 	
 	
@@ -234,6 +223,7 @@ int main(int nargs, char* argv[])
 		maxy,\
 		resy,\
 		t_unc);
+    /*
 	std::vector<dirc_point> hit_points_pion;
 	std::vector<dirc_point> hit_points_kaon;
 	
@@ -248,35 +238,8 @@ int main(int nargs, char* argv[])
 	
 	
 	dirc_model->set_pmt_offset(pmt_offset);
-	
-	for (int i = 0; i < 1; i++)
-	{
-/* 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
- *  	dirc_model->set_bar_box_angle(bar_box_box_angle);*/
-		hit_points_pion = dirc_model->sim_reg_n_photons(\
-			n_phi_phots,\
-			n_z_phots,\
-			pion_angle,\
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			0,\
-			ckov_unc/pdf_unc_red_fac,\
-			pion_beta);
-		
-		hit_points_kaon = dirc_model->sim_reg_n_photons(\
-			n_phi_phots,\
-			n_z_phots,\
-			kaon_angle,
-			particle_x,\
-			particle_y,\
-			particle_theta,\
-			particle_phi,\
-			0,\
-			ckov_unc/pdf_unc_red_fac,\
-			kaon_beta);
-	}
+	 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
+  	dirc_model->set_bar_box_angle(bar_box_box_angle);
 	
 
 	DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(\
@@ -293,39 +256,38 @@ int main(int nargs, char* argv[])
 		s_func_t);
 
 	DircProbabilitySeparation* sep_pdfs = new DircProbabilitySeparation(pdf_kaon,pdf_pion);
-	
+//  */	
 	printf("Beginning Run\n");
 	double llc, llf;
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
 	dirc_model->set_focmirror_nonuniformity(main_mirror_nonuniformity);
-/*   read in csv file for events and 
- *   initialize an array move to after dirc_model is declared.... 
+/*   read in file for events and 
+ *   initialize an array 
  *    */
 	if(inputfile){
 		int mc_tally=0;
 		int confounded_tally=0;
 		num_runs=0;
 		coverage_plot=false;
-		std::ifstream f("../montecarlo.csv");
-		
-		int line_buf_size = 1000;
-		
+		std::ifstream f(in_str);
+	    if(!f.is_open()){printf("%s not found!",in_str);return -1;}	
+
+		int line_buf_size = 1000; 
 		char  s[line_buf_size];
 		f.getline(s,line_buf_size); //skips first line
 		//declare memory addresses for inputs
-		//int PID[m], BAR[m];
-		//float x[m],y[m],t[m],theta[m],phi[m],E[m];//mm, ns, deg, GeV 
+		//units: mm, ns, deg, GeV 
 		int iPID, iBAR;
 		double ix,iy,it,itheta,iphi,iE;
 		std::vector<int> PID,BAR;
 		std::vector<double> x,y,t,theta,phi,E;
 		
-		//declare registers for beta and angle based on PID, and constructors for hitpoints and pdfs
+		//declare for beta and angle based on PID, and constructors for hitpoints and pdfs
 		double pion_mc_beta,kaon_mc_beta,pion_mc_angle,kaon_mc_angle;
-		std::vector<dirc_point> hit_points_pion_mc;
-		std::vector<dirc_point> hit_points_kaon_mc;
-		DircSpreadGaussian * pdf_pion_mc, * pdf_kaon_mc;//could make this an array that is filled...
+		std::vector<dirc_point> hits_trk_is_pion;
+		std::vector<dirc_point> hits_trk_is_kaon;
+		DircSpreadGaussian * pdf_as_pion, * pdf_as_kaon;//could make this an array that is filled...
 		DircProbabilitySeparation * sep_pdfs_mc;
 
 		unsigned int r=0;
@@ -344,26 +306,33 @@ int main(int nargs, char* argv[])
 		}
 		f.close();
 		for(unsigned int n=0;n<r;n++){
-			if(abs(PID[n])>7 && abs(PID[n])<13)//8 and 9 are pions, 11 and 12 are kaons
+			if(fabs(PID[n])>7 && fabs(PID[n])<13)//8 and 9 are pions, 11 and 12 are kaons
 			{
-				//Set to zero
+				
+				mc_tally++;
+                //
+                //
+                //
+                //cdd set what to zero.....
 				dirc_model->set_focus_mirror_angle(\ 
 					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 					spread_ang.Gaus(0,mirror_angle_change_yunc));
 				dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,0),\
 					spread_ang.Gaus(0,0));
-				mc_tally++;
-		      //  printf("found PID=%i\n",PID[n]);
+                //
+                //and replace acos......
+                //cdd replace 1.47 with double refrac_index=1.47;
 				pion_mc_beta = dirc_model->get_beta(E[n],pimass);
 				kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
 				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
 				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
 			      
-				hit_points_pion_mc = dirc_model->sim_reg_n_photons(\
+				hits_trk_is_pion = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
 					n_z_phots,\
 					pion_mc_angle,\
+					BAR[n],\
 					x[n],\
 					y[n],\
 					theta[n],\
@@ -372,10 +341,12 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					pion_mc_beta);
 				
-				hit_points_kaon_mc = dirc_model->sim_reg_n_photons(\
+
+				hits_trk_is_kaon = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
 					n_z_phots,\
 					kaon_mc_angle,
+					BAR[n],\
 					x[n],\
 					y[n],\
 					theta[n],\
@@ -384,40 +355,45 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					kaon_mc_beta);
 
-				pdf_pion_mc = new DircSpreadGaussian(\
+
+				pdf_as_pion = new DircSpreadGaussian(\
+				    sfunc_sig,\
+				    hits_trk_is_pion,\
+				    s_func_x,\
+				    s_func_y,\
+				    s_func_t);
+
+				pdf_as_kaon = new DircSpreadGaussian(\
 					sfunc_sig,\
-					hit_points_pion_mc,\
+					hits_trk_is_kaon,\
 					s_func_x,\
 					s_func_y,\
 					s_func_t);
 
-				pdf_kaon_mc = new DircSpreadGaussian(\
-					sfunc_sig,\
-					hit_points_kaon_mc,\
-					s_func_x,\
-					s_func_y,\
-					s_func_t);
+				sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
 
-				sep_pdfs_mc = new DircProbabilitySeparation(pdf_kaon_mc,pdf_pion_mc);
-
+                //
+                //
+                //
+                //cdd is this the same as above? does this need to be set using 0?
 				dirc_model->set_focus_mirror_angle(\
 					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 					spread_ang.Gaus(0,mirror_angle_change_yunc));
 				dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,wedge_uncertainty),\
 					spread_ang.Gaus(0,upper_wedge_yang_spread));
-			
-				printf("\r                                                    ");
-				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
+             printf("\r  ");
+             printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
 
 				fflush(stdout);
 
-				//simulate pmt hits from primary mc event
+				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
 				//
 				if(abs(PID[n])==8 || PID[n]==9 ){
 					sim_points = dirc_model->sim_rand_n_photons(\
 						n_sim_phots,\
 						pion_mc_angle,\
+                        BAR[n],\
 						x[n],\
 						y[n],\
 						theta[n],\
@@ -430,6 +406,7 @@ int main(int nargs, char* argv[])
 					sim_points = dirc_model->sim_rand_n_photons(\
 						n_sim_phots,\
 						kaon_mc_angle,\
+						BAR[n],\
 						x[n],\
 						y[n],\
 						theta[n],\
@@ -449,6 +426,7 @@ int main(int nargs, char* argv[])
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
 								47.135,\
+								BAR[i],\
 								x[i],\
 								y[i],\
 								theta[i],\
@@ -464,6 +442,7 @@ int main(int nargs, char* argv[])
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
 								pion_angle,\
+								BAR[i],\
 								x[i],\
 								y[i],\
 								theta[i],\
@@ -480,6 +459,7 @@ int main(int nargs, char* argv[])
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
 								kaon_angle,\
+								BAR[i],\
 								x[i],\
 								y[i],\
 								theta[i],\
@@ -496,6 +476,7 @@ int main(int nargs, char* argv[])
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
 								muon_angle,\
+								BAR[i],\
 								x[i],\
 								y[i],\
 								theta[i],\
@@ -512,17 +493,17 @@ int main(int nargs, char* argv[])
 					confound_points.clear();
 				}//end confounded point generation
 			
-				printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
+				//printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
 
 			}
 			else{continue;}
 			
 			digitizer.digitize_points(sim_points);
 			
-			llc = pdf_pion_mc->get_log_likelihood(sim_points);
-			llf = pdf_kaon_mc->get_log_likelihood(sim_points);
+			llc = pdf_as_pion->get_log_likelihood(sim_points);
+			llf = pdf_as_kaon->get_log_likelihood(sim_points);
 				
-			printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
+			//printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
 			if(abs(PID[n])==8||PID[n]==9){
 				ll_diff_pion->Fill(llc-llf);
 					
@@ -538,7 +519,7 @@ int main(int nargs, char* argv[])
 
 	
 	}//end mc reading script
-
+/*
 	for (int i = 0; i < num_runs; i++)
 
 	{
@@ -554,7 +535,7 @@ int main(int nargs, char* argv[])
 		printf("\r                                                    ");
 		printf("\rrunning iter %d/%d  ",i+1,num_runs);
 		
-/*		if (overlap_x > 0)
+		if (overlap_x > 0)
 		{
 			confound_points = dirc_model->sim_rand_n_photons(\
 			      n_sim_phots,\
@@ -572,7 +553,7 @@ int main(int nargs, char* argv[])
 			{
 			      confound_points[i].x += overlap_x;
 			}
-		}//*/
+		}
 		
 		
 		fflush(stdout);
@@ -586,10 +567,10 @@ int main(int nargs, char* argv[])
 			tracking_unc,\
 			ckov_unc,\
 			pion_beta);
-/*		for (unsigned int i = 0; i < confound_points.size(); i++)
+		for (unsigned int i = 0; i < confound_points.size(); i++)
 		{
 			sim_points.push_back(confound_points[i]);
-		}//*/
+		}//
 		digitizer.digitize_points(sim_points);
 		
 		llc = pdf_pion->get_log_likelihood(sim_points);
@@ -688,7 +669,7 @@ int main(int nargs, char* argv[])
 
 	}
 	
-	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
+//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
 	double x,y,t_ns;
 	for (unsigned int i = 0; i < hit_points_pion.size(); i++)
 	{
@@ -702,7 +683,7 @@ int main(int nargs, char* argv[])
 		pion_dist_t->Fill(t_ns);
 	}
 	
-	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());
+//	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());
 	for (unsigned int i = 0; i < hit_points_kaon.size(); i++)
 	{
 		x = hit_points_kaon[i].x;
@@ -744,7 +725,7 @@ int main(int nargs, char* argv[])
 		}	
 		pion_csv.close();
 		kaon_csv.close();
-	}//*/
+	}//
 	std::vector<double> dist_traveled = dirc_model->get_dist_traveled();
 	for (unsigned int i = 0; i < dist_traveled.size(); i++)
 	{
@@ -810,7 +791,7 @@ int main(int nargs, char* argv[])
 		}
 		printf("Refraction histograms created\n");
 	}
-	
+*/	
 	
 	pion_dist_xy->Write();
 	kaon_dist_xy->Write();
