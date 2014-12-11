@@ -140,7 +140,7 @@ private:
 		std::vector<dirc_point> &ovals,\
 		int n_photons, \
 		double ckov_theta /*= 47*/, \
-        double particle_bar /*=0*/, \
+        	double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
 		double particle_theta /*= 0*/, \
@@ -153,7 +153,7 @@ private:
 		int n_photons_phi, \
 		int n_photons_z,\
 		double ckov_theta /*= 47*/, \
-        double particle_bar /*=0*/, \
+	        double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
 		double particle_theta /*= 0*/, \
@@ -301,7 +301,7 @@ public:
 	std::vector<dirc_point> sim_rand_n_photons(\
 		int n_photons,\
 		double ckov_theta = 47, \
-        double particle_bar= 0, \
+        	double particle_bar= 0, \
 		double particle_x = 0, \
 		double particle_y = 0, \
 		double particle_theta = 0, \
@@ -313,7 +313,7 @@ public:
 		int n_photons_phi,\
 		int n_photons_z,\
 		double ckov_theta = 47, \
-        double particle_bar= 0, \
+        	double particle_bar= 0, \
 		double particle_x = 0, \
 		double particle_y = 0, \
 		double particle_theta = 0, \

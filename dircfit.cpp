@@ -114,6 +114,7 @@ int main(int nargs, char* argv[])
         particle_y += outcsv_y;}
 	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
+	double refrac_index=1.47;
 	double mirror_angle_change = 0;
 	double mirror_angle_change_unc = in_num;
 	double mirror_angle_change_yunc = 0;
@@ -313,7 +314,9 @@ int main(int nargs, char* argv[])
                 //
                 //
                 //
-                //cdd set what to zero.....
+                //cdd set what to zero..... 
+		//aso this was a comment from our first meeting. Nothing is to be set to zero here
+		
 				dirc_model->set_focus_mirror_angle(\ 
 					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 					spread_ang.Gaus(0,mirror_angle_change_yunc));
@@ -323,10 +326,11 @@ int main(int nargs, char* argv[])
                 //
                 //and replace acos......
                 //cdd replace 1.47 with double refrac_index=1.47;
+		//aso done
 				pion_mc_beta = dirc_model->get_beta(E[n],pimass);
 				kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
-				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
-				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
+				pion_mc_angle = rad_to_deg*acos(1/(refrac_index*pion_mc_beta));
+				kaon_mc_angle = rad_to_deg*acos(1/(refrac_index*kaon_mc_beta));
 			      
 				hits_trk_is_pion = dirc_model->sim_reg_n_photons(\
 					n_phi_phots,\
@@ -437,7 +441,7 @@ int main(int nargs, char* argv[])
 						}
 						else if(abs(PID[i])==8||PID[i]==9){
 							pion_beta = dirc_model->get_beta(E[i],pimass);
-							pion_angle = rad_to_deg*acos(1/(1.47*pion_beta));
+							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
@@ -454,7 +458,7 @@ int main(int nargs, char* argv[])
 						}
 						else if(abs(PID[i])==11 || PID[i]==12){
 							kaon_beta = dirc_model->get_beta(E[i],kmass);
-							kaon_angle = rad_to_deg*acos(1/(1.47*kaon_beta));
+							kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
 
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
@@ -471,7 +475,7 @@ int main(int nargs, char* argv[])
 						}
 						else if(abs(PID[i])==5 || PID[i]==6){
 							muon_beta = dirc_model->get_beta(E[i],mumass);
-							muon_angle = rad_to_deg*acos(1/(1.47*muon_beta));
+							muon_angle = rad_to_deg*acos(1/(refrac_index*muon_beta));
 
 							confound_points=dirc_model->sim_rand_n_photons(\
 								n_sim_phots,\
