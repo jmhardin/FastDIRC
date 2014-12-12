@@ -13,7 +13,7 @@ protected:
 	double ll_threshold;
 	double E,x,y,phi,theta;
 	double mass_1,mass_2;
-	double BAR, racking_unc, ckov_unc;
+	double BAR, tracking_unc, ckov_unc;
 	
 	DircOpticalSim* dirc_model;
 	DircSpreadGaussian* spread_func;
@@ -22,19 +22,19 @@ protected:
 		std::vector<dirc_point> &hit_points, \
 		int num_support,\
 		double beta_1,\
-		double beta_2,\
-		double tracking_unc,\
-		double ckov_unc);
+		double beta_2);
 public:
-	DircProgressiveSeparation(DircOpticalSim* imodel,\
+	DircProgressiveSeparation(\
+		DircOpticalSim* imodel,\
+		int imax_phots,\
+		int istep_phots,\
 		double isigma, \
 		double x_unc,\
 		double y_unc,\
 		double t_unc,\
-		double im1 = .4937,\
-		double im2 = .1396,\
-		double ithresh = 20,\
-	);
+		double im1 /*= .4937*/,\
+		double im2 /*= .1396*/,\
+		double ithresh /*= 20*/);
 	
 	void set_masses(double im1,double im2);
 	void set_threshold(double ithresh);
@@ -49,8 +49,7 @@ public:
 		double itheta,\
 		double iphi,\
 		double itracking_unc,\
-		double ickov_unc,\
-	);
+		double ickov_unc);
 	double get_ll_max(\
 		std::vector<dirc_point> &hit_points,\
 		int iBAR,\
@@ -60,7 +59,6 @@ public:
 		double itheta,\
 		double iphi,\
 		double itracking_unc,\
-		double ickov_unc,\
-	);
+		double ickov_unc);
 };
 #endif

@@ -1,10 +1,5 @@
 #include "../include/dirc_progressive_separation.h"
 #include "../include/dirc_spread_gaussian.h"
-int max_sim_phots;
-int step_sim_phots;
-double x,y,phi,theta;
-double BAR, tracking_unc, ckov_unc;
-
 
 DircProgressiveSeparation::DircProgressiveSeparation(\
 	DircOpticalSim* imodel,\
@@ -16,8 +11,7 @@ DircProgressiveSeparation::DircProgressiveSeparation(\
 	double t_unc,\
 	double im1 /*= .4937*/,\
 	double im2 /*= .1396*/,\
-	double ithresh /*= 20*/,\
-)
+	double ithresh /*= 20*/)
 {
 	max_sim_phots = imax_phots;
 	step_sim_phots = istep_phots;
@@ -29,7 +23,7 @@ DircProgressiveSeparation::DircProgressiveSeparation(\
 	//be good - try not to abuse side effects here...
 	dirc_model = imodel;
 	
-	std::vector<dirc_points> no_hits;
+	std::vector<dirc_point> no_hits;
 	
 	spread_func = new DircSpreadGaussian(\
 		isigma,\
@@ -50,7 +44,7 @@ void DircProgressiveSeparation::set_masses(double im1,double im2)
 	mass_1 = im1;
 	mass_2 = im2;
 }
-void set_threshold(double ithresh)
+void DircProgressiveSeparation::set_threshold(double ithresh)
 {
 	ll_threshold = ithresh;
 }
@@ -64,7 +58,7 @@ double DircProgressiveSeparation::ll_diff(\
 	double ll_1,ll_2;
 	//NOTE: arg 2 is ignored for beta >= 0
 	std::vector<dirc_point> support_1 = dirc_model->sim_rand_n_photons(\
-		n_sim_phots,\
+		num_support,\
 		0,\
 		BAR,\
 		x,\
@@ -76,7 +70,7 @@ double DircProgressiveSeparation::ll_diff(\
 		beta_1);
 	
 	std::vector<dirc_point> support_2 = dirc_model->sim_rand_n_photons(\
-		n_sim_phots,\
+		num_support,\
 		0,\
 		BAR,\
 		x,\
@@ -93,7 +87,7 @@ double DircProgressiveSeparation::ll_diff(\
 	return ll_2 - ll_1;
 }
 
-double get_ll_progressive(\
+double DircProgressiveSeparation::get_ll_progressive(\
 	std::vector<dirc_point> &hit_points,\
 	int iBAR,\
 	double iE,\
@@ -102,8 +96,7 @@ double get_ll_progressive(\
 	double itheta,\
 	double iphi,\
 	double itracking_unc,\
-	double ickov_unc,\
-)
+	double ickov_unc)
 {
 	double beta_1 = dirc_model->get_beta(iE,mass_1);
 	double beta_2 = dirc_model->get_beta(iE,mass_2);
@@ -120,10 +113,10 @@ double get_ll_progressive(\
 	for (int i = 0; i < max_sim_phots; i++)
 	{
 		cur_ll += ll_diff(\
-			std::vector<dirc_point> &hit_points, \
-			int step_sim_phots,\
-			double beta_1,\
-			double beta_2);
+			hit_points,\
+			step_sim_phots,\
+			beta_1,\
+			beta_2);
 		
 		if (fabs(cur_ll) > ll_threshold)
 		{
@@ -133,7 +126,7 @@ double get_ll_progressive(\
 	}
 }
 	
-double get_ll_max(\
+double DircProgressiveSeparation::get_ll_max(\
 	std::vector<dirc_point> &hit_points,\
 	int iBAR,\
 	double iE,\
@@ -142,8 +135,7 @@ double get_ll_max(\
 	double itheta,\
 	double iphi,\
 	double itracking_unc,\
-	double ickov_unc,\
-)
+	double ickov_unc)
 {
 	double beta_1 = dirc_model->get_beta(iE,mass_1);
 	double beta_2 = dirc_model->get_beta(iE,mass_2);
@@ -156,9 +148,9 @@ double get_ll_max(\
 	ckov_unc = ickov_unc;
 	
 	return ll_diff(\
-		std::vector<dirc_point> &hit_points, \
-		int max_sim_phots,\
-		double beta_1,\
-		double beta_2);
+		hit_points,\
+		max_sim_phots,\
+		beta_1,\
+		beta_2);
 		
 }
