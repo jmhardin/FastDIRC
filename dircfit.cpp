@@ -348,7 +348,10 @@ int main(int nargs, char* argv[])
 				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
 				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
 
-				hits_trk_is_pion = dirc_model->sim_reg_n_photons(\
+				
+				
+				dirc_model->sim_reg_n_photons(\
+					hits_trk_is_pion,\
 					n_phi_phots,\
 					n_z_phots,\
 					pion_mc_angle,\
@@ -361,7 +364,8 @@ int main(int nargs, char* argv[])
 					ckov_unc/pdf_unc_red_fac,\
 					pion_mc_beta);
 
-				hits_trk_is_kaon = dirc_model->sim_reg_n_photons(\
+				dirc_model->sim_reg_n_photons(\
+					hits_trk_is_kaon,\
 					n_phi_phots,\
 					n_z_phots,\
 					kaon_mc_angle,
@@ -373,21 +377,6 @@ int main(int nargs, char* argv[])
 					0,\
 					ckov_unc/pdf_unc_red_fac,\
 					kaon_mc_beta);
-
-// 				pdf_as_pion = new DircSpreadGaussian(\
-// 					sfunc_sig,\
-// 					hits_trk_is_pion,\
-// 					s_func_x,\
-// 					s_func_y,\
-// 					s_func_t);
-// 
-// 				
-// 				pdf_as_kaon = new DircSpreadGaussian(\
-// 					sfunc_sig,\
-// 					hits_trk_is_kaon,\
-// 					s_func_x,\
-// 					s_func_y,\
-// 					s_func_t);
 				
 				pdf_as_pion->set_support(hits_trk_is_pion);
 				pdf_as_kaon->set_support(hits_trk_is_kaon);
@@ -408,8 +397,10 @@ int main(int nargs, char* argv[])
 				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
 				//
 
+				
 				if(abs(PID[n])==8 || PID[n]==9 ){
-					sim_points = dirc_model->sim_rand_n_photons(\
+					dirc_model->sim_rand_n_photons(\
+						sim_points,\
 						n_sim_phots,\
 						pion_mc_angle,\
 						BAR[n],\
@@ -422,7 +413,8 @@ int main(int nargs, char* argv[])
 						pion_mc_beta);
 				}
 				else{
-					sim_points = dirc_model->sim_rand_n_photons(\
+					dirc_model->sim_rand_n_photons(\
+						sim_points,\
 						n_sim_phots,\
 						kaon_mc_angle,\
 						BAR[n],\
@@ -442,7 +434,8 @@ int main(int nargs, char* argv[])
 						confounded_tally++; 
 						if(abs(PID[i])==2 ||PID[i]==3){
 
-							confound_points=dirc_model->sim_rand_n_photons(\
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
 								n_sim_phots,\
 								47.135,\
 								BAR[i],\
@@ -458,7 +451,8 @@ int main(int nargs, char* argv[])
 							pion_beta = dirc_model->get_beta(E[i],pimass);
 							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 
-							confound_points=dirc_model->sim_rand_n_photons(\
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
 								n_sim_phots,\
 								pion_angle,\
 								BAR[i],\
@@ -475,7 +469,8 @@ int main(int nargs, char* argv[])
 							kaon_beta = dirc_model->get_beta(E[i],kmass);
 							kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
 
-							confound_points=dirc_model->sim_rand_n_photons(\
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
 								n_sim_phots,\
 								kaon_angle,\
 								BAR[i],\
@@ -492,7 +487,8 @@ int main(int nargs, char* argv[])
 							muon_beta = dirc_model->get_beta(E[i],mumass);
 							muon_angle = rad_to_deg*acos(1/(refrac_index*muon_beta));
 
-							confound_points=dirc_model->sim_rand_n_photons(\
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
 								n_sim_phots,\
 								muon_angle,\
 								BAR[i],\

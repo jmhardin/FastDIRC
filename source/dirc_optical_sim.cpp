@@ -433,7 +433,8 @@ double DircOpticalSim::get_beta(double E, double m) {
     }
 
 }
-std::vector<dirc_point> DircOpticalSim::sim_rand_n_photons(\
+void DircOpticalSim::sim_rand_n_photons(\
+	std::vector<dirc_point> &out_points,\
         int n_photons, \
         double ckov_theta /*= 47*/, \
         double particle_bar /*=0*/, \
@@ -445,7 +446,8 @@ std::vector<dirc_point> DircOpticalSim::sim_rand_n_photons(\
         double ckov_theta_unc /* = .0055*57.3*/,\
         double beta /* = -1*/) {
 
-    std::vector<dirc_point> out_points;
+//     std::vector<dirc_point> out_points;
+    out_points.clear();
     fill_rand_phi(\
                   out_points,\
                   n_photons,\
@@ -458,9 +460,10 @@ std::vector<dirc_point> DircOpticalSim::sim_rand_n_photons(\
                   phi_theta_unc,\
                   ckov_theta_unc,\
                   beta);
-    return out_points;
+//     return out_points;
 }
-std::vector<dirc_point> DircOpticalSim::sim_reg_n_photons(\
+void DircOpticalSim::sim_reg_n_photons(\
+	std::vector<dirc_point> &out_points,\
         int n_photons_phi, \
         int n_photons_z,\
         double ckov_theta /*= 47*/, \
@@ -473,7 +476,8 @@ std::vector<dirc_point> DircOpticalSim::sim_reg_n_photons(\
         double ckov_theta_unc /* = 0*/,\
         double beta /* = -1*/) {
 
-    std::vector<dirc_point> out_points;
+//     std::vector<dirc_point> out_points;
+    out_points.clear();
     fill_reg_phi(\
                  out_points,\
                  n_photons_phi,\
@@ -488,7 +492,7 @@ std::vector<dirc_point> DircOpticalSim::sim_reg_n_photons(\
                  ckov_theta_unc,\
                  beta);
 
-    return out_points;
+//     return out_points;
 }
 void DircOpticalSim::fill_rand_phi(\
                                    std::vector<dirc_point> &ovals,\
@@ -840,76 +844,76 @@ void DircOpticalSim::fill_reg_phi(\
 	
 
 // 	double sourcez = -sDepth;
-    double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
-    double sourcex = particle_x;
-    double tsy = sourcey;
-    double tsx = sourcex;
-    sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
-    sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
+	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
+	double sourcex = particle_x;
+	double tsy = sourcey;
+	double tsx = sourcex;
+	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
+	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
 
 // 	srcrays.set_position(Math::Vector<3>(sourcex,sourcey,sourcez));
     //Need to hand absolute positions to warp_ray
 // 	srcrays.set_position(Math::Vector<3>(0,0,0));
 // 	srcrays.set_material(oil);
 
-    double sourceOff,regPhi;
+	double sourceOff,regPhi;
 
-    int num_through = 0;
-    double temit;
-    double rand_add;
-    double wavelength = 400;
+	int num_through = 0;
+	double temit;
+	double rand_add;
+	double wavelength = 400;
 
-    double x,y,z,dx,dy,dz;
+	double x,y,z,dx,dy,dz;
 
-    double cos_ptheta = cos(particle_theta/57.3);
-    double sin_ptheta = sin(particle_theta/57.3);
-    double cos_pphi = cos(particle_phi/57.3);
-    double sin_pphi = sin(particle_phi/57.3);
+	double cos_ptheta = cos(particle_theta/57.3);
+	double sin_ptheta = sin(particle_theta/57.3);
+	double cos_pphi = cos(particle_phi/57.3);
+	double sin_pphi = sin(particle_phi/57.3);
 
-    double mm_index = 0;
-    double c_mm_ns = 300;
+	double mm_index = 0;
+	double c_mm_ns = 300;
 
-    double sin_emit;
-    double cos_emit;
-    double sin_regphi;
-    double cos_regphi;
+	double sin_emit;
+	double cos_emit;
+	double sin_regphi;
+	double cos_regphi;
 
 
-    for (int i = 0; i < n_photons_z; i++) {
-        sourceOff = (i+.5)*sDepth/(n_photons_z);
+	for (int i = 0; i < n_photons_z; i++) {
+		sourceOff = (i+.5)*sDepth/(n_photons_z);
 
-        for (int j = 0; j < n_photons_phi; j++) {
-            regPhi = j*2*3.14159265357/(n_photons_phi);
+		for (int j = 0; j < n_photons_phi; j++) {
+		regPhi = j*2*3.14159265357/(n_photons_phi);
 
-            if (beta < 0) {
-                rand_add = rand_gen->Gaus(0,ckov_theta_unc);
-                temit = emitAngle + rand_add;
-            } else {
-                temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
-            }
+		if (beta < 0) {
+			rand_add = rand_gen->Gaus(0,ckov_theta_unc);
+			temit = emitAngle + rand_add;
+		} else {
+			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
+		}
 
-            mm_index = (sourceOff - barDepth)*1.47;
+		mm_index = (sourceOff - barDepth)*1.47;
 
-            x = 0;
-            y = 0;
-            z = sourceOff;
+		x = 0;
+		y = 0;
+		z = sourceOff;
 
-            //save some time ~30ms per 400k
-            //could compute sin even faster with a taylor series
-            sin_emit = sin(temit/57.2957795131);
-            cos_emit = sqrt(1-sin_emit*sin_emit);
-            cos_regphi = cos(regPhi);
-            sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
+		//save some time ~30ms per 400k
+		//could compute sin even faster with a taylor series
+		sin_emit = sin(temit/57.2957795131);
+		cos_emit = sqrt(1-sin_emit*sin_emit);
+		cos_regphi = cos(regPhi);
+		sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
 
 // 			sincos(temit/57.2957795131,&sin_emit,&cos_emit);
 // 			sincos(regPhi,&sin_regphi,&cos_regphi);
 
-            dx = sin_emit*cos_regphi;
-            dy = sin_emit*sin_regphi;
-            dz = cos_emit;
+		dx = sin_emit*cos_regphi;
+		dy = sin_emit*sin_regphi;
+		dz = cos_emit;
 
-            rotate_2d(z,y,cos_ptheta,sin_ptheta);
-            rotate_2d(x,y,cos_pphi,sin_pphi);
+		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+		rotate_2d(x,y,cos_pphi,sin_pphi);
 
 // 			printf("pre nogop: %8.04f %8.04f %8.04f pre gop: %8.04f %8.04f %8.04f\n",dx,dy,dz,dir_ray.x(),dir_ray.y(),dir_ray.z());
 			

@@ -298,7 +298,8 @@ public:
 		double phi_theta_unc = .0015*57.3,\
 		double ckov_theta_unc = .0055*57.3,\
 		double beta = -1);
-	std::vector<dirc_point> sim_rand_n_photons(\
+	void sim_rand_n_photons(\
+		std::vector<dirc_point> &out_points,\
 		int n_photons,\
 		double ckov_theta = 47, \
         	double particle_bar= 0, \
@@ -309,7 +310,8 @@ public:
 		double phi_theta_unc = .08594,\
 		double ckov_theta_unc = .3151,\
 		double beta = -1);	
-	std::vector<dirc_point> sim_reg_n_photons(\
+	void sim_reg_n_photons(\
+		std::vector<dirc_point> &out_points,\
 		int n_photons_phi,\
 		int n_photons_z,\
 		double ckov_theta = 47, \

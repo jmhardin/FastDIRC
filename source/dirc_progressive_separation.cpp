@@ -57,7 +57,9 @@ double DircProgressiveSeparation::ll_diff(\
 {
 	double ll_1,ll_2;
 	//NOTE: arg 2 is ignored for beta >= 0
-	std::vector<dirc_point> support_1 = dirc_model->sim_rand_n_photons(\
+	std::vector<dirc_point> support_1; 
+	 dirc_model->sim_rand_n_photons(\
+		support_1,\
 		num_support,\
 		0,\
 		BAR,\
@@ -69,7 +71,9 @@ double DircProgressiveSeparation::ll_diff(\
 		ckov_unc,\
 		beta_1);
 	
-	std::vector<dirc_point> support_2 = dirc_model->sim_rand_n_photons(\
+	std::vector<dirc_point> support_2;
+	dirc_model->sim_rand_n_photons(\
+		support_2,\
 		num_support,\
 		0,\
 		BAR,\
