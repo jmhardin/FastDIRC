@@ -550,6 +550,7 @@ void DircOpticalSim::fill_rand_phi(\
         randPhi = rand_gen->Uniform(0,2*3.14159265);
         sourceOff = -rand_gen->Uniform(0,barDepth);
 
+	
         if (beta < 0) {
             rand_add = rand_gen->Gaus(0,ckov_theta_unc);
             temit = emitAngle + rand_add;
@@ -588,10 +589,10 @@ void DircOpticalSim::fill_rand_phi(\
                              dz,\
                              sqrt(1-1/(1.47*1.47)));
 
-// 		if (z > 0)
-// 		{
-// 			continue;
-// 		}
+		if (z > 0)
+		{
+			continue;
+		}
 
         spread_wedge_mirror();
 

@@ -212,7 +212,7 @@ int main(int nargs, char* argv[])
 	TH1F *kaon_lambda = new TH1F("kaon_lambda","kaon wavelength distribution",450,250,700);
 
 	TH1F *liquid_dist = new TH1F("liquid_dist","distance travelled in liquid (mm)",1500,0,1500);
-	dirc_model ->set_store_traveled(true);
+	dirc_model->set_store_traveled(false);
 	
 /*	for (int i = 0; i < 1000000; i++)
 	{
