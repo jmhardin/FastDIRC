@@ -644,8 +644,8 @@ void DircOpticalSim::fill_rand_phi(\
         //
         //cdd shift the x value to account for bar number here, units in mm
         //
-        if(particle_bar>0) out_val.x += 150-0.5*barWidth+particle_bar*barWidth;
-        else out_val.x +=-150+0.5*barWidth+particle_bar*barWidth;
+        out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
+	
         ovals.push_back(out_val);
     }
 }

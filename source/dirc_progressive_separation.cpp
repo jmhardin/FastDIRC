@@ -48,7 +48,27 @@ void DircProgressiveSeparation::set_threshold(double ithresh)
 {
 	ll_threshold = ithresh;
 }
-
+double DircProgressiveSeparation::ll_pts(\
+	std::vector<dirc_point> &hit_points, \
+	int num_support,\
+	double beta)
+{
+	std::vector<dirc_point> support; 
+	dirc_model->sim_rand_n_photons(\
+		support,\
+		num_support,\
+		0,\
+		BAR,\
+		x,\
+		y,\
+		theta,\
+		phi,\
+		tracking_unc,\
+		ckov_unc,\
+		beta);
+	
+	return spread_func->get_log_likelihood_new_support(hit_points, support);
+}
 double DircProgressiveSeparation::ll_diff(\
 	std::vector<dirc_point> &hit_points, \
 	int num_support,\
@@ -57,8 +77,9 @@ double DircProgressiveSeparation::ll_diff(\
 {
 	double ll_1,ll_2;
 	//NOTE: arg 2 is ignored for beta >= 0
+	//Also, declare these vectors beforehand preferably - manage memory better for speed if needed
 	std::vector<dirc_point> support_1; 
-	 dirc_model->sim_rand_n_photons(\
+	dirc_model->sim_rand_n_photons(\
 		support_1,\
 		num_support,\
 		0,\
@@ -104,23 +125,95 @@ double DircProgressiveSeparation::get_ll_progressive(\
 {
 	double beta_1 = dirc_model->get_beta(iE,mass_1);
 	double beta_2 = dirc_model->get_beta(iE,mass_2);
-	
+// 	printf("betas: %12.04f %12.04f\n",beta_1,beta_2);
+	BAR = iBAR;
 	x = ix;
 	y = iy;
 	theta = itheta;
 	phi = iphi;
 	tracking_unc = itracking_unc;
 	ckov_unc = ickov_unc;
+	std::vector<dirc_point> support_1; 
+	std::vector<dirc_point> support_2; 
+	std::vector<double> accum_likelihood_1;
+	std::vector<double> accum_likelihood_2;
+	std::vector<double> fill_likelihood_1;
+	std::vector<double> fill_likelihood_2;
+	int support_total_1 = 0;
+	int support_total_2 = 0;
+	
+	for (unsigned int i = 0; i < hit_points.size(); i++)
+	{
+		//initialize arrays
+		accum_likelihood_1.push_back(0);
+		accum_likelihood_2.push_back(0);
+	}
 	
 	double cur_ll = 0;
+	double cur_ll_1 = 0;
+	double cur_ll_2 = 0;
+	double add_ll_1 = 0;
+	double add_ll_2 = 0;
 	
-	for (int i = 0; i < max_sim_phots; i++)
+	for (int i = 0; i < max_sim_phots/step_sim_phots; i++)
 	{
-		cur_ll += ll_diff(\
-			hit_points,\
+		//sim another set
+		dirc_model->sim_rand_n_photons(\
+			support_1,\
 			step_sim_phots,\
-			beta_1,\
+			0,\
+			BAR,\
+			x,\
+			y,\
+			theta,\
+			phi,\
+			tracking_unc,\
+			ckov_unc,\
+			beta_1);
+		
+		support_total_1 += support_1.size();
+		
+		dirc_model->sim_rand_n_photons(\
+			support_2,\
+			step_sim_phots,\
+			0,\
+			BAR,\
+			x,\
+			y,\
+			theta,\
+			phi,\
+			tracking_unc,\
+			ckov_unc,\
 			beta_2);
+		
+		support_total_2 += support_2.size();
+		
+		spread_func->fill_likelihood_new_support(\
+			fill_likelihood_1,\
+			support_1,\
+			hit_points);
+		
+		spread_func->fill_likelihood_new_support(\
+			fill_likelihood_2,\
+			support_2,\
+			hit_points);
+		
+		cur_ll_1 = 0;
+		cur_ll_2 = 0;
+		for(unsigned int j = 0; j < fill_likelihood_1.size(); j++)
+		{
+			accum_likelihood_1[j] += fill_likelihood_1[j];
+			accum_likelihood_2[j] += fill_likelihood_2[j];
+			
+			cur_ll_1 += log(accum_likelihood_1[j]/support_total_1+1e-2);
+			cur_ll_2 += log(accum_likelihood_2[j]/support_total_2+1e-2);
+			
+// 			printf("accum_likelihood_1 accum_likelihood_2: %04d %12.04f %12.04f\n",j,accum_likelihood_1[j],accum_likelihood_2[j]);
+		}
+		
+		cur_ll = cur_ll_2 - cur_ll_1;
+		cur_ll *= 4;
+// 		printf("1 2 diff: %12.04f %12.04f %12.04f\n",cur_ll_1,cur_ll_2,cur_ll);
 		
 		if (fabs(cur_ll) > ll_threshold)
 		{
@@ -128,8 +221,28 @@ double DircProgressiveSeparation::get_ll_progressive(\
 			return cur_ll;
 		}
 	}
+	return cur_ll;
 }
-	
+void DircProgressiveSeparation::get_inf_and_ll(\
+	int &num_neg_inf,\
+	double &ll_sum,\
+	std::vector<double> prob_vals)
+{
+	num_neg_inf = 0;
+	ll_sum = 0;
+	for(unsigned int i = 0; i < prob_vals.size(); i++)
+	{
+		if (prob_vals[i] < 1e-5)
+		{
+			//too small
+			num_neg_inf++;
+		}
+		else
+		{
+			ll_sum += log(prob_vals[i]);
+		}
+	}
+}
 double DircProgressiveSeparation::get_ll_max(\
 	std::vector<dirc_point> &hit_points,\
 	int iBAR,\

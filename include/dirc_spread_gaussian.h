@@ -10,6 +10,7 @@ class DircSpreadGaussian
 {
 private:
 	double x_sig2inv,y_sig2inv,t_sig2inv;
+	double spread_func_norm, spread_func_norm_inv;
 	double lin_slope, r_trans, sigma2, sigma2inv,max_val;
 	TRandom3 *rand_gen;
 	std::vector<dirc_point> support_points;
@@ -54,5 +55,9 @@ public:
 	double get_single_log_likelihood(dirc_point inpoint);
 	double get_log_likelihood(std::vector<dirc_point> inpoints);
 	double get_log_likelihood_new_support(std::vector<dirc_point> &inpoints, std::vector<dirc_point> &t_support);
+	void fill_likelihood_new_support(\
+		std::vector<double> &likelihood_vals,\
+		std::vector<dirc_point> new_support,\
+		std::vector<dirc_point> inpoints);
 };
 #endif

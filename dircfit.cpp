@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 #include "include/dirc_optical_sim.h"
 #include "include/dirc_point.h"
@@ -16,6 +17,7 @@
 #include "include/dirc_spread_linear_soft.h"
 #include "include/dirc_spread_gaussian.h"
 #include "include/dirc_digitizer.h"
+#include "include/dirc_progressive_separation.h"
 #include <TFile.h>
 #include <TH2.h>
 #include <TH1.h>
@@ -44,6 +46,8 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 
 int main(int nargs, char* argv[])
 {  
+	clock_t timing_clock;
+  
 	double in_num = 0; const char* in_str;bool inputfile =true;bool out_csv=false;
 	double time_window=10;//time window for compounded pmt hits, in ns	
 	printf("Arguments Passed=%d\n",nargs);
@@ -78,39 +82,45 @@ int main(int nargs, char* argv[])
 // 	double t_unc = .05;
 
 
-    double rad_to_deg = 57.2958;
+	double rad_to_deg = 57.2958;
 
-    double res_enhance = 1;
+	double res_enhance = 1;
 
-    double tracking_unc = .0000*57.3; //mrad
-// 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
-    double ckov_unc = .003*57.3; //transport = 3mrad
+	double tracking_unc = .0000*57.3; //mrad
+    // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
+	double ckov_unc = .003*57.3; //transport = 3mrad
 
 
-    double energy = 5.0;
-    double kmass = .4937;
-    double pimass = .1396;
-    double mumass = .1057;
+	double energy = 5.0;
+	double kmass = .4937;
+	double pimass = .1396;
+	double mumass = .1057;
 
-    double particle_x = 0;
-    double particle_y = 0;
-    double particle_theta = 4;
-    double particle_phi = 40;
+	double particle_x = 0;
+	double particle_y = 0;
+	double particle_theta = 4;
+	double particle_phi = 40;
 
-    int num_runs = 1000;
+	int num_runs = 1000;
 
-    int n_sim_phots = 40;
+	int n_sim_phots = 40;
 
-    int refraction_sim_n = 0;
+	int refraction_sim_n = 0;
 
-    int n_phi_phots = 100000;
-// 	int n_phi_phots =2;
-    int n_z_phots = 4;
-    double s_func_x = 6;
-    double s_func_y = s_func_x;
-    double s_func_t = 2;
+	int n_phi_phots = 100000;
+    // 	int n_phi_phots =2;
+	int n_z_phots = 4;
+	int n_step_phots = 1000;
+// 	n_step_phots = n_z_phots*n_phi_phots;
+	double s_func_x = 6;
+	double s_func_y = s_func_x;
+	double s_func_t = 2;
 // 	double s_func_t = .3;
 	double sfunc_sig = 1;
+	
+	double prog_thresh = 2;
+	
+	bool use_prog_sep = true;
 	
 	double outcsv_x,outcsv_y,outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
@@ -137,7 +147,7 @@ int main(int nargs, char* argv[])
 	double main_mirror_nonuniformity = 0;
 	
 	double upper_wedge_yang_spread = 0;
-	int rseed = 0;
+	int rseed = 1337;
 	
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
@@ -183,6 +193,8 @@ int main(int nargs, char* argv[])
 	TH1F *ref_pion_after = new TH1F("ref_pion_after","Angle of Pion Photons going out of interface", 9000,0,90);
 	TH1F *ref_kaon_after = new TH1F("ref_kaon_after","Angle of Kaon Photons going out of interface", 9000,0,90);
 
+	
+	
 	TH1F *pion_dist_t = new TH1F("pion_dist_t","t val of intercepted points - pion",(maxt-mint)/(res_enhance*rest),mint,maxt);
 	TH1F *kaon_dist_t = new TH1F("kaon_dist_t","t val of intercepted points - kaon",(maxt-mint)/(res_enhance*rest),mint,maxt);
 
@@ -212,17 +224,11 @@ int main(int nargs, char* argv[])
 	TH1F *kaon_lambda = new TH1F("kaon_lambda","kaon wavelength distribution",450,250,700);
 
 	TH1F *liquid_dist = new TH1F("liquid_dist","distance travelled in liquid (mm)",1500,0,1500);
-	dirc_model->set_store_traveled(false);
 	
-/*	for (int i = 0; i < 1000000; i++)
-	{
-		double tmp;
-		pion_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(pion_beta,ckov_unc, tmp));
-		pion_lambda->Fill(tmp);
-		kaon_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(kaon_beta,ckov_unc, tmp));
-		kaon_lambda->Fill(tmp);
-	}
-//*/
+	TH1F *simulation_time = new TH1F("simulation_time","Simulation time per particle",1001,-.5,1000.5);
+	
+	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
+	
 	
 	
 	
@@ -269,7 +275,7 @@ int main(int nargs, char* argv[])
 	DircProbabilitySeparation* sep_pdfs = new DircProbabilitySeparation(pdf_kaon,pdf_pion);
 //  */	
 	printf("Beginning Run\n");
-	double llc, llf;
+	double llc, llf, ll_diff;
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
 	dirc_model->set_focmirror_nonuniformity(main_mirror_nonuniformity);
@@ -312,6 +318,20 @@ int main(int nargs, char* argv[])
 			s_func_t);//could make this an array that is filled...
 			//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
+		
+		DircProgressiveSeparation *progressive_separation = \
+			new DircProgressiveSeparation(\
+				dirc_model,\
+				n_phi_phots*n_z_phots,\
+				n_step_phots,\
+				sfunc_sig,\
+				s_func_x,\
+				s_func_y,\
+				s_func_t,\
+				kmass,\
+				pimass,\
+				prog_thresh);
+				
 
 		unsigned int r=0;
 		while(f>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
@@ -334,12 +354,6 @@ int main(int nargs, char* argv[])
 				
 				mc_tally++;
 
-				dirc_model->set_focus_mirror_angle(\
-					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
-					spread_ang.Gaus(0,mirror_angle_change_yunc));
-				dirc_model->set_upper_wedge_angle_diff(\
-					spread_ang.Gaus(0,0),\
-					spread_ang.Gaus(0,0));
 				//
 				//and replace acos......
 				//cdd replace 1.47 with double refrac_index=1.47;
@@ -347,39 +361,6 @@ int main(int nargs, char* argv[])
 				kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
 				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
 				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
-
-				
-				
-				dirc_model->sim_reg_n_photons(\
-					hits_trk_is_pion,\
-					n_phi_phots,\
-					n_z_phots,\
-					pion_mc_angle,\
-					BAR[n],\
-					x[n],\
-					y[n],\
-					theta[n],\
-					phi[n],\
-					0,\
-					ckov_unc/pdf_unc_red_fac,\
-					pion_mc_beta);
-
-				dirc_model->sim_reg_n_photons(\
-					hits_trk_is_kaon,\
-					n_phi_phots,\
-					n_z_phots,\
-					kaon_mc_angle,
-					BAR[n],\
-					x[n],\
-					y[n],\
-					theta[n],\
-					phi[n],\
-					0,\
-					ckov_unc/pdf_unc_red_fac,\
-					kaon_mc_beta);
-				
-				pdf_as_pion->set_support(hits_trk_is_pion);
-				pdf_as_kaon->set_support(hits_trk_is_kaon);
 
 				//sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
 
@@ -510,29 +491,132 @@ int main(int nargs, char* argv[])
 			
 				//printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
 
-			}
-			else{continue;}
+				
+				//Begin analysis
 			
-			digitizer.digitize_points(sim_points);
-			
-			
-			llc = pdf_as_pion->get_log_likelihood(sim_points);
-			llf = pdf_as_kaon->get_log_likelihood(sim_points);
-			
-			//printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],llc-llf);
-			if(abs(PID[n])==8||PID[n]==9){
-				ll_diff_pion->Fill(llc-llf);
+				//Zero out uncertainties (assume we are starting from calibrated versions
+				
+				digitizer.digitize_points(sim_points);
+				
+				
+				
+				timing_clock = clock();
+				
+				if (use_prog_sep == true)
+				{
+					dirc_model->set_focus_mirror_angle(\
+						spread_ang.Gaus(74.11,0),\
+						spread_ang.Gaus(0,0));
+					dirc_model->set_upper_wedge_angle_diff(\
+						spread_ang.Gaus(0,0),\
+						spread_ang.Gaus(0,0));
 					
-				phot_found_pion->Fill(sim_points.size()/(confounded_tally+1));//divide by tally+1 for an average number of photons per event? or do we want to know the total number of photons in the timewindow?
-			}
-			else{
+					
+					ll_diff = progressive_separation->get_ll_progressive(\
+						sim_points,\
+						BAR[n],\
+						E[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc);
+				}
+				else
+				{
+					dirc_model->set_focus_mirror_angle(\
+						spread_ang.Gaus(74.11,0),\
+						spread_ang.Gaus(0,0));
+					dirc_model->set_upper_wedge_angle_diff(\
+						spread_ang.Gaus(0,0),\
+						spread_ang.Gaus(0,0));
+						
+// 					dirc_model->sim_reg_n_photons(\
+// 						hits_trk_is_pion,\
+// 						n_phi_phots,\
+// 						n_z_phots,\
+// 						pion_mc_angle,\
+// 						BAR[n],\
+// 						x[n],\
+// 						y[n],\
+// 						theta[n],\
+// 						phi[n],\
+// 						0,\
+// 						ckov_unc/pdf_unc_red_fac,\
+// 						pion_mc_beta);
+// 
+// 					dirc_model->sim_reg_n_photons(\
+// 						hits_trk_is_kaon,\
+// 						n_phi_phots,\
+// 						n_z_phots,\
+// 						kaon_mc_angle,
+// 						BAR[n],\
+// 						x[n],\
+// 						y[n],\
+// 						theta[n],\
+// 						phi[n],\
+// 						0,\
+// 						ckov_unc/pdf_unc_red_fac,\
+// 						kaon_mc_beta);
+					
+					dirc_model->sim_rand_n_photons(\
+						hits_trk_is_pion,\
+						n_phi_phots*n_z_phots,\
+						pion_mc_angle,\
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc/pdf_unc_red_fac,\
+						pion_mc_beta);
 
-				ll_diff_kaon->Fill(llc-llf);
+					dirc_model->sim_rand_n_photons(\
+						hits_trk_is_kaon,\
+						n_phi_phots*n_z_phots,\
+						kaon_mc_angle,
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc/pdf_unc_red_fac,\
+						kaon_mc_beta);
 					
-				phot_found_kaon->Fill(sim_points.size()/(confounded_tally+1));
+					pdf_as_pion->set_support(hits_trk_is_pion);
+					pdf_as_kaon->set_support(hits_trk_is_kaon);
+					
+					
+// 					printf("betas: %12.04f %12.04f\n",pion_mc_beta,kaon_mc_beta);
+					
+					llc = pdf_as_pion->get_log_likelihood(sim_points);
+					llf = pdf_as_kaon->get_log_likelihood(sim_points);
+					
+					ll_diff = llc - llf;
+				}
+				
+				timing_clock = clock() - timing_clock;
+				
+				simulation_time->Fill(((float)timing_clock)/(1000*CLOCKS_PER_SEC));
+				
+// 				printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],ll_diff);
+				if(abs(PID[n])==8||PID[n]==9){
+					ll_diff_pion->Fill(ll_diff);
+						
+					phot_found_pion->Fill(sim_points.size()/(confounded_tally+1));//divide by tally+1 for an average number of photons per event? or do we want to know the total number of photons in the timewindow?
+				}
+				else{
+
+					ll_diff_kaon->Fill(ll_diff);
+						
+					phot_found_kaon->Fill(sim_points.size()/(confounded_tally+1));
+				}
 			}
 		}
-
+		printf("\n");//ensure we're on a new line at the end
 	
 	}//end mc reading script
 /*
@@ -838,6 +922,8 @@ int main(int nargs, char* argv[])
 	
 	ref_theta_cphi_pion->Write();
 	ref_theta_cphi_kaon->Write();
+	
+	simulation_time->Write();
 	tfile->Close();
 	
 	int status = 0;

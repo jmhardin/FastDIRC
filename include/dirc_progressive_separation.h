@@ -23,6 +23,15 @@ protected:
 		int num_support,\
 		double beta_1,\
 		double beta_2);
+	double ll_pts(\
+		std::vector<dirc_point> &hit_points, \
+		int num_support,\
+		double beta);
+	
+	void get_inf_and_ll(\
+		int &num_neg_inf,\
+		double &ll_sum,\
+		std::vector<double> prob_vals);
 public:
 	DircProgressiveSeparation(\
 		DircOpticalSim* imodel,\
