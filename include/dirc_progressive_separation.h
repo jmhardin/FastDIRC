@@ -14,6 +14,7 @@ protected:
 	double E,x,y,phi,theta;
 	double mass_1,mass_2;
 	double BAR, tracking_unc, ckov_unc;
+	double fudge_sigma;
 	
 	DircOpticalSim* dirc_model;
 	DircSpreadGaussian* spread_func;
@@ -48,6 +49,8 @@ public:
 	void set_masses(double im1,double im2);
 	void set_threshold(double ithresh);
 	void set_max_step_phots(int im, int is);
+	
+	
 	
 	double get_ll_progressive(\
 		std::vector<dirc_point> &hit_points,\

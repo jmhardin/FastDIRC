@@ -26,6 +26,7 @@ public:
 	void support_spread(double spread_sig);
 	void support_x_weight();
 	void set_support(std::vector<dirc_point> isupport);
+	void set_gaus_sigma(double isigma);
 
 	
 	//I am so sorry.  I did this disgusting thing for speed
@@ -49,6 +50,7 @@ public:
 		dy2 *= dy2;
 		dt2 = support.t - test.t;
 		dt2 *= dt2;
+// 		printf("%12.04f %12.04f %12.04f %12.04f %12.04f\n",dx2,dy2,dt2,dx2*x_sig2inv+dy2*y_sig2inv+dt2*t_sig2inv,sigma2inv);
 		return radius_spread_function(dx2*x_sig2inv+dy2*y_sig2inv+dt2*t_sig2inv);
 	};
 

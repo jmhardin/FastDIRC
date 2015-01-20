@@ -5,7 +5,7 @@ DircProgressiveSeparation::DircProgressiveSeparation(\
 	DircOpticalSim* imodel,\
 	int imax_phots,\
 	int istep_phots,\
-	double isigma, \
+	double ifudge_sigma, \
 	double x_unc,\
 	double y_unc,\
 	double t_unc,\
@@ -26,11 +26,14 @@ DircProgressiveSeparation::DircProgressiveSeparation(\
 	std::vector<dirc_point> no_hits;
 	
 	spread_func = new DircSpreadGaussian(\
-		isigma,\
+		1,\
 		no_hits,\
 		x_unc,\
 		y_unc,\
 		t_unc);
+	
+	//Use rule of thumb times a ocnstant
+	fudge_sigma = ifudge_sigma;
 }
 	
 void DircProgressiveSeparation::set_max_step_phots(int im, int is)
@@ -188,6 +191,11 @@ double DircProgressiveSeparation::get_ll_progressive(\
 		
 		support_total_2 += support_2.size();
 		
+		//3d rule of thumb - 3.46 ~ sqrt[12] for the uniform uncertainty of the grid
+		//TODO fix how this applies to timing
+// 		spread_func->set_gaus_sigma(std::max(10*fudge_sigma,fudge_sigma*pow(((double)step_sim_phots*i),-1./7.)));
+		spread_func->set_gaus_sigma(fudge_sigma);
+		
 		spread_func->fill_likelihood_new_support(\
 			fill_likelihood_1,\
 			support_1,\
@@ -200,20 +208,27 @@ double DircProgressiveSeparation::get_ll_progressive(\
 		
 		cur_ll_1 = 0;
 		cur_ll_2 = 0;
+		
+		bool all_hit_points_covered = true;
 		for(unsigned int j = 0; j < fill_likelihood_1.size(); j++)
 		{
 			accum_likelihood_1[j] += fill_likelihood_1[j];
 			accum_likelihood_2[j] += fill_likelihood_2[j];
 			
-			cur_ll_1 += log(accum_likelihood_1[j]/support_total_1+1e-2);
-			cur_ll_2 += log(accum_likelihood_2[j]/support_total_2+1e-2);
+			all_hit_points_covered = all_hit_points_covered && (accum_likelihood_1[j] > 1e-6) && (accum_likelihood_2[j] > 1e-6);
+			
+			cur_ll_1 += log(accum_likelihood_1[j]/support_total_1);
+			cur_ll_2 += log(accum_likelihood_2[j]/support_total_2);
 			
 // 			printf("accum_likelihood_1 accum_likelihood_2: %04d %12.04f %12.04f\n",j,accum_likelihood_1[j],accum_likelihood_2[j]);
+// 			printf("fill_likelihood_1 fill_likelihood_2: %04d %12.04f %12.04f\n",j,fill_likelihood_1[j],fill_likelihood_2[j]);
+		  
 		}
 		
+		//One or more of the points does not have hits around it - throw more
+		if (all_hit_points_covered == false) continue;
+		
 		cur_ll = cur_ll_2 - cur_ll_1;
-		cur_ll *= 4;
-// 		printf("1 2 diff: %12.04f %12.04f %12.04f\n",cur_ll_1,cur_ll_2,cur_ll);
 		
 		if (fabs(cur_ll) > ll_threshold)
 		{
