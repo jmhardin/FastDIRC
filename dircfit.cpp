@@ -48,51 +48,11 @@ int main(int nargs, char* argv[])
 {  
 	clock_t timing_clock;
   
-	double in_num = 0; 
 	const char* in_str;
-	bool inputfile = true;
+	bool inputfile = false;
 	bool out_csv = false;
 	double time_window=-1;//time window for compounded pmt hits, in ns	
-	printf("Arguments Passed=%d\n",nargs);
-
-	if(nargs==1){
-		  inputfile=false;
-	}
-	if(nargs==2){
-		in_str = argv[1];
-		printf("%s\n",in_str);
-		printf("nargs=2\n");
-	}
-	if(nargs==3){
-		in_str = argv[1];
-		time_window= atof(argv[2]);
-		printf("Opening %s with time window of %fns\n",in_str,time_window);
-	}
 	
-	
-	double resx = 6;
-	double resy = 6;
-	double rest = 1;
-	double minx = -8000;
-	double maxx = -minx;
-	double miny = -800;
-	double maxy = -miny;
-	double mint = 0;
-	double maxt = 1000;
-	double t_unc = 1;
-
-// 	double t_unc = .05;
-
-
-	double rad_to_deg = 57.2958;
-
-	double res_enhance = 1;
-
-	double tracking_unc = .0000*57.3; //mrad
-    // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
-	double ckov_unc = .003*57.3; //transport = 3mrad
-
-
 	double energy = 5.0;
 	double kmass = .4937;
 	double pimass = .1396;
@@ -106,35 +66,8 @@ int main(int nargs, char* argv[])
 	bool force_kinematics = true;
 
 	int num_runs = 1000;
-
-	int n_sim_phots = 40;
-
-	int n_phi_phots = 100000;
-    // 	int n_phi_phots =2;
-	int n_z_phots = 4;
-	int n_step_phots = 1000;
-// 	n_step_phots = n_z_phots*n_phi_phots;
-	double s_func_x = 6;
-	double s_func_y = s_func_x;
-	double s_func_t = 2;
-// 	double s_func_t = .3;
-	double sfunc_sig = 1;
-	
-	double prog_thresh = 5;
-	
-	bool use_prog_sep = true;
-	
-	double outcsv_x,outcsv_y,outcsv_t;
-	outcsv_x = 0*35;//bars are 35mm wide
-	outcsv_y = 0;//mm
-	outcsv_t = 0;//ns
 	
 	
-	if(out_csv){
-	    n_phi_phots = 4000;
-	    n_z_phots = 8;
-	    particle_y += outcsv_y;}
-	double pdf_unc_red_fac = 1;
 	double wedge_uncertainty = 0/57.3;
 	double refrac_index=1.47;
 	double mirror_angle_change = 0;
@@ -165,6 +98,175 @@ int main(int nargs, char* argv[])
 	bool coverage_plot = false;
 	int num_cov = 100000;
 	
+	printf("Arguments Passed=%d\n",nargs);
+
+	if(nargs==2){
+		in_str = argv[1];
+		printf("%s\n",in_str);
+		printf("nargs=2\n");
+		inputfile = true;
+	}
+	else{
+		for (int i = 1; i < nargs; i++)
+		{
+			if (strcmp(argv[i], "-if") == 0)
+			{
+				i++;
+				in_str = argv[i];
+				inputfile = true;
+				printf("Opening %s with time window of %fns\n",in_str,time_window);
+			}
+			else if (strcmp(argv[i], "-t") == 0)
+			{
+				i++;
+				time_window= atof(argv[2]);
+				printf("Opening %s with time window of %fns\n",in_str,time_window);
+			}
+			else if (strcmp(argv[i], "-E") == 0)
+			{
+				i++;
+				energy = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-n") == 0)
+			{
+				i++;
+				num_runs = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-wedge_uncertainty") == 0)
+			{
+				i++;
+				wedge_uncertainty = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-refrac_index") == 0)
+			{
+				i++;
+				refrac_index = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-mirror_angle_change") == 0)
+			{
+				i++;
+				mirror_angle_change = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-mirror_angle_change_unc") == 0)
+			{
+				i++;
+				mirror_angle_change_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-mirror_angle_change_yunc") == 0)
+			{
+				i++;
+				mirror_angle_change_yunc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-box_rot") == 0)
+			{
+				i++;
+				box_rot = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-box_rot_unc") == 0)
+			{
+				i++;
+				box_rot_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_box_angle") == 0)
+			{
+				i++;
+				bar_box_box_angle = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-mirror_r_difference") == 0)
+			{
+				i++;
+				mirror_r_difference = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-wedge_non_uniformity") == 0)
+			{
+				i++;
+				wedge_non_uniformity = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-pmt_offset") == 0)
+			{
+				i++;
+				pmt_offset = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_nonuniformity") == 0)
+			{
+				i++;
+				main_mirror_nonuniformity = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-upper_wedge_yang_spread") == 0)
+			{
+				i++;
+				upper_wedge_yang_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-rseed") == 0)
+			{
+				i++;
+				rseed = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-upper_wedge_yang_spread") == 0)
+			{
+				i++;
+				upper_wedge_yang_spread = atof(argv[i]);
+			}
+		}
+	}
+	
+	
+	double resx = 6;
+	double resy = 6;
+	double rest = 1;
+	double minx = -8000;
+	double maxx = -minx;
+	double miny = -800;
+	double maxy = -miny;
+	double mint = 0;
+	double maxt = 1000;
+	double t_unc = 1;
+
+// 	double t_unc = .05;
+
+
+	double rad_to_deg = 57.2958;
+
+	double res_enhance = 1;
+
+	double tracking_unc = .0000*57.3; //mrad
+    // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
+	double ckov_unc = .003*57.3; //transport = 3mrad
+
+
+	
+	
+
+	int n_sim_phots = 40;
+
+	int n_phi_phots = 100000;
+    // 	int n_phi_phots =2;
+	int n_z_phots = 4;
+	int n_step_phots = 1000;
+// 	n_step_phots = n_z_phots*n_phi_phots;
+	double s_func_x = 6;
+	double s_func_y = s_func_x;
+	double s_func_t = 2;
+// 	double s_func_t = .3;
+	double sfunc_sig = 1;
+	
+	double prog_thresh = 5;
+	
+	bool use_prog_sep = true;
+	
+	double outcsv_x,outcsv_y,outcsv_t;
+	outcsv_x = 0*35;//bars are 35mm wide
+	outcsv_y = 0;//mm
+	outcsv_t = 0;//ns
+	
+	
+	if(out_csv){
+	    n_phi_phots = 4000;
+	    n_z_phots = 8;
+	    particle_y += outcsv_y;}
+	double pdf_unc_red_fac = 1;
+	
+	
 	TRandom3 spread_ang(rseed+3);
 	
 	
@@ -178,6 +280,7 @@ int main(int nargs, char* argv[])
     	
 	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
 	double muon_angle, pion_angle, kaon_angle;
+	pion_angle=kaon_angle = -1;
 	
 	char* rootfilename = new char[256];
 	sprintf(rootfilename,"fitdirc.root");	
@@ -232,7 +335,7 @@ int main(int nargs, char* argv[])
 	TH1F *zero_kaon_id = new TH1F("zero_kaon_id","Correct kaon ID with cut at 0",2,-0.5,1.5);
 	
 	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
-	
+	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
 	
 	
 	
@@ -632,7 +735,7 @@ int main(int nargs, char* argv[])
 		std::vector<dirc_point> hit_points_pion;
 		std::vector<dirc_point> hit_points_kaon;
 		
-	// 	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
+		
 
 	// 	dirc_model->set_upper_wedge_angle_diff(0);
 		
@@ -690,7 +793,7 @@ int main(int nargs, char* argv[])
 
 		for (int i = 0; i < num_runs; i++)
 		{
-	// // 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
+	// 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
 			dirc_model->set_focus_mirror_angle(\
 				spread_ang.Gaus(74.11,mirror_angle_change_unc),\
 				spread_ang.Gaus(0,mirror_angle_change_yunc));
