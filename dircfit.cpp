@@ -53,7 +53,7 @@ int main(int nargs, char* argv[])
 	bool out_csv = false;
 	double time_window=-1;//time window for compounded pmt hits, in ns	
 	
-	double energy = 5.0;
+	double energy = 4.0;
 	double kmass = .4937;
 	double pimass = .1396;
 	double mumass = .1057;
@@ -101,6 +101,9 @@ int main(int nargs, char* argv[])
 	bool coverage_plot = false;
 	int num_cov = 100000;
 	
+	char* rootfilename = new char[256];
+	sprintf(rootfilename,"fitdirc.root");	
+	
 	printf("Arguments Passed=%d\n",nargs);
 
 	if(nargs==2){
@@ -117,6 +120,21 @@ int main(int nargs, char* argv[])
 				i++;
 				in_str = argv[i];
 				inputfile = true;
+			}
+			else if (strcmp(argv[i], "-of") == 0)
+			{
+				i++;
+				sprintf(rootfilename,argv[i]);	
+			}
+			else if (strcmp(argv[i], "-particle_phi") == 0)
+			{
+				i++;
+				particle_phi = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-particle_theta") == 0)
+			{
+				i++;
+				particle_theta = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-force_kinematics") == 0)
 			{
@@ -304,8 +322,6 @@ int main(int nargs, char* argv[])
 	double muon_angle, pion_angle, kaon_angle;
 	pion_angle=kaon_angle = -1;
 	
-	char* rootfilename = new char[256];
-	sprintf(rootfilename,"fitdirc.root");	
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
 	
@@ -449,7 +465,6 @@ int main(int nargs, char* argv[])
 				itheta = particle_theta;
 				iphi = particle_phi;
 				iE = energy;
-				iBAR = 1;
 			}
 			
 			iE = 4;
