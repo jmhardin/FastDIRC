@@ -203,16 +203,19 @@ void DircOpticalSim::fill_threeseg_plane_vecs() {
 
 // 	printf("ThreeSeg3z: %12.04f  seg_h: %12.04f\n",threeSeg3Z,seg_h);
 
+    threeSeg1Nx = 0;
     threeSeg1Ny = sin(theta_1);
     threeSeg1Nz = cos(theta_1);
     rotate_2d(threeSeg1Nx,threeSeg1Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
     threeSeg1D = threeSeg1Ny*threeSeg1Y + threeSeg1Nz*threeSeg1Z;//Use point x=0 as reference
 
+    threeSeg2Nx = 0;
     threeSeg2Ny = sin(theta_2);
     threeSeg2Nz = cos(theta_2);
     rotate_2d(threeSeg2Nx,threeSeg2Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
     threeSeg2D = threeSeg2Ny*threeSeg2Y + threeSeg2Nz*threeSeg2Z;//Use point x=0 as reference
 
+    threeSeg3Nx = 0;
     threeSeg3Ny = sin(theta_3);
     threeSeg3Nz = cos(theta_3);
     rotate_2d(threeSeg3Nx,threeSeg3Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
@@ -546,8 +549,11 @@ void DircOpticalSim::fill_rand_phi(\
     double mm_index = 0;
     double c_mm_ns = 300;
 
+    double inv_numPhots = 1./numPhots;
+    
     for (int i = 0; i < numPhots; i++) {
         randPhi = rand_gen->Uniform(0,2*3.14159265);
+// 	randPhi = i*inv_numPhots;
         sourceOff = -rand_gen->Uniform(0,barDepth);
 
 	

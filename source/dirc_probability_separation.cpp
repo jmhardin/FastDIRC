@@ -42,8 +42,15 @@ double DircProbabilitySeparation::get_log_likelihood_spread_diff(std::vector<dir
 	double tneg = 0;
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
-		tpos = pos_dens->get_single_log_likelihood(inpoints[i]);
-		tneg = neg_dens->get_single_log_likelihood(inpoints[i]);
+		tpos = pos_dens->get_single_likelihood(inpoints[i]);
+		tneg = neg_dens->get_single_likelihood(inpoints[i]);
+		
+		if (tpos < 1e-6 || tneg < 1e-6)
+		{
+			continue;
+		}
+		tpos = log(tpos);
+		tneg = log(tneg);
 
 		rval += spread_function(tneg,tpos);
 

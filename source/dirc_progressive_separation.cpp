@@ -226,7 +226,7 @@ double DircProgressiveSeparation::get_ll_progressive(\
 		}
 		
 		//One or more of the points does not have hits around it - throw more
-		if (all_hit_points_covered == false) continue;
+// 		if (all_hit_points_covered == false) continue;
 		
 		cur_ll = cur_ll_2 - cur_ll_1;
 		

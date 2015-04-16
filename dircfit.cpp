@@ -63,7 +63,7 @@ int main(int nargs, char* argv[])
 	double particle_theta = 4;
 	double particle_phi = 40;
 	
-	bool force_kinematics = true;
+	bool force_kinematics = false;
 
 	int num_runs = 1000;
 	
@@ -84,6 +84,8 @@ int main(int nargs, char* argv[])
 	double upper_wedge_yang_spread = 0;
 	int rseed = 1337;
 	
+	int broaden_events = 0;
+	
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
 	
@@ -91,6 +93,7 @@ int main(int nargs, char* argv[])
 	
 	bool three_seg_mirror = true;
 	
+
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
@@ -114,13 +117,15 @@ int main(int nargs, char* argv[])
 				i++;
 				in_str = argv[i];
 				inputfile = true;
-				printf("Opening %s with time window of %fns\n",in_str,time_window);
+			}
+			else if (strcmp(argv[i], "-force_kinematics") == 0)
+			{
+				force_kinematics = true;
 			}
 			else if (strcmp(argv[i], "-t") == 0)
 			{
 				i++;
-				time_window= atof(argv[2]);
-				printf("Opening %s with time window of %fns\n",in_str,time_window);
+				time_window = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-E") == 0)
 			{
@@ -131,6 +136,16 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				num_runs = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-liquid_index") == 0)
+			{
+				i++;
+				liquid_index = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-broaden_events") == 0)
+			{
+				i++;
+				broaden_events = atoi(argv[i]);
 			}
 			else if (strcmp(argv[i], "-wedge_uncertainty") == 0)
 			{
@@ -207,9 +222,15 @@ int main(int nargs, char* argv[])
 				i++;
 				upper_wedge_yang_spread = atof(argv[i]);
 			}
+			else
+			{
+				printf("Unrecognized argument: %s\n",argv[i]);
+			}
 		}
 	}
 	
+	
+	double main_mirror_angle = 74.11+mirror_angle_change;
 	
 	double resx = 6;
 	double resy = 6;
@@ -220,7 +241,7 @@ int main(int nargs, char* argv[])
 	double maxy = -miny;
 	double mint = 0;
 	double maxt = 1000;
-	double t_unc = 1;
+	double t_unc = .5;
 
 // 	double t_unc = .05;
 
@@ -239,20 +260,21 @@ int main(int nargs, char* argv[])
 
 	int n_sim_phots = 40;
 
-	int n_phi_phots = 100000;
+	int n_phi_phots = 150000;
     // 	int n_phi_phots =2;
+// 	int n_z_phots = 10;
 	int n_z_phots = 4;
 	int n_step_phots = 1000;
 // 	n_step_phots = n_z_phots*n_phi_phots;
 	double s_func_x = 6;
 	double s_func_y = s_func_x;
-	double s_func_t = 2;
+	double s_func_t = 2.5;
 // 	double s_func_t = .3;
 	double sfunc_sig = 1;
 	
-	double prog_thresh = 5;
+	double prog_thresh = 500;
 	
-	bool use_prog_sep = true;
+	bool use_prog_sep = false;
 	
 	double outcsv_x,outcsv_y,outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
@@ -274,7 +296,7 @@ int main(int nargs, char* argv[])
 		rseed,\
 		-1200 + mirror_r_difference,\
 		300.38,\
-		74.11 + mirror_angle_change,\
+		main_mirror_angle,\
 		600,\
 		47.87 + box_rot);
     	
@@ -287,8 +309,8 @@ int main(int nargs, char* argv[])
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
 	
-	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",20000,-50,50);
-	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",20000,-50,50);
+	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",2000000,-500,500);
+	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",2000000,-500,500);
 	TH1F *phot_found_pion = new TH1F("phot_found_pion","number of photons found on pion angle", 1001,-.5,1000.5);
 	TH1F *phot_found_kaon = new TH1F("phot_found_kaon","number of photons found on kaon angle", 1001,-.5,1000.5);
 	
@@ -351,6 +373,7 @@ int main(int nargs, char* argv[])
 //  	
 	printf("Beginning Run\n");
 	double llc, llf, ll_diff;
+	int pion_kaon_diff = 0;
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
 	dirc_model->set_focmirror_nonuniformity(main_mirror_nonuniformity);
@@ -358,6 +381,10 @@ int main(int nargs, char* argv[])
  *   initialize an array 
  *    */
 	if(inputfile){
+	  
+		
+		printf("Opening %s with time window of %fns\n",in_str,time_window);
+	  
 		int mc_tally=0;
 		int confounded_tally=0;
 		num_runs=0;
@@ -370,27 +397,31 @@ int main(int nargs, char* argv[])
 		f.getline(s,line_buf_size); //skips first line
 		//declare memory addresses for inputs
 		//units: mm, ns, deg, GeV 
-		int iPID, iBAR;
+		int iPID, iBAR,ievent_index;
 		double ix,iy,it,itheta,iphi,iE;
-		std::vector<int> PID,BAR;
+		std::vector<int> PID,BAR,event_index;
 		std::vector<double> x,y,t,theta,phi,E;
 		
 		//declare for beta and angle based on PID, and constructors for hitpoints and pdfs
 		double pion_mc_beta,kaon_mc_beta,pion_mc_angle,kaon_mc_angle;
 		std::vector<dirc_point> hits_trk_is_pion;
 		std::vector<dirc_point> hits_trk_is_kaon;
+		
+		double min_pval = 1e-2;
 		DircSpreadGaussian * pdf_as_pion = new DircSpreadGaussian(\
 			sfunc_sig,\
 			hits_trk_is_pion,\
 			s_func_x,\
 			s_func_y,\
-			s_func_t);
+			s_func_t,\
+			min_pval);
 		DircSpreadGaussian * pdf_as_kaon = new DircSpreadGaussian(\
 			sfunc_sig,\
 			hits_trk_is_kaon,\
 			s_func_x,\
 			s_func_y,\
-			s_func_t);//could make this an array that is filled...
+			s_func_t,\
+			min_pval);//could make this an array that is filled...
 			//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
 		
@@ -409,9 +440,9 @@ int main(int nargs, char* argv[])
 				
 
 		unsigned int r=0;
-		while(f>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
+		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
-			if (iE > 4) continue;
+// 			if (iE > 4) continue;
 			
 			if (force_kinematics == true)
 			{
@@ -419,9 +450,12 @@ int main(int nargs, char* argv[])
 				iphi = particle_phi;
 				iE = energy;
 				iBAR = 1;
-				
 			}
-				
+			
+			iE = 4;
+			itheta = 3;
+			
+			event_index.push_back(ievent_index);
 			PID.push_back(iPID);
 			BAR.push_back(iBAR);
 			x.push_back(ix);
@@ -451,12 +485,12 @@ int main(int nargs, char* argv[])
 				//sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
 
 				dirc_model->set_focus_mirror_angle(\
-					spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
 					spread_ang.Gaus(0,mirror_angle_change_yunc));
 				dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,wedge_uncertainty),\
 					spread_ang.Gaus(0,upper_wedge_yang_spread));
-				printf("\r  ");
+				printf("\r                                                                                                      ");
 				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
 
 				fflush(stdout);
@@ -478,6 +512,7 @@ int main(int nargs, char* argv[])
 						tracking_unc,\
 						ckov_unc,\
 						pion_mc_beta);
+					pion_kaon_diff = 1;
 				}
 				else{
 					dirc_model->sim_rand_n_photons(\
@@ -492,77 +527,89 @@ int main(int nargs, char* argv[])
 						tracking_unc,\
 						ckov_unc,\
 						kaon_mc_beta);
+					pion_kaon_diff = -1;
+				}
+				for (unsigned int i = 0; i < sim_points.size(); i++)
+				{
+					sim_points[i].t += t[n];
+// 					sim_points[i].x += 150;
+// 					printf("%12.04f\n",sim_points[i].t);
 				}
 				//simulate pmt hits from background events that occur within t ns of the primary event
 				confounded_tally=0;
-				for (unsigned int i =0; i < r;i++){
+				for (unsigned int j =0; j < r;j++){
 					
-					if(fabs(t[n]-t[i])<time_window && i!=n){
+					if (abs(event_index[n] - event_index[j]) > broaden_events)
+					{
+						continue;
+					}
+				  
+					if(fabs(t[n]-t[j])<time_window && j!=n){
 						confounded_tally++; 
-						if(abs(PID[i])==2 ||PID[i]==3){
+						if(abs(PID[j])==2 ||PID[j]==3){
 
 							dirc_model->sim_rand_n_photons(\
 								confound_points,\
 								n_sim_phots,\
 								47.135,\
-								BAR[i],\
-								x[i],\
-								y[i],\
-								theta[i],\
-								phi[i],\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
 								tracking_unc,\
 								ckov_unc,\
 								1);
 						}
-						else if(abs(PID[i])==8||PID[i]==9){
-							pion_beta = dirc_model->get_beta(E[i],pimass);
+						else if(abs(PID[j])==8||PID[j]==9){
+							pion_beta = dirc_model->get_beta(E[j],pimass);
 							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 
-							dirc_model->sim_rand_n_photons(\
+// 							dirc_model->sim_rand_n_photons(\
 								confound_points,\
 								n_sim_phots,\
 								pion_angle,\
-								BAR[i],\
-								x[i],\
-								y[i],\
-								theta[i],\
-								phi[i],\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
 								tracking_unc,\
 								ckov_unc,\
 								pion_beta);
 						  
 						}
-						else if(abs(PID[i])==11 || PID[i]==12){
-							kaon_beta = dirc_model->get_beta(E[i],kmass);
+						else if(abs(PID[j])==11 || PID[j]==12){
+							kaon_beta = dirc_model->get_beta(E[j],kmass);
 							kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
 
-							dirc_model->sim_rand_n_photons(\
+// 							dirc_model->sim_rand_n_photons(\
 								confound_points,\
 								n_sim_phots,\
 								kaon_angle,\
-								BAR[i],\
-								x[i],\
-								y[i],\
-								theta[i],\
-								phi[i],\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
 								tracking_unc,\
 								ckov_unc,\
 								kaon_beta);
 						  
 						}
-						else if(abs(PID[i])==5 || PID[i]==6){
-							muon_beta = dirc_model->get_beta(E[i],mumass);
+						else if(abs(PID[j])==5 || PID[j]==6){
+							muon_beta = dirc_model->get_beta(E[j],mumass);
 							muon_angle = rad_to_deg*acos(1/(refrac_index*muon_beta));
 
 							dirc_model->sim_rand_n_photons(\
 								confound_points,\
 								n_sim_phots,\
 								muon_angle,\
-								BAR[i],\
-								x[i],\
-								y[i],\
-								theta[i],\
-								phi[i],\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
 								tracking_unc,\
 								ckov_unc,\
 								muon_beta);
@@ -570,6 +617,8 @@ int main(int nargs, char* argv[])
 					}
 					for (unsigned int i = 0; i < confound_points.size(); i++)
 					{
+						confound_points[i].t += t[j];
+// 						confound_points[i].x += 150;
 						sim_points.push_back(confound_points[i]);
 					}
 					confound_points.clear();
@@ -591,7 +640,7 @@ int main(int nargs, char* argv[])
 				if (use_prog_sep == true)
 				{
 					dirc_model->set_focus_mirror_angle(\
-						spread_ang.Gaus(74.11,0),\
+						spread_ang.Gaus(main_mirror_angle,0),\
 						spread_ang.Gaus(0,0));
 					dirc_model->set_upper_wedge_angle_diff(\
 						spread_ang.Gaus(0,0),\
@@ -612,7 +661,7 @@ int main(int nargs, char* argv[])
 				else
 				{
 					dirc_model->set_focus_mirror_angle(\
-						spread_ang.Gaus(74.11,0),\
+						spread_ang.Gaus(main_mirror_angle,0),\
 						spread_ang.Gaus(0,0));
 					dirc_model->set_upper_wedge_angle_diff(\
 						spread_ang.Gaus(0,0),\
@@ -672,6 +721,14 @@ int main(int nargs, char* argv[])
 // 						ckov_unc/pdf_unc_red_fac,\
 // 						kaon_mc_beta);
 					
+					for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
+					{
+						hits_trk_is_pion[k].t += t[n];
+					}
+					for (unsigned int k = 0; k < hits_trk_is_kaon.size(); k++)
+					{
+						hits_trk_is_kaon[k].t += t[n];
+					}
 					pdf_as_pion->set_support(hits_trk_is_pion);
 					pdf_as_kaon->set_support(hits_trk_is_kaon);
 					
@@ -681,7 +738,39 @@ int main(int nargs, char* argv[])
 					llc = pdf_as_pion->get_log_likelihood(sim_points);
 					llf = pdf_as_kaon->get_log_likelihood(sim_points);
 					
+// 					printf("%06d\n",sim_points.size());
+					
 					ll_diff = llc - llf;
+					
+// 					printf("\n%12.04f %12.04f %12.04f\n",llc,llf,ll_diff);
+					int correct_id = 1;
+					if (ll_diff*pion_kaon_diff < 0)
+					{
+						correct_id = 0;
+						for (unsigned int k = 0; k < sim_points.size(); k++)
+						{
+//  							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
+						}
+					}
+					for (unsigned int k = 0; k < sim_points.size(); k++)
+					{
+//  						printf("%12.04f %12.04f %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t);
+					}
+					if (ll_diff == ll_diff)
+					{
+// 						printf("\n%12.04f %12.04f %12.04f %d\n",llc,llf,ll_diff,correct_id);
+						for (unsigned int k = 0; k < sim_points.size(); k++)
+						{
+// 							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
+								
+						}
+					}
 				}
 				
 				timing_clock = clock() - timing_clock;
@@ -702,7 +791,7 @@ int main(int nargs, char* argv[])
 						zero_pion_id->Fill(0);
 					}
 						
-					phot_found_pion->Fill(sim_points.size()/(confounded_tally+1));//divide by tally+1 for an average number of photons per event? or do we want to know the total number of photons in the timewindow?
+					phot_found_pion->Fill(sim_points.size());
 				}
 				else{
       
@@ -715,7 +804,7 @@ int main(int nargs, char* argv[])
 					{
 						zero_kaon_id->Fill(0);
 					}
-					phot_found_kaon->Fill(sim_points.size()/(confounded_tally+1));
+					phot_found_kaon->Fill(sim_points.size());
 				}
 			}
 		}
@@ -795,7 +884,7 @@ int main(int nargs, char* argv[])
 		{
 	// 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
 			dirc_model->set_focus_mirror_angle(\
-				spread_ang.Gaus(74.11,mirror_angle_change_unc),\
+				spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
 				spread_ang.Gaus(0,mirror_angle_change_yunc));
 			dirc_model->set_upper_wedge_angle_diff(\
 				spread_ang.Gaus(0,wedge_uncertainty),\
@@ -803,7 +892,7 @@ int main(int nargs, char* argv[])
 	// 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,bar_box_box_angle));
 			
 			printf("\r                                                    ");
-			printf("\rrunning iter %d/%d  ",i+1,num_runs);
+			printf("\rrunning iter %8d/%d  ",i+1,num_runs);
 			
 			
 			fflush(stdout);

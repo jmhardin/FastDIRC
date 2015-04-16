@@ -47,7 +47,7 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 
 
 }
-void graphicHistos(TString ifile = "tmpfitdirc.root")
+double runGraphicHistos(TString ifile = "tmpfitdirc.root")
 {
 double hmin = -100;
 double hmax = 100;
@@ -301,6 +301,11 @@ c1->Print("roc_curve_fake.gif");
 
 printf("Matching resolution: %6.03f\n",spread);
 
+return spread;
 
 }
 
+void graphicHistos(TString ifile = "tmpfitdirc.root")
+{
+	runGraphicHistos(ifile);
+}

@@ -15,6 +15,7 @@ private:
 	TRandom3 *rand_gen;
 	std::vector<dirc_point> support_points;
 	double get_weight(dirc_point inpoint);
+	double min_probability;
 public:
 	//by reference - later for speed
 	DircSpreadGaussian(\
@@ -22,7 +23,8 @@ public:
 		std::vector<dirc_point> isupport,\
 		double x_unc,\
 		double y_unc,\
-		double t_unc);
+		double t_unc,\
+		double imin_prob = 1e-6);
 	void support_spread(double spread_sig);
 	void support_x_weight();
 	void set_support(std::vector<dirc_point> isupport);
@@ -35,6 +37,8 @@ public:
 		if (r2 < 5*sigma2)
 		{
 			return exp(-r2*sigma2inv);
+			//return 5*sigma2 - r2;
+// 			return 1;
 		}
 		else
 		{
@@ -54,7 +58,7 @@ public:
 		return radius_spread_function(dx2*x_sig2inv+dy2*y_sig2inv+dt2*t_sig2inv);
 	};
 
-	double get_single_log_likelihood(dirc_point inpoint);
+	double get_single_likelihood(dirc_point inpoint);
 	double get_log_likelihood(std::vector<dirc_point> inpoints);
 	double get_log_likelihood_new_support(std::vector<dirc_point> &inpoints, std::vector<dirc_point> &t_support);
 	void fill_likelihood_new_support(\

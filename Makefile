@@ -28,7 +28,8 @@ vpath %.cpp ./source/
 	mv $@ $(LIBLOC)
 
 .PHONY : all
-all: dircfit.cpp $(OBJFILES) 
+all: dircfit.cpp $(OBJFILES)
+	rm $(OUT)
 	g++ -Wall dircfit.cpp $(OBJLOC) $(CFLAGS) $(INCLUDE) -o $(OUT)
 
 .PHONY : clean
