@@ -467,9 +467,6 @@ int main(int nargs, char* argv[])
 				iE = energy;
 			}
 			
-			iE = 4;
-			itheta = 3;
-			
 			event_index.push_back(ievent_index);
 			PID.push_back(iPID);
 			BAR.push_back(iBAR);
