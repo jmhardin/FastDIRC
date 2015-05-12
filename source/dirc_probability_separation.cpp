@@ -53,8 +53,6 @@ double DircProbabilitySeparation::get_log_likelihood_spread_diff(std::vector<dir
 		tneg = log(tneg);
 
 		rval += spread_function(tneg,tpos);
-
-// 		printf("%03d: %12.04f\n",i,tpos-tneg);		
 	}
 	return rval;
 }

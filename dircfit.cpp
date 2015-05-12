@@ -19,6 +19,8 @@
 #include "include/dirc_digitizer.h"
 #include "include/dirc_progressive_separation.h"
 #include <TFile.h>
+#include <TTree.h>
+#include <TH3.h>
 #include <TH2.h>
 #include <TH1.h>
 #include <TRandom3.h>
@@ -50,8 +52,9 @@ int main(int nargs, char* argv[])
   
 	const char* in_str;
 	bool inputfile = false;
+	bool inputrootfile = false;
 	bool out_csv = false;
-	double time_window=-1;//time window for compounded pmt hits, in ns	
+	double time_window=-1;//time window for confounded pmt hits, in ns	
 	
 	double energy = 4.0;
 	double kmass = .4937;
@@ -64,9 +67,10 @@ int main(int nargs, char* argv[])
 	double particle_phi = 40;
 	
 	bool force_kinematics = false;
+	bool use_prog_sep = false;
 
 	int num_runs = 1000;
-	
+	int max_particles = 1000000;
 	
 	double wedge_uncertainty = 0/57.3;
 	double refrac_index=1.47;
@@ -77,6 +81,7 @@ int main(int nargs, char* argv[])
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
 	double mirror_r_difference = -400;
+//	double mirror_r_difference = 0;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
 	double main_mirror_nonuniformity = 0;
@@ -92,7 +97,7 @@ int main(int nargs, char* argv[])
 	double overlap_x = -1;
 	
 	bool three_seg_mirror = true;
-	
+	bool fill_distributions	= false;
 
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
@@ -102,6 +107,7 @@ int main(int nargs, char* argv[])
 	int num_cov = 100000;
 	
 	char* rootfilename = new char[256];
+	char* inputrootfilename = new char[256];
 	sprintf(rootfilename,"fitdirc.root");	
 	
 	printf("Arguments Passed=%d\n",nargs);
@@ -124,7 +130,21 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-of") == 0)
 			{
 				i++;
-				sprintf(rootfilename,argv[i]);	
+				sprintf(rootfilename,"%s",argv[i]);	
+			}
+			else if (strcmp(argv[i], "-fill_dist") == 0)
+			{
+				fill_distributions = true;	
+			}
+			else if (strcmp(argv[i], "-cylindrical_mirror") == 0)
+			{
+				three_seg_mirror = false;	
+			}
+			else if (strcmp(argv[i], "-root_input") == 0)
+			{
+				i++;
+				inputrootfile = true;
+				sprintf(inputrootfilename,"%s",argv[i]);
 			}
 			else if (strcmp(argv[i], "-particle_phi") == 0)
 			{
@@ -140,6 +160,10 @@ int main(int nargs, char* argv[])
 			{
 				force_kinematics = true;
 			}
+			else if (strcmp(argv[i], "-prog_sep") == 0)
+			{
+				use_prog_sep = true;
+			}
 			else if (strcmp(argv[i], "-t") == 0)
 			{
 				i++;
@@ -154,6 +178,11 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				num_runs = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-max_particles") == 0)
+			{
+				i++;
+				max_particles = atoi(argv[i]);
 			}
 			else if (strcmp(argv[i], "-liquid_index") == 0)
 			{
@@ -257,9 +286,13 @@ int main(int nargs, char* argv[])
 	double maxx = -minx;
 	double miny = -800;
 	double maxy = -miny;
+//	double minx = -1000;
+//	double maxx = 1500;
+//	double miny = -50;
+//	double maxy = 210;
 	double mint = 0;
 	double maxt = 1000;
-	double t_unc = .5;
+	double t_unc = 1;
 
 // 	double t_unc = .05;
 
@@ -279,6 +312,7 @@ int main(int nargs, char* argv[])
 	int n_sim_phots = 40;
 
 	int n_phi_phots = 150000;
+//	int n_phi_phots = 1003;
     // 	int n_phi_phots =2;
 // 	int n_z_phots = 10;
 	int n_z_phots = 4;
@@ -286,13 +320,11 @@ int main(int nargs, char* argv[])
 // 	n_step_phots = n_z_phots*n_phi_phots;
 	double s_func_x = 6;
 	double s_func_y = s_func_x;
-	double s_func_t = 2.5;
-// 	double s_func_t = .3;
+	double s_func_t = 2;
 	double sfunc_sig = 1;
 	
 	double prog_thresh = 500;
 	
-	bool use_prog_sep = false;
 	
 	double outcsv_x,outcsv_y,outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
@@ -337,28 +369,38 @@ int main(int nargs, char* argv[])
 
 	
 	
+	TH1F *pion_dist_x = new TH1F("pion_dist_x","x val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx);
+	TH1F *pion_dist_y = new TH1F("pion_dist_y","y val of intercepted points - pion",(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH1F *pion_dist_t = new TH1F("pion_dist_t","t val of intercepted points - pion",(maxt-mint)/(res_enhance*rest),mint,maxt);
 	TH1F *kaon_dist_t = new TH1F("kaon_dist_t","t val of intercepted points - kaon",(maxt-mint)/(res_enhance*rest),mint,maxt);
 
+	TH1F *pion_dist_geant_x = new TH1F("pion_dist_geant_x","x val of intercepted points (from geant) - pion",(maxx-minx)/(res_enhance*resx),minx,maxx);
+	TH1F *pion_dist_geant_y = new TH1F("pion_dist_geant_y","y val of intercepted points (from geant) - pion",(maxy-miny)/(res_enhance*resy),miny,maxy);
+	TH1F *pion_dist_geant_t = new TH1F("pion_dist_geant_t","t val of intercepted points (from geant) - pion",(maxt-mint)/(res_enhance*rest),mint,maxt);
 	
 	TH2F *ref_theta_cphi_pion = new TH2F("ref_theta_cphi_pion","Emitted angle of Pion Photons versus angle into interface", 7200,0,360,1800,0,90);
 	TH2F *ref_theta_cphi_kaon = new TH2F("ref_theta_cphi_kaon","Emitted angle of Kaon Photons versus angle into interface", 7200,0,360,1800,0,90);
 	
 	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH2F *kaon_dist_xy = new TH2F("kaon_dist_xy","xy val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
+	
+	TH2F *pion_dist_geant_xy = new TH2F("pion_dist_geant_xy","xy val of intercepted points (from geant) - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 
 	TH2F *pion_dist_xt = new TH2F("pion_dist_xt","xt val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxt-mint)/(res_enhance*rest),mint,maxt);
 	TH2F *kaon_dist_xt = new TH2F("kaon_dist_xt","xt val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxt-mint)/(res_enhance*rest),mint,maxt);
 
+	TH2F *pion_dist_geant_xt = new TH2F("pion_dist_geant_xt","xt val of intercepted points (from geant) - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxt-mint)/(res_enhance*rest),mint,maxt);
+
 	TH2F *pion_dist_yt = new TH2F("pion_dist_yt","yt val of intercepted points - pion",(maxy-miny)/(res_enhance*resy),miny,maxy,(maxt-mint)/(res_enhance*rest),mint,maxt);
 	TH2F *kaon_dist_yt = new TH2F("kaon_dist_yt","yt val of intercepted points - kaon",(maxy-miny)/(res_enhance*resy),miny,maxy,(maxt-mint)/(res_enhance*rest),mint,maxt);
+
+	TH2F *pion_dist_geant_yt = new TH2F("pion_dist_geant_yt","yt val of intercepted points (from geant) - pion",(maxy-miny)/(res_enhance*resy),miny,maxy,(maxt-mint)/(res_enhance*rest),mint,maxt);
 
 	
 	maxy *= 5;
 	
 	TH2F *pion_coverage_xy = new TH2F("pion_coverage_xy","xy val of generated points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH2F *kaon_coverage_xy = new TH2F("kaon_coverage_xy","xy val of generated points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
-
 	
 	TH1F *pion_cerenkov = new TH1F("pion_cerenkov","pion cerenkov angle distribution",300,45,48);
 	TH1F *kaon_cerenkov = new TH1F("kaon_cerenkov","kaon cerenkov angle distribution",300,45,48);
@@ -374,6 +416,7 @@ int main(int nargs, char* argv[])
 	
 	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
 	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
+	dirc_model->set_three_seg_mirror(three_seg_mirror);
 	
 	
 	
@@ -396,9 +439,607 @@ int main(int nargs, char* argv[])
 /*   read in file for events and 
  *   initialize an array 
  *    */
-	if(inputfile){
-	  
+	if (inputrootfile)
+	{
+		printf("Opening root file: %s\n",inputrootfilename);
+		//Gross... I got root types in my loops...
+	        Float_t px[10];
+	        Float_t py[10];
+	        Float_t pz[10];
+	        Float_t particle_x[10];
+	        Float_t particle_y[10];
+	        Float_t particle_z[10];
+	        Float_t gen_t[10];
+	        Float_t gen_E[10];
+	        Float_t hitw[2000];
+	        Float_t hity[2000];
+	        Float_t hit_t[2000];
+	        int nHit;
+	        Int_t particle_id[10];
+
+		TFile* inputrootfile = new TFile(inputrootfilename,"READONLY");
+		TTree *in_tree = (TTree*) inputrootfile->Get("dircTreePID");
+
+		int nentries = in_tree->GetEntries();
+
+		in_tree->SetBranchAddress("ParticleID",&particle_id);
+		in_tree->SetBranchAddress("genTrk_px",&px);
+	        in_tree->SetBranchAddress("genTrk_py",&py);
+        	in_tree->SetBranchAddress("genTrk_pz",&pz);
+		in_tree->SetBranchAddress("genTrk_x",&particle_x);
+	        in_tree->SetBranchAddress("genTrk_y",&particle_y);
+        	in_tree->SetBranchAddress("genTrk_z",&particle_z);
+        	in_tree->SetBranchAddress("genTrk_t",&gen_t);
+        	in_tree->SetBranchAddress("genTrk_E",&gen_E);
+
+        	in_tree->SetBranchAddress("hitpixel_w",&hitw);
+        	in_tree->SetBranchAddress("hitpixel_y",&hity);
+        	in_tree->SetBranchAddress("hit_t",&hit_t);
+
+        	in_tree->SetBranchAddress("nHit",&nHit);
+
+		std::vector<std::vector<dirc_point> > root_hits_array;
 		
+		unsigned int r = 0;
+		
+		int iPID, iBAR,ievent_index;
+		double ix,iy,it,itheta,iphi,iE;
+		std::vector<int> PID,BAR,event_index;
+		std::vector<double> x,y,t,theta,phi,E;
+		
+		double min_t = 1000;
+		double avg_x = 0;
+		double avg_y = 0;
+		double avg_t = 0;
+		int tot_nhit = 0;
+		for (int i = 0; i < nentries; i++) {
+
+			if (r >= max_particles) break;
+
+	                in_tree->GetEntry(i);
+// 			if (iE > 4) continue;	
+			//TODO read more than 1 particle per event
+			iPID = particle_id[0];
+			iBAR = dirc_model->get_bar_from_x(particle_x[0]*10);
+
+			if (iBAR != 6) {continue;}
+			ix = particle_x[0]*10 - dirc_model->get_bar_offset(iBAR);
+			iy = particle_y[0]*10 + 1040;//Figure out that geometry
+			it = gen_t[0] + 2*r;//2ns spacing of events at least.
+			iE = gen_E[0];
+			double p_trans = sqrt(py[0]*py[0]+px[0]*px[0]);
+			itheta = atan(p_trans/pz[0])*180/3.14159;
+			iphi = atan2(py[0],px[0])*180/3.14159;
+
+			if (force_kinematics == true)
+			{
+				itheta = particle_theta;
+				iphi = particle_phi;
+				iE = energy;
+			}
+			event_index.push_back(i);
+			PID.push_back(iPID);
+			BAR.push_back(iBAR);
+			x.push_back(ix);
+			y.push_back(iy);
+			t.push_back(it);
+			theta.push_back(itheta);
+			phi.push_back(iphi);
+			E.push_back(iE);
+	
+			if (t[r] < 0) printf("low t: %12.04f\n",t[r]);
+	
+			std::vector<dirc_point> root_hits_add;
+			if (iPID == 8 || iPID == 9){
+				tot_nhit += nHit;
+			}
+			for (int j = 0; j < nHit; j++)
+			{
+				dirc_point addpt;
+				//these are swapped knowingly
+				addpt.x = hity[j]*10 + 151.4;
+				addpt.y = hitw[j]*10 - 28.85 + 35;
+				addpt.t = t[r] + hit_t[j]-9;
+
+				if (addpt.t - 2*r < 0)
+				{//hmmmm can't be - ignore it
+					printf("low addt: %12.04f %d %d\n", addpt.t - 2*r, i, j);
+					if (iPID == 8 || iPID == 9)
+					{
+						tot_nhit--;
+					}
+					continue;
+				}
+
+				root_hits_add.push_back(addpt);
+			
+			
+	
+				if (fill_distributions == true)
+				{
+					addpt.t -= 2*r;
+					pion_dist_geant_x->Fill(addpt.x);
+					pion_dist_geant_y->Fill(addpt.y);
+					pion_dist_geant_t->Fill(addpt.t);
+					pion_dist_geant_xy->Fill(addpt.x,addpt.y);
+					pion_dist_geant_xt->Fill(addpt.x,addpt.t);
+					pion_dist_geant_yt->Fill(addpt.y,addpt.t);
+					addpt.t += 2*r;
+				}
+
+				if (addpt.t < 0) printf("low addpt: %12.04f\n",addpt.t);
+				if ((iPID == 8 || iPID == 9))
+				{
+					min_t = std::min(min_t,addpt.t - 2*r);
+					avg_x += addpt.x;
+					avg_y += addpt.y;
+					avg_t += addpt.t - 2*r;
+				}
+			}
+			root_hits_array.push_back(root_hits_add);
+
+// 			std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r] << " " << root_hits_array[r][0].t <<std::endl; 
+			r++;
+                }
+		double high_avg = 0;
+		double low_avg = 0;
+		double high_min = 10000000;
+		double low_min = 10000000;
+		int high_count = 0;
+		int low_count = 0;
+		double tmp_t = -1;
+		for (unsigned int j = 0; j < root_hits_array.size(); j++)
+		{
+			for (unsigned int k = 0; k < root_hits_array[j].size(); k++)
+			{
+				tmp_t = root_hits_array[j][k].t - 2*j;
+				if (tmp_t < 0) printf("low t: %12.04f %d %d\n",tmp_t,j,k);
+				if (tmp_t > avg_t/tot_nhit)
+				{
+					high_count++;
+					high_avg += tmp_t;
+					high_min = std::min(high_min, tmp_t);
+				}
+				else
+				{
+					low_count++;
+					low_avg += tmp_t;
+					low_min = std::min(low_min, tmp_t);
+				}
+			}
+		}
+
+
+		printf("Avg hit x y t: %12.04f %12.04f %12.04f\n",avg_x/tot_nhit,avg_y/tot_nhit, avg_t/tot_nhit);
+		printf("min input t delta: %12.04f\n",min_t);
+		printf("T abv avg : below avg : diff : %12.04f %12.04f %12.04f\n", high_avg/high_count, low_avg/low_count, high_avg/high_count - low_avg/low_count);
+		printf("T abv min : below min : diff : %12.04f %12.04f %12.04f\n", high_min, low_min, high_min - low_min);
+		inputrootfile->Close("R");
+		
+		int mc_tally=0;
+		int confounded_tally=0;
+		num_runs=0;
+		coverage_plot=false;
+
+		//declare memory addresses for inputs
+		//units: mm, ns, deg, GeV 
+		
+		//declare for beta and angle based on PID, and constructors for hitpoints and pdfs
+		double pion_mc_beta,kaon_mc_beta,pion_mc_angle,kaon_mc_angle;
+		std::vector<dirc_point> hits_trk_is_pion;
+		std::vector<dirc_point> hits_trk_is_kaon;
+		
+		double min_pval = 1e-2;
+		DircSpreadGaussian * pdf_as_pion = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hits_trk_is_pion,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t,\
+			min_pval);
+		DircSpreadGaussian * pdf_as_kaon = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hits_trk_is_kaon,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t,\
+			min_pval);//could make this an array that is filled...
+			//Might be worth making a new copy each time
+		DircProbabilitySeparation * sep_pdfs_mc;
+		
+		DircProgressiveSeparation *progressive_separation = \
+			new DircProgressiveSeparation(\
+				dirc_model,\
+				n_phi_phots*n_z_phots,\
+				n_step_phots,\
+				sfunc_sig,\
+				s_func_x,\
+				s_func_y,\
+				s_func_t,\
+				kmass,\
+				pimass,\
+				prog_thresh);
+				
+		r = 15;
+
+		for(unsigned int n=0;n < r; n++){
+	
+			min_t = 1000;
+		
+			if(fabs(PID[n])>7 && fabs(PID[n])<13)//8 and 9 are pions, 11 and 12 are kaons
+			{
+				
+				mc_tally++;
+
+				//
+				//and replace acos......
+				//cdd replace 1.47 with double refrac_index=1.47;
+				pion_mc_beta = dirc_model->get_beta(E[n],pimass);
+				kaon_mc_beta = dirc_model->get_beta(E[n],kmass);
+				pion_mc_angle = rad_to_deg*acos(1/(1.47*pion_mc_beta));
+				kaon_mc_angle = rad_to_deg*acos(1/(1.47*kaon_mc_beta));
+
+				//sep_pdfs_mc = new DircProbabilitySeparation(pdf_as_kaon,pdf_as_pion);
+
+				dirc_model->set_focus_mirror_angle(\
+					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
+					spread_ang.Gaus(0,mirror_angle_change_yunc));
+				dirc_model->set_upper_wedge_angle_diff(\
+					spread_ang.Gaus(0,wedge_uncertainty),\
+					spread_ang.Gaus(0,upper_wedge_yang_spread));
+				printf("\r                                                                                                      ");
+				printf("\rRunning monte carlo event  %i/%i. Found %i pions/kaons", n,r-1,mc_tally);
+
+				fflush(stdout);
+
+				//simulate pmt hits from primary mc event to compare with preconstructed pdfs
+				//
+
+				
+				if(abs(PID[n])==8 || PID[n]==9 ){
+					dirc_model->sim_rand_n_photons(\
+						sim_points,\
+						n_sim_phots,\
+						pion_mc_angle,\
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc,\
+						pion_mc_beta);
+					pion_kaon_diff = 1;
+				}
+				else{
+					dirc_model->sim_rand_n_photons(\
+						sim_points,\
+						n_sim_phots,\
+						kaon_mc_angle,\
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc,\
+						kaon_mc_beta);
+					pion_kaon_diff = -1;
+				}
+				
+				
+				for (unsigned int i = 0; i < sim_points.size(); i++)
+				{
+					sim_points[i].t += t[n];
+// 					printf("%12.04f\n",sim_points[i].t);
+				}
+				//simulate pmt hits from background events that occur within t ns of the primary event
+
+				/*Ignore confounding for now
+				confounded_tally=0;
+				for (unsigned int j =0; j < r;j++){
+					
+					if (abs(event_index[n] - event_index[j]) > broaden_events)
+					{
+						continue;
+					}
+				  
+					if(fabs(t[n]-t[j])<time_window && j!=n){
+						confounded_tally++; 
+						if(abs(PID[j])==2 ||PID[j]==3){
+
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
+								n_sim_phots,\
+								47.135,\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
+								tracking_unc,\
+								ckov_unc,\
+								1);
+						}
+						else if(abs(PID[j])==8||PID[j]==9){
+							pion_beta = dirc_model->get_beta(E[j],pimass);
+							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
+
+ 							dirc_model->sim_rand_n_photons(\
+								confound_points,\
+								n_sim_phots,\
+								pion_angle,\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
+								tracking_unc,\
+								ckov_unc,\
+								pion_beta);
+						  
+						}
+						else if(abs(PID[j])==11 || PID[j]==12){
+							kaon_beta = dirc_model->get_beta(E[j],kmass);
+							kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
+
+ 							dirc_model->sim_rand_n_photons(\
+								confound_points,\
+								n_sim_phots,\
+								kaon_angle,\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
+								tracking_unc,\
+								ckov_unc,\
+								kaon_beta);
+						  
+						}
+						else if(abs(PID[j])==5 || PID[j]==6){
+							muon_beta = dirc_model->get_beta(E[j],mumass);
+							muon_angle = rad_to_deg*acos(1/(refrac_index*muon_beta));
+
+							dirc_model->sim_rand_n_photons(\
+								confound_points,\
+								n_sim_phots,\
+								muon_angle,\
+								BAR[j],\
+								x[j],\
+								y[j],\
+								theta[j],\
+								phi[j],\
+								tracking_unc,\
+								ckov_unc,\
+								muon_beta);
+						}
+					}
+					for (unsigned int i = 0; i < confound_points.size(); i++)
+					{
+						confound_points[i].t += t[j];
+// 						confound_points[i].x += 150;
+						sim_points.push_back(confound_points[i]);
+					}
+					confound_points.clear();
+				}//end confounded point generation
+			*/
+// 				printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
+
+				
+				//Begin analysis
+			
+				//Zero out uncertainties (assume we are starting from calibrated versions
+				
+//				digitizer.digitize_points(sim_points);
+		
+				//Ignore all the simpoints - use the root file
+				sim_points = root_hits_array[n];
+				
+				timing_clock = clock();
+				
+				if (use_prog_sep == true)
+				{
+					dirc_model->set_focus_mirror_angle(\
+						spread_ang.Gaus(main_mirror_angle,0),\
+						spread_ang.Gaus(0,0));
+					dirc_model->set_upper_wedge_angle_diff(\
+						spread_ang.Gaus(0,0),\
+						spread_ang.Gaus(0,0));
+					//Make Prog Sep with proper points
+					/*
+					ll_diff = progressive_separation->get_ll_progressive(\
+						sim_points,\
+						BAR[n],\
+						E[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						tracking_unc,\
+						ckov_unc);
+					*/
+				}
+				else
+				{
+					dirc_model->set_focus_mirror_angle(\
+						spread_ang.Gaus(main_mirror_angle,0),\
+						spread_ang.Gaus(0,0));
+					dirc_model->set_upper_wedge_angle_diff(\
+						spread_ang.Gaus(0,0),\
+						spread_ang.Gaus(0,0));
+						
+					dirc_model->sim_reg_n_photons(\
+						hits_trk_is_pion,\
+						n_phi_phots,\
+						n_z_phots,\
+						pion_mc_angle,\
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						0,\
+						ckov_unc/pdf_unc_red_fac,\
+						pion_mc_beta);
+
+					dirc_model->sim_reg_n_photons(\
+						hits_trk_is_kaon,\
+						n_phi_phots,\
+						n_z_phots,\
+						kaon_mc_angle,
+						BAR[n],\
+						x[n],\
+						y[n],\
+						theta[n],\
+						phi[n],\
+						0,\
+						ckov_unc/pdf_unc_red_fac,\
+						kaon_mc_beta);
+					double avg_x = 0;	
+					double avg_y = 0;	
+					double avg_t = 0;	
+					for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
+					{
+						hits_trk_is_pion[k].t += t[n];
+						min_t = std::min(min_t,hits_trk_is_pion[k].t - 2*n);
+						avg_x += hits_trk_is_pion[k].x;
+						avg_y += hits_trk_is_pion[k].y;
+						avg_t += hits_trk_is_pion[k].t - 2*n;
+					}
+
+					double high_avg = 0;
+					double low_avg = 0;
+					double high_min = 10000000;
+					double low_min = 10000000;
+					int high_count = 0;
+					int low_count = 0;
+					double tmp_t = -1;
+					double tmp_x = -1;
+					double tmp_y = -1;
+					for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
+					{
+						tmp_t = hits_trk_is_pion[k].t - 2*n;
+						tmp_x = hits_trk_is_pion[k].x;
+						tmp_y = hits_trk_is_pion[k].y;
+						if (n == 0 && fill_distributions == true)
+						{
+							pion_dist_x->Fill(tmp_x);
+							pion_dist_y->Fill(tmp_y);
+							pion_dist_t->Fill(tmp_t);
+							pion_dist_xy->Fill(tmp_x, tmp_y);
+							pion_dist_xt->Fill(tmp_x, tmp_t);
+							pion_dist_yt->Fill(tmp_t, tmp_t);
+						}
+							
+						if (tmp_t > avg_t/hits_trk_is_pion.size())
+						{
+							high_count++;
+							high_avg += tmp_t;
+							high_min = std::min(high_min,tmp_t);
+						}
+						else
+						{
+							low_count++;
+							low_avg += tmp_t;
+							low_min = std::min(low_min,tmp_t);
+						}
+					}
+					printf("\nAvg t High : low : diff : %12.04f : %12.04f : % 12.04f\n",high_avg/high_count,low_avg/low_count,high_avg/high_count-low_avg/low_count);
+					printf("Min t High : low : diff : %12.04f : %12.04f : % 12.04f\n",high_min,low_min,high_min - low_min);
+
+					for (unsigned int k = 0; k < hits_trk_is_kaon.size(); k++)
+					{
+						hits_trk_is_kaon[k].t += t[n];
+					}
+					printf("Pion Avg x y t: %12.04f %12.04f %12.04f\n",avg_x/hits_trk_is_pion.size(),avg_y/hits_trk_is_pion.size(),avg_t/hits_trk_is_pion.size());
+					printf("pion min_t: %12.04f\n",min_t);
+					pdf_as_pion->set_support(hits_trk_is_pion);
+					pdf_as_kaon->set_support(hits_trk_is_kaon);
+					
+					
+// 					printf("betas: %12.04f %12.04f\n",pion_mc_beta,kaon_mc_beta);
+					
+					llc = pdf_as_pion->get_log_likelihood(sim_points);
+					llf = pdf_as_kaon->get_log_likelihood(sim_points);
+					
+// 					printf("%06d\n",sim_points.size());
+					
+					ll_diff = llc - llf;
+					
+// 					printf("\n%12.04f %12.04f %12.04f\n",llc,llf,ll_diff);
+					int correct_id = 1;
+					if (ll_diff*pion_kaon_diff < 0)
+					{
+						correct_id = 0;
+						for (unsigned int k = 0; k < sim_points.size(); k++)
+						{
+//  							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
+						}
+					}
+					for (unsigned int k = 0; k < sim_points.size(); k++)
+					{
+//  						printf("%12.04f %12.04f %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t);
+					}
+					if (ll_diff == ll_diff)
+					{
+// 						printf("\n%12.04f %12.04f %12.04f %d\n",llc,llf,ll_diff,correct_id);
+						for (unsigned int k = 0; k < sim_points.size(); k++)
+						{
+// 							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
+								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
+								
+						}
+					}
+				}
+				
+				timing_clock = clock() - timing_clock;
+				
+				simulation_time->Fill(((float)timing_clock)/(CLOCKS_PER_SEC)*1000);
+				
+				
+// 				printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],ll_diff);
+				if(abs(PID[n])==8||PID[n]==9){
+					ll_diff_pion->Fill(ll_diff);
+					
+					if (ll_diff > 0)
+					{
+						zero_pion_id->Fill(1);
+					}
+					else
+					{
+						zero_pion_id->Fill(0);
+					}
+						
+					phot_found_pion->Fill(sim_points.size());
+				}
+				else{
+      
+					ll_diff_kaon->Fill(ll_diff);
+					if (ll_diff < 0)
+					{
+						zero_kaon_id->Fill(1);
+					}
+					else
+					{
+						zero_kaon_id->Fill(0);
+					}
+					phot_found_kaon->Fill(sim_points.size());
+				}
+			}
+		}
+		printf("\n");//ensure we're on a new line at the end
+		printf("Kaon missID: %12.04f%\n",100.0*zero_kaon_id->GetBinContent(1)/(zero_kaon_id->GetBinContent(1)+zero_kaon_id->GetBinContent(2)));
+		printf("Pion missID: %12.04f%\n",100.0*zero_pion_id->GetBinContent(1)/(zero_pion_id->GetBinContent(1)+zero_pion_id->GetBinContent(2)));
+	}
+	else if(inputfile){
+	  
+		printf("Csv file with name %s selected.\n",in_str);
 		printf("Opening %s with time window of %fns\n",in_str,time_window);
 	  
 		int mc_tally=0;
@@ -459,6 +1100,7 @@ int main(int nargs, char* argv[])
 		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
 // 			if (iE > 4) continue;
+			if (r >= max_particles) break;
 			
 			if (force_kinematics == true)
 			{
@@ -521,7 +1163,7 @@ int main(int nargs, char* argv[])
 						y[n],\
 						theta[n],\
 						phi[n],\
-						tracking_unc,\
+						0,\
 						ckov_unc,\
 						pion_mc_beta);
 					pion_kaon_diff = 1;
@@ -536,7 +1178,7 @@ int main(int nargs, char* argv[])
 						y[n],\
 						theta[n],\
 						phi[n],\
-						tracking_unc,\
+						0,\
 						ckov_unc,\
 						kaon_mc_beta);
 					pion_kaon_diff = -1;
@@ -635,14 +1277,9 @@ int main(int nargs, char* argv[])
 					}
 					confound_points.clear();
 				}//end confounded point generation
-			
-// 				printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
-
 				
 				//Begin analysis
 			
-				//Zero out uncertainties (assume we are starting from calibrated versions
-				
 				digitizer.digitize_points(sim_points);
 				
 				
@@ -658,7 +1295,7 @@ int main(int nargs, char* argv[])
 						spread_ang.Gaus(0,0),\
 						spread_ang.Gaus(0,0));
 					
-					
+				printf("ASDASFDAFSAFASD\n");	
 					ll_diff = progressive_separation->get_ll_progressive(\
 						sim_points,\
 						BAR[n],\
@@ -706,33 +1343,7 @@ int main(int nargs, char* argv[])
 						0,\
 						ckov_unc/pdf_unc_red_fac,\
 						kaon_mc_beta);
-					
-// 					dirc_model->sim_rand_n_photons(\
-// 						hits_trk_is_pion,\
-// 						n_phi_phots*n_z_phots,\
-// 						pion_mc_angle,\
-// 						BAR[n],\
-// 						x[n],\
-// 						y[n],\
-// 						theta[n],\
-// 						phi[n],\
-// 						tracking_unc,\
-// 						ckov_unc/pdf_unc_red_fac,\
-// 						pion_mc_beta);
-// 
-// 					dirc_model->sim_rand_n_photons(\
-// 						hits_trk_is_kaon,\
-// 						n_phi_phots*n_z_phots,\
-// 						kaon_mc_angle,
-// 						BAR[n],\
-// 						x[n],\
-// 						y[n],\
-// 						theta[n],\
-// 						phi[n],\
-// 						tracking_unc,\
-// 						ckov_unc/pdf_unc_red_fac,\
-// 						kaon_mc_beta);
-					
+			
 					for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
 					{
 						hits_trk_is_pion[k].t += t[n];
@@ -759,9 +1370,11 @@ int main(int nargs, char* argv[])
 					if (ll_diff*pion_kaon_diff < 0)
 					{
 						correct_id = 0;
+						
+						printf("wrong: %12.04f %d\n",ll_diff,pion_kaon_diff);
 						for (unsigned int k = 0; k < sim_points.size(); k++)
 						{
-//  							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
+  							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
 								log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
 								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
 								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
@@ -1145,6 +1758,18 @@ int main(int nargs, char* argv[])
 		printf("Refraction histograms created\n");
 	}
 */	
+
+	tfile->cd();
+
+	pion_dist_geant_xy->Write();
+	pion_dist_geant_xt->Write();
+	pion_dist_geant_yt->Write();
+	pion_dist_geant_x->Write();
+	pion_dist_geant_y->Write();
+	pion_dist_geant_t->Write();
+	
+	pion_dist_x->Write();
+	pion_dist_y->Write();
 	
 	pion_dist_xy->Write();
 	kaon_dist_xy->Write();

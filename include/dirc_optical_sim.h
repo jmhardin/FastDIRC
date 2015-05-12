@@ -279,6 +279,9 @@ public:
 	double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength);
 	double get_beta(double E, double m);
 	void set_upper_wedge_angle_diff(double rads, double radsy_y = 0);	
+	double get_bar_offset(int bar);
+	int get_bar_from_x(double x);
+	
 	DircOpticalSim(\
 		int rand_seed = 4357,\
 		double ifoc_r = -1200, \

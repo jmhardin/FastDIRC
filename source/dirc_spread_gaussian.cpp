@@ -23,7 +23,7 @@ DircSpreadGaussian::DircSpreadGaussian(\
 	t_sig2inv = 1/(t_unc*t_unc);
 	
 	min_probability = imin_prob;
-	
+
 	rand_gen = new TRandom3(123);
 	support_points = isupport;
 	
@@ -96,7 +96,7 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 // 		tprob = std::max(tprob,min_probability);
 		
 		rval += weight*log_mult*log(tprob+min_probability);
-// 		printf("tprob: %04d %12.04f \n",i,tprob*support_points.size());
+// 		printf("tprob: %04d %12.04f \n",i,tprob+min_probability);
 	}
 	rval -= log(inpoints.size());
 	

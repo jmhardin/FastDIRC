@@ -37,8 +37,6 @@ public:
 		if (r2 < 5*sigma2)
 		{
 			return exp(-r2*sigma2inv);
-			//return 5*sigma2 - r2;
-// 			return 1;
 		}
 		else
 		{

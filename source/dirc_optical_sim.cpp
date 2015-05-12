@@ -436,6 +436,44 @@ double DircOpticalSim::get_beta(double E, double m) {
     }
 
 }
+double DircOpticalSim::get_bar_offset(int bar)
+{
+        return fabs(bar)/bar*((150-0.5*(barWidth))+bar*(barWidth+.015));
+	//old version:
+//        return fabs(bar)/bar*((150-0.5*(barWidth))+bar*(barWidth));
+}
+int DircOpticalSim::get_bar_from_x(double x)
+{
+	
+	if (x < -150)
+	{
+		return (x+150)/(barWidth+.015) - 1;
+	}
+	else if (x > 150)
+	{
+		return  (x-150)/(barWidth+.015) + 1;
+	}
+	else
+	{
+		return 0;
+	}
+	
+	//Old version
+/*
+	if (x < -150)
+	{
+		return (x+150)/(barWidth) - 1;
+	}
+	else if (x > 150)
+	{
+		return  (x-150)/(barWidth) + 1;
+	}
+	else
+	{
+		return 0;
+	}
+*/
+}
 void DircOpticalSim::sim_rand_n_photons(\
 	std::vector<dirc_point> &out_points,\
         int n_photons, \
@@ -650,7 +688,8 @@ void DircOpticalSim::fill_rand_phi(\
         //
         //cdd shift the x value to account for bar number here, units in mm
         //
-        out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
+        //out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
+        out_val.x += get_bar_offset(particle_bar);
 	
         ovals.push_back(out_val);
     }
@@ -940,7 +979,9 @@ void DircOpticalSim::fill_reg_phi(\
 				dy,\
 				dz,\
 				sqrt(1-1/(1.47*1.47)));
-			
+
+		//	if (j > 1000 && j < 1003){printf("warp_ray: %12.04f\n",mm_index);}
+
 			if (z > 0)
 			{
 				continue;
@@ -999,7 +1040,8 @@ void DircOpticalSim::fill_reg_phi(\
 			
 			//TODO - stick this in an inlided function to ensure consistency between reg and rand.
 			
-			out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
+			//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
+			out_val.x += get_bar_offset(particle_bar);
 			out_val.t = mm_index/(c_mm_ns);
 			ovals.push_back(out_val);
 		}
@@ -1019,7 +1061,7 @@ double DircOpticalSim::warp_ray(\
 //Uses bar geometry.
 //Modifys the ray.
 //Be careful about x,y,and z - can't straight rotate that
-//returns distance traveled
+//returns distance traveled (mm) times index
 
     double rval = 0; //stores total distance;
 
@@ -1226,6 +1268,7 @@ double DircOpticalSim::warp_wedge(\
         n_dot_v = -(dy*upperWedgeClosePlaneNy + dz*upperWedgeClosePlaneNz + dx*upperWedgeClosePlaneNx);
         n_dot_v0 = -(y*upperWedgeClosePlaneNy + z*upperWedgeClosePlaneNz + x*upperWedgeClosePlaneNx);
 
+
         dt = -(upperWedgeClosePlaneD+n_dot_v0)/n_dot_v;
 
         if (dt*dy + y < upperWedgeTop + barLength/2) {
@@ -1289,6 +1332,7 @@ double DircOpticalSim::warp_wedge(\
 
     //and we're done.  Everything should be correct now with the ray at the top of the wedge
     //return the distance traveled times the index it traveled in
+
     return mm_index;
 
 }
@@ -1459,6 +1503,7 @@ double DircOpticalSim::warp_box(\
 
 
     double trval  = 0;
+
     if (three_seg_mirror == true) {
 // 		printf("preplane x: %8.04f   y: %8.04f   z: %8.04f\n",x,y,z);
         trval = three_seg_reflect(\
@@ -1469,7 +1514,7 @@ double DircOpticalSim::warp_box(\
                                   dy,\
                                   dz);
     } else {
-        trval = cylindrical_reflect(\
+	trval = cylindrical_reflect(\
                                     x,\
                                     y,\
                                     z,\
