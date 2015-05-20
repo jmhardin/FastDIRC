@@ -282,14 +282,14 @@ int main(int nargs, char* argv[])
 	double resx = 6;
 	double resy = 6;
 	double rest = 1;
-	double minx = -8000;
-	double maxx = -minx;
-	double miny = -800;
-	double maxy = -miny;
-//	double minx = -1000;
-//	double maxx = 1500;
-//	double miny = -50;
-//	double maxy = 210;
+//	double minx = -8000;
+//	double maxx = -minx;
+//	double miny = -800;
+//	double maxy = -miny;
+	double minx = -1000;
+	double maxx = 1500;
+	double miny = -50;
+	double maxy = 300;
 	double mint = 0;
 	double maxt = 1000;
 	double t_unc = 1;
@@ -372,6 +372,8 @@ int main(int nargs, char* argv[])
 	TH1F *pion_dist_x = new TH1F("pion_dist_x","x val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx);
 	TH1F *pion_dist_y = new TH1F("pion_dist_y","y val of intercepted points - pion",(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH1F *pion_dist_t = new TH1F("pion_dist_t","t val of intercepted points - pion",(maxt-mint)/(res_enhance*rest),mint,maxt);
+	TH1F *kaon_dist_x = new TH1F("kaon_dist_x","x val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx);
+	TH1F *kaon_dist_y = new TH1F("kaon_dist_y","y val of intercepted points - kaon",(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH1F *kaon_dist_t = new TH1F("kaon_dist_t","t val of intercepted points - kaon",(maxt-mint)/(res_enhance*rest),mint,maxt);
 
 	TH1F *pion_dist_geant_x = new TH1F("pion_dist_geant_x","x val of intercepted points (from geant) - pion",(maxx-minx)/(res_enhance*resx),minx,maxx);
@@ -503,8 +505,9 @@ int main(int nargs, char* argv[])
 			iBAR = dirc_model->get_bar_from_x(particle_x[0]*10);
 
 			if (iBAR != 6) {continue;}
+//			if (iPID == 8) {continue;}
 			ix = particle_x[0]*10 - dirc_model->get_bar_offset(iBAR);
-			iy = particle_y[0]*10 + 1040;//Figure out that geometry
+			iy = particle_y[0]*10 + 700;//Figure out that geometry
 			it = gen_t[0] + 2*r;//2ns spacing of events at least.
 			iE = gen_E[0];
 			double p_trans = sqrt(py[0]*py[0]+px[0]*px[0]);
@@ -537,9 +540,10 @@ int main(int nargs, char* argv[])
 			{
 				dirc_point addpt;
 				//these are swapped knowingly
-				addpt.x = hity[j]*10 + 151.4;
-				addpt.y = hitw[j]*10 - 28.85 + 35;
-				addpt.t = t[r] + hit_t[j]-9;
+				addpt.x = hity[j]*10 + 151.4 + 0;
+				addpt.y = hitw[j]*10 - 28.85 + 20;
+				//addpt.t = t[r] + hit_t[j] - 11;
+				addpt.t = hit_t[j] + 2*r;
 
 				if (addpt.t - 2*r < 0)
 				{//hmmmm can't be - ignore it
@@ -660,7 +664,7 @@ int main(int nargs, char* argv[])
 				pimass,\
 				prog_thresh);
 				
-		r = 15;
+//		r = 100;
 
 		for(unsigned int n=0;n < r; n++){
 	
@@ -952,8 +956,36 @@ int main(int nargs, char* argv[])
 					{
 						hits_trk_is_kaon[k].t += t[n];
 					}
-					printf("Pion Avg x y t: %12.04f %12.04f %12.04f\n",avg_x/hits_trk_is_pion.size(),avg_y/hits_trk_is_pion.size(),avg_t/hits_trk_is_pion.size());
-					printf("pion min_t: %12.04f\n",min_t);
+					for (unsigned int k = 0; k < hits_trk_is_kaon.size(); k++)
+					{
+						tmp_t = hits_trk_is_kaon[k].t - 2*n;
+						tmp_x = hits_trk_is_kaon[k].x;
+						tmp_y = hits_trk_is_kaon[k].y;
+						if (n == 0 && fill_distributions == true)
+						{
+							kaon_dist_x->Fill(tmp_x);
+							kaon_dist_y->Fill(tmp_y);
+							kaon_dist_t->Fill(tmp_t);
+							kaon_dist_xy->Fill(tmp_x, tmp_y);
+							kaon_dist_xt->Fill(tmp_x, tmp_t);
+							kaon_dist_yt->Fill(tmp_t, tmp_t);
+						}
+							
+						if (tmp_t > avg_t/hits_trk_is_kaon.size())
+						{
+							high_count++;
+							high_avg += tmp_t;
+							high_min = std::min(high_min,tmp_t);
+						}
+						else
+						{
+							low_count++;
+							low_avg += tmp_t;
+							low_min = std::min(low_min,tmp_t);
+						}
+					}
+					//printf("Pion Avg x y t: %12.04f %12.04f %12.04f\n",avg_x/hits_trk_is_kaon.size(),avg_y/hits_trk_is_kaon.size(),avg_t/hits_trk_is_kaon.size());
+					//printf("kaon min_t: %12.04f\n",min_t);
 					pdf_as_pion->set_support(hits_trk_is_pion);
 					pdf_as_kaon->set_support(hits_trk_is_kaon);
 					
@@ -1770,6 +1802,8 @@ int main(int nargs, char* argv[])
 	
 	pion_dist_x->Write();
 	pion_dist_y->Write();
+	kaon_dist_x->Write();
+	kaon_dist_y->Write();
 	
 	pion_dist_xy->Write();
 	kaon_dist_xy->Write();

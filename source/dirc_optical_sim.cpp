@@ -30,6 +30,13 @@ DircOpticalSim::DircOpticalSim(
     sens_size = isens_size;
     sens_rot = isens_rot;
 
+    double prism_height = 0;
+    bool remove_prism = true;
+    if (remove_prism == true)
+    {
+        prism_height = 20;
+        printf("Removing the small wedge (prism) with a size of %12.02f mm\n",prism_height);
+    }
 
 
     barLength=4900;
@@ -44,11 +51,13 @@ DircOpticalSim::DircOpticalSim(
     wedgeHeight = 91;
     upperWedgeDepthHigh = 130;
     upperWedgeTop = 178.6;
-    upperWedgeHeight = 78;
+    upperWedgeHeight = 78 - prism_height;
     upperWedgeBottom = upperWedgeTop-upperWedgeHeight;
 
     lowerWedgeExtensionZ = -wedgeDepthHigh\
                            - tan(wedgeCloseAngle/57.296)*(upperWedgeBottom - wedgeHeight);
+
+    printf("Lower Wedge Top: %12.04f Upper Wedge Bottom: %12.04f\n",wedgeHeight, upperWedgeBottom);
 
     //Variables used for plane intersection
     wedgeClosePlaneNx = 0; //Shouldn't be needed
@@ -1207,7 +1216,6 @@ double DircOpticalSim::warp_wedge(\
             //No bottom wedge, try top
             if (dt*dy < upperWedgeTop) { //Should always be true... I hope (remove later?)
                 //Does pass through optical interface
-// 				if (dt*dy
 
                 //Following statement performs the propagation if it does not fail
                 mm_index += dt*quartzIndex;
@@ -1234,6 +1242,8 @@ double DircOpticalSim::warp_wedge(\
     //Assume close enough to determine which wedge it hit
     double ty = dt*dy + y - barLength/2;
 
+//    printf("%12.04f\n",ty);
+
     if ((ty < wedgeHeight)) {
         //reflect it off bottom wedge
 
@@ -1241,6 +1251,7 @@ double DircOpticalSim::warp_wedge(\
         mm_index += dt*quartzIndex;
         if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
             //Goes out the window, fail and return
+	    //Shouldn't
             z = 1337;
             return -1;
         }
@@ -1393,8 +1404,6 @@ bool DircOpticalSim::x_wedge_coerce_check(\
     //returns false if it goes out the window on the x step
     //Will not check for y and z directions (assumes dt corresponds to an intersection/reflection point)
 
-// 	double cx = x;
-// 	double cdx = dx;
     double cdt = 0;
     double tdt = 0;
     double ty = y - barLength/2;
@@ -1409,7 +1418,6 @@ bool DircOpticalSim::x_wedge_coerce_check(\
             tdt = -x + barWidth/2 - wedgeWidthOff;
             tdt /= dx;
         }
-// 		printf("tdt: %12.04f dx: %12.04f\n",tdt,dx);
         if (tdt + cdt < dt) {
             //bounced
             //add to total time taken
@@ -1417,12 +1425,15 @@ bool DircOpticalSim::x_wedge_coerce_check(\
             ty += dy*tdt;
             if (ty < upperWedgeBottom && ty > wedgeHeight) {
                 //out the window on an edge
-                return false;
+        	//this is ok, finish propagation without bouncing
+		printf("%12.04f\n",ty);
+		//return false;
             }
 
             //not out the window, propagate x for the next iteration
             x += tdt*dx;
             if (ty < upperWedgeBottom) {
+		//Must be less than Wedge height at this point
                 //bounce off lower wedge
                 dx = -dx;
             } else {
@@ -1435,11 +1446,10 @@ bool DircOpticalSim::x_wedge_coerce_check(\
             tdt = dt - cdt;
             break;
         }
-// 		printf("x: %12.04f\n",x);
     }
     //Finish last leg of trip:
     x += dx*tdt;
-    y = barLength/2 + ty + dy*tdt;//Note that y starts at zero (bar middle, but ty starts at bar top
+    y = barLength/2 + ty + dy*tdt;//Note that y starts at zero (bar middle), but ty starts at bar top
     z += dt*dz;//Implemented for convenience - z direction irrelevant to window calculation
 
     return true;//not out the window for the whole trip

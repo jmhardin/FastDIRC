@@ -1,6 +1,6 @@
 double gaussian_ROC_integral(double sep, double sig)
 {
-	int npoints = 100000;
+	int npoints = 10000;
 	double min = sep - 10*sig;
 	double max = sep + 10*sig;
 	double step = (max - min)/npoints;
@@ -20,7 +20,7 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 {
 	//newton's method - quick and dirty
 	
-	double dsig = .001;
+	double dsig = .01;
 
 	double cur_sig = sig_start;
 	double cur_y = 0;
@@ -42,10 +42,6 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 	}
 
 	return cur_sig;
-	
-	
-
-
 }
 double runGraphicHistos(TString ifile = "tmpfitdirc.root")
 {
@@ -83,6 +79,10 @@ TFile *f1 = new TFile(ifile);
 TH1F *hpion = (TH1F*) f1->Get("ll_diff_pion");
 TH1F *hkaon = (TH1F*) f1->Get("ll_diff_kaon");
 
+int rebin = 20;
+hpion->Rebin(rebin);
+hkaon->Rebin(rebin);
+
 hpion->SetAxisRange(hmin,hmax);
 hkaon->SetAxisRange(hmin,hmax);
 
@@ -105,10 +105,12 @@ pion_veto_eff->SetTitle("Pion Veto Efficiency");
 kaon_missid->SetName("kaon_missid");
 kaon_missid->SetTitle("Kaon Miss ID");
 
+
 for (int i = 0; i < pion_veto_eff->GetNbinsX(); i++)
 {
 	pion_veto_eff->SetBinContent(i,hpion->Integral(i,pion_veto_eff->GetNbinsX()));
 	kaon_missid->SetBinContent(i,hkaon->Integral(0,i));
+//	printf("%12.04f %12.04f %d\n",1,1,i);
 }
 
 pion_veto_eff->SetAxisRange(0,10000,"Y");
