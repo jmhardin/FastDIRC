@@ -531,7 +531,6 @@ void DircOpticalSim::sim_reg_n_photons(\
         double phi_theta_unc /*= 0*/,\
         double ckov_theta_unc /* = 0*/,\
         double beta /* = -1*/) {
-
 //     std::vector<dirc_point> out_points;
     out_points.clear();
     fill_reg_phi(\
@@ -564,7 +563,6 @@ void DircOpticalSim::fill_rand_phi(\
                                    double ckov_theta_unc /* = .0055*57.3*/,\
                                    double beta/* = -1*/) {
 // 	double sDepth = .95*barDepth;
-
 
     //cdd
     //negative bar number is - x axis?

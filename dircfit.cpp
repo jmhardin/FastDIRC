@@ -56,7 +56,7 @@ int main(int nargs, char* argv[])
 	bool out_csv = false;
 	double time_window=-1;//time window for confounded pmt hits, in ns	
 	
-	double energy = 4.0;
+	double energy = 5.0;
 	double kmass = .4937;
 	double pimass = .1396;
 	double mumass = .1057;
