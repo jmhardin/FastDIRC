@@ -35,6 +35,7 @@ DircOpticalSim::DircOpticalSim(
     if (remove_prism == true)
     {
         prism_height = 20;
+	upperWedgeGap = prism_height;
         printf("Removing the small wedge (prism) with a size of %12.02f mm\n",prism_height);
     }
 
@@ -51,7 +52,7 @@ DircOpticalSim::DircOpticalSim(
     wedgeHeight = 91;
     upperWedgeDepthHigh = 130;
     upperWedgeTop = 178.6;
-    upperWedgeHeight = 78 - prism_height;
+    upperWedgeHeight = 78;
     upperWedgeBottom = upperWedgeTop-upperWedgeHeight;
 
     lowerWedgeExtensionZ = -wedgeDepthHigh\
@@ -405,6 +406,7 @@ double DircOpticalSim::get_cerenkov_angle_rand(double beta, double additional_sp
 
     return out_ang;
 }
+
 bool DircOpticalSim::quartz_transmission_mc(double R, double lambda) {
 // 	if (R > 10000)
 // 	{
@@ -510,6 +512,10 @@ void DircOpticalSim::sim_rand_n_photons(\
                   phi_theta_unc,\
                   ckov_theta_unc,\
                   beta);
+    //Reflection wasn't being used...
+    sidemirror_reflect_points(out_points);
+
+
 //     return out_points;
 }
 void DircOpticalSim::sim_reg_n_photons(\
@@ -540,7 +546,8 @@ void DircOpticalSim::sim_reg_n_photons(\
                  phi_theta_unc,\
                  ckov_theta_unc,\
                  beta);
-
+    //Reflection wasn't being used...
+    sidemirror_reflect_points(out_points);
 //     return out_points;
 }
 void DircOpticalSim::fill_rand_phi(\
@@ -1288,6 +1295,13 @@ double DircOpticalSim::warp_wedge(\
                 return -1;
             }
 
+	    if (y > wedgeHeight + barLength/2 && y < upperWedgeBottom + upperWedgeGap + barLength/2)
+	    {
+		//We let it go out the gap on the slanted side, but not on the left and right.
+		z = 1337;
+		return -1;
+	    }
+
             dx += 2*n_dot_v*upperWedgeClosePlaneNx;
             dy += 2*n_dot_v*upperWedgeClosePlaneNy;
             dz += 2*n_dot_v*upperWedgeClosePlaneNz;
@@ -1421,11 +1435,14 @@ bool DircOpticalSim::x_wedge_coerce_check(\
             //add to total time taken
             cdt += tdt;
             ty += dy*tdt;
-            if (ty < upperWedgeBottom && ty > wedgeHeight) {
+            if (ty > wedgeHeight && ty < upperWedgeBottom) {
                 //out the window on an edge
         	//this is ok, finish propagation without bouncing
 		//printf("%12.04f\n",ty);
 		//return false;
+            	x += tdt*dx;
+		tdt = dt - cdt;
+		break;
             }
 
             //not out the window, propagate x for the next iteration
