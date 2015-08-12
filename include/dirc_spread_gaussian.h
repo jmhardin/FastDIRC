@@ -1,6 +1,7 @@
 #include "dirc_point.h"
 #include "dirc_spread_radius.h"
 #include <vector>
+#include <math.h>
 #include <TRandom3.h>
 #ifndef DIRC_SPREAD_GAUSSIAN
 #define DIRC_SPREAD_GAUSSIAN
