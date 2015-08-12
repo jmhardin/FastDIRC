@@ -86,7 +86,7 @@ hkaon->Rebin(rebin);
 hpion->SetAxisRange(hmin,hmax);
 hkaon->SetAxisRange(hmin,hmax);
 
-hpion->SetLineColor(kCyan);
+hpion->SetLineColor(kRed);
 //hpion->SetFillColorAlpha(kRed,.5);
 
 hkaon->SetLineColor(kBlue);
@@ -100,10 +100,10 @@ TH1F *pion_veto_eff = new TH1F(*hpion);
 TH1F *kaon_missid = new TH1F(*hkaon);
 
 pion_veto_eff->SetName("pion_veto_eff");
-pion_veto_eff->SetTitle("");
+pion_veto_eff->SetTitle("Pion Veto Efficiency");
 
 kaon_missid->SetName("kaon_missid");
-kaon_missid->SetTitle("");
+kaon_missid->SetTitle("Kaon Miss ID");
 
 
 for (int i = 0; i < pion_veto_eff->GetNbinsX(); i++)
@@ -119,9 +119,6 @@ double scale_int = 1/hpion->Integral(0,pion_veto_eff->GetNbinsX());
 pion_veto_eff->Scale(scale_int);
 scale_int = 1/hkaon->Integral(0,kaon_missid->GetNbinsX());
 kaon_missid->Scale(scale_int);
-
-hkaon->SetTitle("");
-hpion->SetTitle("");
 
 hkaon->Draw();
 hpion->Draw("SAME H");
@@ -168,7 +165,7 @@ roc_graph->SetLineColor(2);
 roc_graph->SetLineWidth(4);
 //roc_graph->SetMarkerColor(4);
 //roc_graph->SetMarkerStyle(21);
-roc_graph->SetTitle("");
+roc_graph->SetTitle("ROC Curve");
 roc_graph->GetXaxis()->SetTitle("Pion Veto Efficiency");
 roc_graph->GetYaxis()->SetTitle("Kaon Missid rate");
 roc_graph->GetXaxis()->SetLimits(0,1.01);
@@ -226,16 +223,16 @@ fhpion->SetLineColor(kRed);
 fhkaon->SetLineColor(kBlue);
 //hkaon->SetFillColorAlpha(kBlue,.5);
 
-fhkaon->SetTitle("");
+fhkaon->SetTitle("Fake Seperation distance = 5.23 mrad.  spread = 2.5mrad");
 
 TH1F *fpion_veto_eff = new TH1F(*fhpion);
 TH1F *fkaon_missid = new TH1F(*fhkaon);
 
 fpion_veto_eff->SetName("pion_veto_eff");
-fpion_veto_eff->SetTitle("");
+fpion_veto_eff->SetTitle("Pion Veto Efficiency");
 
 fkaon_missid->SetName("kaon_missid");
-fkaon_missid->SetTitle("");
+fkaon_missid->SetTitle("Kaon Miss ID");
 
 for (int i = 0; i < fpion_veto_eff->GetNbinsX(); i++)
 {
@@ -291,8 +288,7 @@ for (int i = 0; i < fpion_veto_eff->GetNbinsX(); i++)
 froc_graph = new TGraph(fxr,fyr);
 froc_graph->SetLineColor(4);
 froc_graph->SetLineWidth(4);
-froc_graph->SetLineStyle(2);
-froc_graph->SetTitle("");
+froc_graph->SetTitle("Fake ROC graph");
 froc_graph->GetXaxis()->SetTitle("\"Pion Veto Efficiency\"");
 froc_graph->GetYaxis()->SetTitle("\"Kaon Missid rate\"");
 froc_graph->GetXaxis()->SetLimits(0,1.01);

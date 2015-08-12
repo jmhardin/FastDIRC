@@ -42,8 +42,6 @@ private:
 	double upperWedgeClosePlaneNz;
 	double upperWedgeClosePlaneD;
 	double lowerWedgeExtensionZ;
-
-	double upperWedgeGap;
 	
 	
 	double focMirrorBottom;

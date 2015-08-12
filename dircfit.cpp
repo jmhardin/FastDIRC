@@ -91,12 +91,8 @@ int main(int nargs, char* argv[])
 	
 	int broaden_events = 0;
 	
-	//Sets the side boundarys of the distributions
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
-
-//	sm_xl = -50;
-//	sm_xr = sm_xl + 440;
 	
 	double overlap_x = -1;
 	
@@ -361,8 +357,8 @@ int main(int nargs, char* argv[])
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
 	
-	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",200000,-200,200);
-	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",200000,-200,200);
+	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",2000000,-500,500);
+	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",2000000,-500,500);
 	TH1F *phot_found_pion = new TH1F("phot_found_pion","number of photons found on pion angle", 1001,-.5,1000.5);
 	TH1F *phot_found_kaon = new TH1F("phot_found_kaon","number of photons found on kaon angle", 1001,-.5,1000.5);
 	
@@ -544,10 +540,8 @@ int main(int nargs, char* argv[])
 			{
 				dirc_point addpt;
 				//these are swapped knowingly
-				addpt.x = hity[j]*10 + 151.4 + 22;
-				addpt.y = hitw[j]*10 - 28.85 + 25.1;
-				//Strange extra hits at 149.15 for some reason
-				if (addpt.y > 149.1 && addpt.y < 149.2) continue;
+				addpt.x = hity[j]*10 + 151.4 + 0;
+				addpt.y = hitw[j]*10 - 28.85 + 20;
 				//addpt.t = t[r] + hit_t[j] - 11;
 				addpt.t = hit_t[j] + 2*r;
 
@@ -1796,18 +1790,6 @@ int main(int nargs, char* argv[])
 		printf("Refraction histograms created\n");
 	}
 */	
-
-	double t_lambda = 0;
-	for (int i = 0; i < 1000000; i++)
-	{
-		//4GeV pion
-		dirc_model->get_cerenkov_angle_rand(.9994,0,t_lambda);
-		pion_lambda->Fill(t_lambda);
-		//4GeV kaon
-		dirc_model->get_cerenkov_angle_rand(.99235,0,t_lambda);
-		kaon_lambda->Fill(t_lambda);
-	}
-
 
 	tfile->cd();
 
