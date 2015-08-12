@@ -1424,7 +1424,7 @@ bool DircOpticalSim::x_wedge_coerce_check(\
             if (ty < upperWedgeBottom && ty > wedgeHeight) {
                 //out the window on an edge
         	//this is ok, finish propagation without bouncing
-		printf("%12.04f\n",ty);
+		//printf("%12.04f\n",ty);
 		//return false;
             }
 

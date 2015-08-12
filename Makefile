@@ -1,4 +1,4 @@
-CFLAGS_BASE = -O3 -Wno-comment -Wl,--no-as-needed -L./lib/ `root-config --cflags` `root-config --glibs` 
+CFLAGS_BASE = -Ofast -Wno-comment -Wl,--no-as-needed -L./lib/ `root-config --cflags` `root-config --glibs` 
 CFLAGS_OPT = -g
 CFLAGS_BASE += $(CFLAGS_OPT)
 INCLUDE = -I./include/
