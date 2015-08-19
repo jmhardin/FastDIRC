@@ -295,9 +295,9 @@ void DircOpticalSim::rotate_2d(double &x, double &y, double cval, double sval) {
     y = sval*tx + cval*y;
 }
 void DircOpticalSim::set_bar_box_angle(double ang) {
-    //expect radians
-    box_angle_off_cval = cos(ang);
-    box_angle_off_sval = sin(ang);
+    //expect degrees
+    box_angle_off_cval = cos(ang/57.3);
+    box_angle_off_sval = sin(ang/57.3);
 }
 void DircOpticalSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
     upperWedgeClosePlaneNx = 0; //Shouldn't be needed

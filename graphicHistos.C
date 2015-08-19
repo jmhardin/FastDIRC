@@ -43,7 +43,7 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 
 	return cur_sig;
 }
-double runGraphicHistos(TString ifile = "tmpfitdirc.root")
+double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true)
 {
 double hmin = -100;
 double hmax = 100;
@@ -66,10 +66,11 @@ double spread = 2;
 double seperation = pi_mrad - k_mrad;
 double mean_pion = 0;
 double mean_kaon = mean_pion + seperation;
-
-printf("Energy: %4.02f\n",energy);
-printf("Mrad Seperation: %8.03f\n",seperation);
-
+if (verbose_out == true)
+{
+	printf("Energy: %4.02f\n",energy);
+	printf("Mrad Seperation: %8.03f\n",seperation);
+}
 //denominator pf spread
 double spreadsq2 = 2*spread*spread;
 
@@ -123,19 +124,23 @@ kaon_missid->Scale(scale_int);
 hkaon->SetTitle("");
 hpion->SetTitle("");
 
-hkaon->Draw();
-hpion->Draw("SAME H");
-c1->SetWindowSize(1000,800);
+if (verbose_out == true)
+{
+    hkaon->Draw();
+    hpion->Draw("SAME H");
+    c1->SetWindowSize(1000,800);
 
-c1->Print("overlap.gif");
+    c1->Print("overlap.gif");
+}
 
+if (verbose_out == true)
+{
+    pion_veto_eff->Draw("");
+    kaon_missid->Draw("SAME H");
 
-pion_veto_eff->Draw("");
-kaon_missid->Draw("SAME H");
-
-c1->SetWindowSize(1000,800);
-c1->Print("overlap_integral.gif");
-
+    c1->SetWindowSize(1000,800);
+    c1->Print("overlap_integral.gif");
+}
 
 TGraph* roc_graph;
 int roc_n = pion_veto_eff->GetNbinsX();
@@ -162,7 +167,12 @@ for (int i = 0; i < pion_veto_eff->GetNbinsX()-1; i++)
 	last_x = xr[i];
 	last_y = yr[i];
 }
-printf("ROC integral: %12.04f\n",ival);
+
+if (verbose_out == true)
+{
+	printf("ROC integral: %12.04f\n",ival);
+}
+
 roc_graph = new TGraph(xr,yr);
 roc_graph->SetLineColor(2);
 roc_graph->SetLineWidth(4);
@@ -175,9 +185,11 @@ roc_graph->GetXaxis()->SetLimits(0,1.01);
 roc_graph->SetMinimum(0);
 roc_graph->SetMaximum(1.01);
 
-roc_graph->Draw("ACP");
-c1->Print("roc_curve.gif");
-
+if (verbose_out == true)
+{
+    roc_graph->Draw("ACP");
+    c1->Print("roc_curve.gif");
+}
 spread = find_sig_val(seperation,ival,spread); 
 
 
@@ -299,19 +311,27 @@ froc_graph->GetXaxis()->SetLimits(0,1.01);
 froc_graph->SetMinimum(0);
 froc_graph->SetMaximum(1.01);
 
-froc_graph->Draw("");
-c1->Print("roc_curve_fake.gif");
+if (verbose_out == true)
+{
+	froc_graph->Draw("");
+	c1->Print("roc_curve_fake.gif");
+}
 
 
 
-
-printf("Matching resolution: %6.03f\n",spread);
-
+if (verbose_out == true)
+{
+	printf("Matching resolution: %6.03f\n",spread);
+}
+else
+{
+	printf("%6.04f\n",spread);
+}
 return spread;
 
 }
 
-void graphicHistos(TString ifile = "tmpfitdirc.root")
+void graphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true)
 {
-	runGraphicHistos(ifile);
+	runGraphicHistos(ifile, verbose_out);
 }

@@ -68,6 +68,7 @@ int main(int nargs, char* argv[])
 	
 	bool force_kinematics = false;
 	bool use_prog_sep = false;
+	bool kaleidoscope_plot = false;
 
 	int num_runs = 1000;
 	int max_particles = 1000000;
@@ -91,9 +92,34 @@ int main(int nargs, char* argv[])
 	
 	int broaden_events = 0;
 	
+	double resx = 6;
+	double resy = 6;
+	double rest = 1;
+//	double minx = -8000;
+//	double maxx = -minx;
+//	double miny = -800;
+//	double maxy = -miny;
+	double minx = -1500;
+	double maxx = 1500;
+	double miny = -500;
+	double maxy = 500;
+	double mint = 0;
+	double maxt = 1000;
+	double t_unc = 1;
+
+	double digit_miny = -50;
+	double digit_maxy = 300;
+	
+	digit_miny = miny;
+	digit_maxy = maxy;
+
+
 	//Sets the side boundarys of the distributions
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
+
+//	sm_xl = 10;
+//	sm_xr = 310;
 
 //	sm_xl = -50;
 //	sm_xr = sm_xl + 440;
@@ -164,6 +190,14 @@ int main(int nargs, char* argv[])
 			{
 				force_kinematics = true;
 			}
+			else if (strcmp(argv[i], "-coverage_plot") == 0)
+			{
+				coverage_plot = true;
+			}
+			else if (strcmp(argv[i], "-kaleidoscope_plot") == 0)
+			{
+				kaleidoscope_plot = true;
+			}
 			else if (strcmp(argv[i], "-prog_sep") == 0)
 			{
 				use_prog_sep = true;
@@ -187,6 +221,12 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				max_particles = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-pmt_res") == 0)
+			{
+				i++;
+				resx = atof(argv[i]);
+				resy = resx;
 			}
 			else if (strcmp(argv[i], "-liquid_index") == 0)
 			{
@@ -283,20 +323,7 @@ int main(int nargs, char* argv[])
 	
 	double main_mirror_angle = 74.11+mirror_angle_change;
 	
-	double resx = 6;
-	double resy = 6;
-	double rest = 1;
-//	double minx = -8000;
-//	double maxx = -minx;
-//	double miny = -800;
-//	double maxy = -miny;
-	double minx = -1000;
-	double maxx = 1500;
-	double miny = -50;
-	double maxy = 300;
-	double mint = 0;
-	double maxt = 1000;
-	double t_unc = 1;
+
 
 // 	double t_unc = .05;
 
@@ -352,7 +379,7 @@ int main(int nargs, char* argv[])
 		300.38,\
 		main_mirror_angle,\
 		600,\
-		47.87 + box_rot);
+		47.87 + box_rot + mirror_angle_change);
     	
 	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
 	double muon_angle, pion_angle, kaon_angle;
@@ -425,13 +452,12 @@ int main(int nargs, char* argv[])
 	dirc_model->set_three_seg_mirror(three_seg_mirror);
 	
 	
-	
 	DircDigitizer digitizer(\
 		minx,\
 		maxx,\
 		resx,\
-		miny,\
-		maxy,\
+		digit_miny,\
+		digit_maxy,\
 		resy,\
 		t_unc);
 
@@ -1333,7 +1359,6 @@ int main(int nargs, char* argv[])
 						spread_ang.Gaus(0,0),\
 						spread_ang.Gaus(0,0));
 					
-				printf("ASDASFDAFSAFASD\n");	
 					ll_diff = progressive_separation->get_ll_progressive(\
 						sim_points,\
 						BAR[n],\
@@ -1483,6 +1508,15 @@ int main(int nargs, char* argv[])
 		
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
+		
+		if (kaleidoscope_plot == true)
+		{
+			pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
+			kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
+			pion_beta = -1;
+			kaon_beta = -1;
+			ckov_unc = 0;
+		}
 			
 		std::vector<dirc_point> hit_points_pion;
 		std::vector<dirc_point> hit_points_kaon;
@@ -1545,14 +1579,13 @@ int main(int nargs, char* argv[])
 
 		for (int i = 0; i < num_runs; i++)
 		{
-	// 		dirc_model->set_pmt_angle(spread_ang.Gaus(47.87,box_rot_unc));
 			dirc_model->set_focus_mirror_angle(\
 				spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
 				spread_ang.Gaus(0,mirror_angle_change_yunc));
 			dirc_model->set_upper_wedge_angle_diff(\
 				spread_ang.Gaus(0,wedge_uncertainty),\
 				spread_ang.Gaus(0,upper_wedge_yang_spread));
-	// 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,bar_box_box_angle));
+	 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,box_rot_unc));
 			
 			printf("\r                                                    ");
 			printf("\rrunning iter %8d/%d  ",i+1,num_runs);
@@ -1616,9 +1649,11 @@ int main(int nargs, char* argv[])
 
 			for (int i = 0; i < num_cov; i++)
 			{
-				printf("\r                                                                                                                           ");
-				printf("\rcoverage iter %d/%d",i+1,num_cov);
-				
+				if ((i+1) % 1000 == 0)
+				{
+					//printf("\r                                                                                                                           ");
+					printf("\rcoverage iter %d/%d",i+1,num_cov);
+				}
 				fflush(stdout);
 				
 				particle_theta = spread_ang.Uniform(0,14);
@@ -1626,12 +1661,11 @@ int main(int nargs, char* argv[])
 				energy = spread_ang.Uniform(2,4.5);
 				pion_beta = dirc_model->get_beta(energy,pimass);
 				kaon_beta = dirc_model->get_beta(energy,kmass);
-				
 				dirc_model->sim_rand_n_photons(\
 					sim_points,\
 					n_sim_phots,\
 					pion_angle,\
-					0,\
+					1,\
 					particle_x,\
 					particle_y,\
 					particle_theta,\
@@ -1642,6 +1676,7 @@ int main(int nargs, char* argv[])
 				
 				for (unsigned int j = 0; j < sim_points.size(); j++)
 				{
+					//printf("%12.04f %12.04f\n",sim_points[j].x,sim_points[j].y);
 					pion_coverage_xy->Fill(sim_points[j].x+outcsv_x,sim_points[j].y);
 				}
 				
@@ -1649,7 +1684,7 @@ int main(int nargs, char* argv[])
 					sim_points,\
 					n_sim_phots,\
 					kaon_angle,\
-					0,\
+					1,\
 					particle_x,\
 					particle_y,\
 					particle_theta,\

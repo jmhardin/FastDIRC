@@ -1,9 +1,9 @@
 void outputDistro(TString ifile_pref)
 {
-	double xmin = -1000;
+	double xmin = -1500;
 	double xmax = 1500;
-	double ymin = -50;
-	double ymax = 250;	
+	double ymin = -150;
+	double ymax = 350;	
 
 	double tmin = 0;
 	double tmax = 250;
@@ -56,6 +56,8 @@ void outputDistro(TString ifile_pref)
    	Int_t nb=50;
    	TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
    	pi_dist->Draw("colz");
+
+	c1->SetWindowSize(3600,2400);
 
 	c1->Print(ifile_pref + "_pion_dist.gif");	
 

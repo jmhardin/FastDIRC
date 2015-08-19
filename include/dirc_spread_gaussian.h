@@ -1,7 +1,7 @@
 #include "dirc_point.h"
 #include "dirc_spread_radius.h"
 #include <vector>
-#include <math.h>
+//#include <math.h>
 #include <TRandom3.h>
 #ifndef DIRC_SPREAD_GAUSSIAN
 #define DIRC_SPREAD_GAUSSIAN
@@ -37,6 +37,7 @@ public:
 	{
 		if (r2 < 5*sigma2)
 		{
+		//	printf("%12.04f\n",exp(-r2*sigma2inv));
 			return exp(-r2*sigma2inv);
 		}
 		else
