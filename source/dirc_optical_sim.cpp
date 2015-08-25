@@ -92,6 +92,8 @@ DircOpticalSim::DircOpticalSim(
 
     sidemirror_xl = -1000000;
     sidemirror_xr = 1000000;
+    sidemirror_reflectivity = .9;
+
 
     //Take average
     quartzIndex = 1.47;
@@ -181,6 +183,9 @@ void DircOpticalSim::fill_sens_plane_vecs() {
     sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
 // 	printf("ydist conv: %12.04f\n",sensPlaneYdistConversion);
 }
+void DircOpticalSim::set_sidemirror_reflectivity(double isr) {
+    sidemirror_reflectivity = isr;
+}
 void DircOpticalSim::fill_foc_mirror_vecs() {
     //is off by pi/2 to reduce rounding errors and such
     double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
@@ -250,6 +255,24 @@ void DircOpticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points) 
         }
         points[i].x = tmpx;
     }
+}
+void DircOpticalSim::sidemirror_reflect_point(dirc_point &point) {
+    double tmpx = 0;
+    tmpx = point.x;
+    while (tmpx < sidemirror_xl || tmpx > sidemirror_xr) {
+        if (rand_gen->Uniform(0,1) > sidemirror_reflectivity)
+	{
+	    point.t = -1337;
+	    break;
+	}
+	if (tmpx < sidemirror_xl) {
+            tmpx = 2*sidemirror_xl - tmpx;
+        }
+        if (tmpx > sidemirror_xr) {
+            tmpx = 2*sidemirror_xr - tmpx;
+        }
+    }
+    point.x = tmpx;
 }
 void DircOpticalSim::set_sidemirror(double ixr, double ixl) {
     sidemirror_xr = ixr;
@@ -512,8 +535,8 @@ void DircOpticalSim::sim_rand_n_photons(\
                   phi_theta_unc,\
                   ckov_theta_unc,\
                   beta);
-    //Reflection wasn't being used...
-    sidemirror_reflect_points(out_points);
+    //Reflection inside loops
+//    sidemirror_reflect_points(out_points);
 
 
 //     return out_points;
@@ -546,8 +569,8 @@ void DircOpticalSim::sim_reg_n_photons(\
                  phi_theta_unc,\
                  ckov_theta_unc,\
                  beta);
-    //Reflection wasn't being used...
-    sidemirror_reflect_points(out_points);
+    //Reflection inside loops
+//    sidemirror_reflect_points(out_points);
 //     return out_points;
 }
 void DircOpticalSim::fill_rand_phi(\
@@ -569,7 +592,9 @@ void DircOpticalSim::fill_rand_phi(\
     double emitAngle = ckov_theta;
     double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
     double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
-    int numPhots = n_photons;
+    int numPhots = n_photons/cos(particle_theta/57.3);
+
+//	printf("%d\n",numPhots);
 
 // 	double sourcez = -sDepth;
     double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
@@ -736,7 +761,7 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
     double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
     double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
 
-    int numPhots = n_photons;
+    int numPhots = n_photons/cos(particle_theta/57.3);
 
 // 	double sourcez = -sDepth;
     double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
@@ -861,6 +886,11 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
                                     dy,\
                                     dz);
 
+	sidemirror_reflect_point(out_val);	
+	if (out_val.t < 0)
+	{
+		continue;
+	}
         //should be threading time information into this soon
         out_val.t = mm_index/(c_mm_ns);
         std::pair<double, double> add_val;
@@ -938,12 +968,13 @@ void DircOpticalSim::fill_reg_phi(\
 	double sin_regphi;
 	double cos_regphi;
 
+	int adj_n_photons_phi = n_photons_phi/cos(particle_theta/57.3);
 
 	for (int i = 0; i < n_photons_z; i++) {
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
 
-		for (int j = 0; j < n_photons_phi; j++) {
-		regPhi = j*2*3.14159265357/(n_photons_phi);
+		for (int j = 0; j < adj_n_photons_phi; j++) {
+		regPhi = j*2*3.14159265357/(adj_n_photons_phi);
 
 		if (beta < 0) {
 			rand_add = rand_gen->Gaus(0,ckov_theta_unc);
@@ -1048,6 +1079,11 @@ void DircOpticalSim::fill_reg_phi(\
 				dy,\
 				dz);
 			
+			sidemirror_reflect_point(out_val);	
+			if (out_val.t < 0)
+			{
+				continue;
+			}
 			//should be threading time information into this soon
             		//
             		//out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;

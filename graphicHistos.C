@@ -43,12 +43,12 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 
 	return cur_sig;
 }
-double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true)
+double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true, double ienergy = 5)
 {
 double hmin = -100;
 double hmax = 100;
 
-double energy = 5;
+double energy = ienergy;
 
 double pi_mass = .13957;
 double k_mass = .49367;
@@ -79,6 +79,7 @@ TRandom3* randgen = new TRandom3();
 TFile *f1 = new TFile(ifile);
 TH1F *hpion = (TH1F*) f1->Get("ll_diff_pion");
 TH1F *hkaon = (TH1F*) f1->Get("ll_diff_kaon");
+TH1F *phots_pion = (TH1F*) f1->Get("phot_found_pion");
 
 int rebin = 20;
 hpion->Rebin(rebin);
@@ -322,6 +323,7 @@ if (verbose_out == true)
 if (verbose_out == true)
 {
 	printf("Matching resolution: %6.03f\n",spread);
+	printf("Matching resolution per photon: %6.03f\n",spread*sqrt(phots_pion->GetMean()));
 }
 else
 {
@@ -331,7 +333,7 @@ return spread;
 
 }
 
-void graphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true)
+void graphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true, double ienergy = 5)
 {
-	runGraphicHistos(ifile, verbose_out);
+	runGraphicHistos(ifile, verbose_out,ienergy);
 }

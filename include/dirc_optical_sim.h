@@ -101,6 +101,8 @@ private:
 	
 	double sidemirror_xr;
 	double sidemirror_xl;
+	double sidemirror_reflectivity;
+
 	
 	double quartzIndex;
 	double liquidIndex;
@@ -134,6 +136,7 @@ private:
 	void fill_threeseg_plane_vecs();
 	void fill_foc_mirror_vecs();
 	void sidemirror_reflect_points(std::vector<dirc_point> &points);
+	void sidemirror_reflect_point(dirc_point &point);
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
 	bool absorbtion_mc(double dx, double dy);
@@ -268,6 +271,7 @@ private:
 public:
 	void set_focmirror_nonuniformity(double nonuni_deg);
 	void set_sidemirror(double ixr, double ixl);
+	void set_sidemirror_reflectivity(double isr);
 	void set_three_seg_mirror(bool itsm);
 	void set_pmt_offset(double r);
 	void set_liquid_absorbtion(double iabs);

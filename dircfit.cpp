@@ -54,24 +54,38 @@ int main(int nargs, char* argv[])
 	bool inputfile = false;
 	bool inputrootfile = false;
 	bool out_csv = false;
+	bool slac_run = false;
 	double time_window=-1;//time window for confounded pmt hits, in ns	
 	
 	double energy = 5.0;
+	double energy_mean = energy;
+	double energy_spread = 0;
 	double kmass = .4937;
 	double pimass = .1396;
 	double mumass = .1057;
 
 	double particle_x = 0;
 	double particle_y = 0;
+	double particle_x_mean = particle_x;
+	double particle_y_mean = particle_y;
+	double particle_x_spread = 0;
+	double particle_y_spread = 0;
 	double particle_theta = 4;
+	double particle_theta_mean = particle_theta;
+	double particle_theta_spread = 0;
 	double particle_phi = 40;
 	
 	bool force_kinematics = false;
 	bool use_prog_sep = false;
 	bool kaleidoscope_plot = false;
+	bool flatten_time = false;
 
 	int num_runs = 1000;
 	int max_particles = 1000000;
+	int phi_phots_reduce = 1;
+
+	double mean_n_phot = 40;
+	double spread_n_phot = 0;
 	
 	double wedge_uncertainty = 0/57.3;
 	double refrac_index=1.47;
@@ -101,8 +115,8 @@ int main(int nargs, char* argv[])
 //	double maxy = -miny;
 	double minx = -1500;
 	double maxx = 1500;
-	double miny = -500;
-	double maxy = 500;
+	double miny = -1500;
+	double maxy = 1500;
 	double mint = 0;
 	double maxt = 1000;
 	double t_unc = 1;
@@ -118,6 +132,10 @@ int main(int nargs, char* argv[])
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
 
+	double s_func_x = 6;
+	double s_func_y = s_func_x;
+	double s_func_t = 2;
+	double sfunc_sig = 1;
 //	sm_xl = 10;
 //	sm_xr = 310;
 
@@ -185,6 +203,7 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				particle_theta = atof(argv[i]);
+				particle_theta_mean = particle_theta;
 			}
 			else if (strcmp(argv[i], "-force_kinematics") == 0)
 			{
@@ -202,15 +221,80 @@ int main(int nargs, char* argv[])
 			{
 				use_prog_sep = true;
 			}
+			else if (strcmp(argv[i], "-slac_run") == 0)
+			{
+				slac_run = true;
+				three_seg_mirror = false;
+				mirror_r_difference = 0;
+				mean_n_phot = 31.1;
+				spread_n_phot = 6;
+				liquid_index = 1.47;
+				phi_phots_reduce = 10;
+			}
+			else if (strcmp(argv[i], "-slac_geometry") == 0)
+			{
+				three_seg_mirror = false;
+				mirror_r_difference = 0;
+				mean_n_phot = 31.1;
+				spread_n_phot = 6;
+				liquid_index = 1.47;
+				phi_phots_reduce = 10;
+			//	sm_xl = -300;
+			//	sm_xr = sm_xl + 1000;
+				miny = -1500;
+				maxy = 1500;
+				digit_miny = miny;
+				digit_maxy = maxy;
+			}
+			else if (strcmp(argv[i], "-flatten_time") == 0)
+			{
+				flatten_time = true;
+			}
+			else if (strcmp(argv[i], "-mean_n_phot") == 0)
+			{
+				i++;
+				mean_n_phot = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-s_func_t") == 0)
+			{
+				i++;
+				s_func_t = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-spread_n_phot") == 0)
+			{
+				i++;
+				spread_n_phot = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-t") == 0)
 			{
 				i++;
 				time_window = atof(argv[i]);
 			}
+			else if (strcmp(argv[i], "-particle_x_spread") == 0)
+			{
+				i++;
+				particle_x_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-particle_y_spread") == 0)
+			{
+				i++;
+				particle_y_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-particle_theta_spread") == 0)
+			{
+				i++;
+				particle_theta_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-energy_spread") == 0)
+			{
+				i++;
+				energy_spread = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-E") == 0)
 			{
 				i++;
 				energy = atof(argv[i]);
+				energy_mean = energy;
 			}
 			else if (strcmp(argv[i], "-n") == 0)
 			{
@@ -349,13 +433,13 @@ int main(int nargs, char* argv[])
 	int n_z_phots = 4;
 	int n_step_phots = 1000;
 // 	n_step_phots = n_z_phots*n_phi_phots;
-	double s_func_x = 6;
-	double s_func_y = s_func_x;
-	double s_func_t = 2;
-	double sfunc_sig = 1;
 	
 	double prog_thresh = 500;
-	
+
+	if (flatten_time == true)
+	{
+		s_func_t = 100000000;
+	}	
 	
 	double outcsv_x,outcsv_y,outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
@@ -1502,6 +1586,263 @@ int main(int nargs, char* argv[])
 		//end mc reading script
 	  
 	}
+	else if (slac_run == true)
+	{ 
+		printf("Testing the SLAC geometry/run\n");
+		
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+		
+		std::vector<dirc_point> hit_points_pion;
+		std::vector<dirc_point> hit_points_kaon;
+		
+		dirc_model->set_liquid_absorbtion(liquid_absorbtion);
+		dirc_model->set_liquid_index(liquid_index);
+		dirc_model->set_three_seg_mirror(three_seg_mirror);
+		dirc_model->set_sidemirror(sm_xr,sm_xl);
+		
+		
+		dirc_model->set_pmt_offset(pmt_offset);
+				dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
+		dirc_model->set_bar_box_angle(bar_box_box_angle);
+
+		dirc_model->sim_reg_n_photons(\
+			hit_points_pion,\
+			n_phi_phots/10,\
+			n_z_phots,\
+			pion_angle,\
+			1,\
+			particle_x,\
+			particle_y,\
+			particle_theta,\
+			particle_phi,\
+			0,\
+			ckov_unc/pdf_unc_red_fac,\
+			pion_beta);
+
+		dirc_model->sim_reg_n_photons(\
+			hit_points_kaon,\
+			n_phi_phots/10,\
+			n_z_phots,\
+			pion_angle,\
+			1,\
+			particle_x,\
+			particle_y,\
+			particle_theta,\
+			particle_phi,\
+			0,\
+			ckov_unc/pdf_unc_red_fac,\
+			kaon_beta);
+		
+
+		DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hit_points_pion,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t);
+		DircSpreadGaussian* pdf_kaon = new DircSpreadGaussian(\
+			sfunc_sig,\
+			hit_points_kaon,\
+			s_func_x,\
+			s_func_y,\
+			s_func_t);
+
+		for (int i = 0; i < num_runs; i++)
+		{
+			dirc_model->set_focus_mirror_angle(\
+				spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
+				spread_ang.Gaus(0,mirror_angle_change_yunc));
+			dirc_model->set_upper_wedge_angle_diff(\
+				spread_ang.Gaus(0,wedge_uncertainty),\
+				spread_ang.Gaus(0,upper_wedge_yang_spread));
+	 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,box_rot_unc));
+			
+			printf("\r                                                    ");
+			printf("\rrunning iter %8d/%d  ",i+1,num_runs);
+			
+			
+			fflush(stdout);
+
+			particle_theta = spread_ang.Uniform(0,box_rot_unc);
+			particle_phi = spread_ang.Uniform(0,360);
+			//Sim new photons
+			dirc_model->sim_reg_n_photons(\
+				hit_points_pion,\
+				n_phi_phots/phi_phots_reduce,\
+				n_z_phots,\
+				pion_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				pion_beta);
+
+			dirc_model->sim_reg_n_photons(\
+				hit_points_kaon,\
+				n_phi_phots/phi_phots_reduce,\
+				n_z_phots,\
+				pion_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				kaon_beta);
+
+			pdf_pion->set_support(hit_points_pion);
+			pdf_kaon->set_support(hit_points_kaon);
+
+
+			n_sim_phots = spread_ang.Gaus(mean_n_phot,spread_n_phot);
+
+			//assume its a middle bar
+			dirc_model->sim_rand_n_photons(\
+				sim_points,\
+				n_sim_phots,\
+				pion_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				particle_theta,\
+				particle_phi,\
+				tracking_unc,\
+				ckov_unc,\
+				pion_beta);
+			digitizer.digitize_points(sim_points);
+			
+			llc = pdf_pion->get_log_likelihood(sim_points);
+			llf = pdf_kaon->get_log_likelihood(sim_points);
+			
+
+			ll_diff_pion->Fill(1*(llc-llf));
+					
+			phot_found_pion->Fill(sim_points.size());
+			
+			dirc_model->sim_rand_n_photons(\
+				sim_points,\
+				n_sim_phots,\
+				kaon_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				particle_theta,\
+				particle_phi,\
+				tracking_unc,\
+				ckov_unc,\
+				kaon_beta);
+			
+			
+			digitizer.digitize_points(sim_points);
+					
+			llc = pdf_pion->get_log_likelihood(sim_points);
+			llf = pdf_kaon->get_log_likelihood(sim_points);
+
+			ll_diff_kaon->Fill(1*(llc-llf));
+			
+	// 		ll_diff_kaon->Fill(sep_pdfs->get_log_likelihood_spread_diff(sim_points));
+			
+			phot_found_kaon->Fill(sim_points.size());
+		}
+		
+		printf("\nRun Completed\n");
+		if (coverage_plot == true)
+		{
+			printf("starting coverage ouput\n");
+
+			for (int i = 0; i < num_cov; i++)
+			{
+				if ((i+1) % 1000 == 0)
+				{
+					//printf("\r                                                                                                                           ");
+					printf("\rcoverage iter %d/%d",i+1,num_cov);
+				}
+				fflush(stdout);
+				
+				particle_theta = spread_ang.Uniform(0,14);
+				particle_phi = spread_ang.Uniform(0,360);
+				energy = spread_ang.Uniform(2,4.5);
+				pion_beta = dirc_model->get_beta(energy,pimass);
+				kaon_beta = dirc_model->get_beta(energy,kmass);
+				dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					pion_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					particle_theta,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					pion_beta);
+				
+				for (unsigned int j = 0; j < sim_points.size(); j++)
+				{
+					//printf("%12.04f %12.04f\n",sim_points[j].x,sim_points[j].y);
+					pion_coverage_xy->Fill(sim_points[j].x+outcsv_x,sim_points[j].y);
+				}
+				
+				dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					kaon_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					particle_theta,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					kaon_beta);
+				
+				for (unsigned int j = 0; j < sim_points.size(); j++)
+				{
+					kaon_coverage_xy->Fill(sim_points[j].x+outcsv_x,sim_points[j].y);
+				}
+				
+			}
+			printf("\nfinished output of coverage plots\n");
+		}
+		else
+		{
+			pion_coverage_xy->Fill(0.0,0.0);
+			kaon_coverage_xy->Fill(0.0,0.0);
+
+		}
+		
+	//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
+		double x,y,t_ns;
+		for (unsigned int i = 0; i < hit_points_pion.size(); i++)
+		{
+			x = hit_points_pion[i].x;
+			y = hit_points_pion[i].y;
+			t_ns = hit_points_pion[i].t;
+	// 		if (hit_points_pion[i].t > 0) continue;
+			pion_dist_xy->Fill(x,y);
+			pion_dist_xt->Fill(x,t_ns);
+			pion_dist_yt->Fill(y,t_ns);
+			pion_dist_t->Fill(t_ns);
+		}
+		
+	//	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());
+		for (unsigned int i = 0; i < hit_points_kaon.size(); i++)
+		{
+			x = hit_points_kaon[i].x;
+			y = hit_points_kaon[i].y;
+			t_ns = hit_points_kaon[i].t;
+	// 		if (hit_points_pion[i].t > 0) continue;
+			kaon_dist_xy->Fill(x,y);
+			kaon_dist_xt->Fill(x,t_ns);
+			kaon_dist_yt->Fill(y,t_ns);
+			kaon_dist_t->Fill(t_ns);
+		}
+	}
 	else
 	{ 
 		printf("no input file specified.  Running in loop mode\n");
@@ -1562,7 +1903,19 @@ int main(int nargs, char* argv[])
 			0,\
 			ckov_unc/pdf_unc_red_fac,\
 			kaon_beta);
-		
+	
+		if (flatten_time == true)
+		{
+			for (unsigned int i = 0; i < hit_points_pion.size(); i++)
+			{
+				hit_points_pion[i].t = 0;
+			}
+			for (unsigned int i = 0; i < hit_points_kaon.size(); i++)
+			{
+				hit_points_kaon[i].t = 0;
+			}
+		}
+	
 
 		DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(\
 			sfunc_sig,\
@@ -1586,12 +1939,28 @@ int main(int nargs, char* argv[])
 				spread_ang.Gaus(0,wedge_uncertainty),\
 				spread_ang.Gaus(0,upper_wedge_yang_spread));
 	 		dirc_model->set_bar_box_angle(spread_ang.Gaus(0,box_rot_unc));
+	
+			if (particle_theta_mean < .01)
+			{
+				particle_phi = spread_ang.Uniform(0,360);
+			}
 			
+			particle_theta = spread_ang.Gaus(particle_theta_mean, particle_theta_spread);
+			particle_x = spread_ang.Gaus(particle_x_mean, particle_x_spread);
+			particle_y = spread_ang.Gaus(particle_y_mean, particle_y_spread);
+			energy = spread_ang.Gaus(energy_mean,energy_spread);
+			pion_beta = dirc_model->get_beta(energy,pimass);
+			kaon_beta = dirc_model->get_beta(energy,kmass);
+			
+//			printf("%12.04f %12.04f %12.04f %12.04f\n",particle_x, particle_y, particle_theta, energy);
+	
 			printf("\r                                                    ");
 			printf("\rrunning iter %8d/%d  ",i+1,num_runs);
 			
 			
 			fflush(stdout);
+			
+			n_sim_phots = spread_ang.Gaus(mean_n_phot,spread_n_phot);
 			
 			//assume its a middle bar
 			dirc_model->sim_rand_n_photons(\
@@ -1608,6 +1977,13 @@ int main(int nargs, char* argv[])
 				pion_beta);
 			digitizer.digitize_points(sim_points);
 			
+			if (flatten_time == true)
+			{
+				for (unsigned int i = 0; i < sim_points.size(); i++)
+				{
+					sim_points[i].t = 0;
+				}
+			}
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 			
@@ -1629,6 +2005,13 @@ int main(int nargs, char* argv[])
 				ckov_unc,\
 				kaon_beta);
 			
+			if (flatten_time == true)
+			{
+				for (unsigned int i = 0; i < sim_points.size(); i++)
+				{
+					sim_points[i].t = 0;
+				}
+			}
 			
 			digitizer.digitize_points(sim_points);
 					
