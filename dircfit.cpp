@@ -146,7 +146,13 @@ int main(int nargs, char* argv[])
 	
 	bool three_seg_mirror = true;
 	bool fill_distributions	= false;
-
+	bool fill_kinematics_yields = false;
+	double kinematics_yields_min_theta = 0;
+	double kinematics_yields_max_theta = 12;
+	double kinematics_yields_step_theta = 1;
+	double kinematics_yields_step_phi = 0;
+	double kinematics_yields_step_phi = 45;
+	double kinematics_yields_step_phi = 3;
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
