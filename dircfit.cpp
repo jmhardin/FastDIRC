@@ -2006,7 +2006,7 @@ int main(int nargs, char* argv[])
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 			
-			printf("%12.04f\n",llc);	
+//			printf("%12.04f\n",llc);	
 
 			ll_diff_pion->Fill(1*(llc-llf));
 					
