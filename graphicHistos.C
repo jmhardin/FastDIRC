@@ -48,6 +48,9 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 double hmin = -100;
 double hmax = 100;
 
+hmin = -25;
+hmax = 25;
+
 double energy = ienergy;
 
 double pi_mass = .13957;
@@ -88,11 +91,18 @@ hkaon->Rebin(rebin);
 hpion->SetAxisRange(hmin,hmax);
 hkaon->SetAxisRange(hmin,hmax);
 
+hpion->SetStats(false);
+hkaon->SetStats(false);
+
 hpion->SetLineColor(kCyan);
 //hpion->SetFillColorAlpha(kRed,.5);
 
 hkaon->SetLineColor(kBlue);
 //hkaon->SetFillColorAlpha(kBlue,.5);
+
+TLegend *leg_ll = new TLegend(.6,.6,.8,.8);
+leg_ll->AddEntry(hpion,"Pion");
+leg_ll->AddEntry(hkaon,"Kaon");
 
 hkaon->SetTitle("log(P(Pi)/P(K)) for actual Pi (red) and K (blue) at 5 GeV");
 
@@ -125,13 +135,15 @@ kaon_missid->Scale(scale_int);
 hkaon->SetTitle("");
 hpion->SetTitle("");
 
+
 if (verbose_out == true)
 {
     hkaon->Draw();
     hpion->Draw("SAME H");
+    leg_ll->Draw("SAME");
     c1->SetWindowSize(1000,800);
 
-    c1->Print("overlap.gif");
+    c1->Print("overlap.pdf");
 }
 
 if (verbose_out == true)
@@ -140,7 +152,7 @@ if (verbose_out == true)
     kaon_missid->Draw("SAME H");
 
     c1->SetWindowSize(1000,800);
-    c1->Print("overlap_integral.gif");
+    c1->Print("overlap_integral.pdf");
 }
 
 TGraph* roc_graph;
@@ -180,8 +192,8 @@ roc_graph->SetLineWidth(4);
 //roc_graph->SetMarkerColor(4);
 //roc_graph->SetMarkerStyle(21);
 roc_graph->SetTitle("");
-roc_graph->GetXaxis()->SetTitle("Pion Veto Efficiency");
-roc_graph->GetYaxis()->SetTitle("Kaon Missid rate");
+roc_graph->GetXaxis()->SetTitle("Kaon Efficiency");
+roc_graph->GetYaxis()->SetTitle("Pion Rejection");
 roc_graph->GetXaxis()->SetLimits(0,1.01);
 roc_graph->SetMinimum(0);
 roc_graph->SetMaximum(1.01);
@@ -306,16 +318,25 @@ froc_graph->SetLineColor(4);
 froc_graph->SetLineWidth(4);
 froc_graph->SetLineStyle(2);
 froc_graph->SetTitle("");
-froc_graph->GetXaxis()->SetTitle("\"Pion Veto Efficiency\"");
-froc_graph->GetYaxis()->SetTitle("\"Kaon Missid rate\"");
+froc_graph->GetXaxis()->SetTitle("\"Kaon Efficiency\"");
+froc_graph->GetYaxis()->SetTitle("\"Pion Rejection\"");
 froc_graph->GetXaxis()->SetLimits(0,1.01);
 froc_graph->SetMinimum(0);
 froc_graph->SetMaximum(1.01);
 
+
+roc_graph->SetFillColorAlpha(kWhite,1);
+froc_graph->SetFillColorAlpha(kWhite,1);
+TLegend *leg_roc = new TLegend(.3,.5,.7,.7);
+leg_roc->AddEntry(roc_graph,"ROC Curve");
+leg_roc->AddEntry(froc_graph,"Matched Gaussian ROC Curve");
+
+
 if (verbose_out == true)
 {
-	froc_graph->Draw("");
-	c1->Print("roc_curve_fake.gif");
+	froc_graph->Draw("SAME");
+	leg_roc->Draw("SAME");
+	c1->Print("roc_curve_overlay.pdf");
 }
 
 

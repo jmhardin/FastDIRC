@@ -149,10 +149,11 @@ int main(int nargs, char* argv[])
 	bool fill_kinematics_yields = false;
 	double kinematics_yields_min_theta = 0;
 	double kinematics_yields_max_theta = 12;
-	double kinematics_yields_step_theta = 1;
-	double kinematics_yields_step_phi = 0;
-	double kinematics_yields_step_phi = 45;
-	double kinematics_yields_step_phi = 3;
+	double kinematics_yields_step_theta = .25;
+	double kinematics_yields_min_phi = 0;
+	double kinematics_yields_max_phi = 45;
+	double kinematics_yields_step_phi = 1;
+	int  kinematics_n_phots = 100000;
 	
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
@@ -214,6 +215,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-force_kinematics") == 0)
 			{
 				force_kinematics = true;
+			}
+			else if (strcmp(argv[i], "-fill_kinematics_yields") == 0)
+			{
+				fill_kinematics_yields = true;
 			}
 			else if (strcmp(argv[i], "-coverage_plot") == 0)
 			{
@@ -524,6 +529,13 @@ int main(int nargs, char* argv[])
 	
 	TH2F *pion_coverage_xy = new TH2F("pion_coverage_xy","xy val of generated points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 	TH2F *kaon_coverage_xy = new TH2F("kaon_coverage_xy","xy val of generated points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
+	
+	TH2F *kinematics_yields = new TH2F("kinematics_yields","Fractional Yields versus angles",(kinematics_yields_max_theta-kinematics_yields_min_theta)/kinematics_yields_step_theta*1.00001,\
+		kinematics_yields_min_theta,\
+		kinematics_yields_max_theta,\
+		(kinematics_yields_max_phi-kinematics_yields_min_phi)/kinematics_yields_step_phi*1.00001,\
+		kinematics_yields_min_phi,\
+		kinematics_yields_max_phi);
 	
 	TH1F *pion_cerenkov = new TH1F("pion_cerenkov","pion cerenkov angle distribution",300,45,48);
 	TH1F *kaon_cerenkov = new TH1F("kaon_cerenkov","kaon cerenkov angle distribution",300,45,48);
@@ -1721,10 +1733,11 @@ int main(int nargs, char* argv[])
 				ckov_unc,\
 				pion_beta);
 			digitizer.digitize_points(sim_points);
-			
+		
+	
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
-			
+		
 
 			ll_diff_pion->Fill(1*(llc-llf));
 					
@@ -1993,6 +2006,7 @@ int main(int nargs, char* argv[])
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 			
+			printf("%12.04f\n",llc);	
 
 			ll_diff_pion->Fill(1*(llc-llf));
 					
@@ -2096,6 +2110,42 @@ int main(int nargs, char* argv[])
 			kaon_coverage_xy->Fill(0.0,0.0);
 
 		}
+		if (fill_kinematics_yields == true)
+		{
+			int itheta_bin = 0;
+			int iphi_bin = 0;
+			printf("starting kinematics yields ouput\n");
+			for (double itheta = kinematics_yields_min_theta + kinematics_yields_step_theta/2; itheta < kinematics_yields_max_theta; itheta += kinematics_yields_step_theta)
+			{
+				itheta_bin++;//I know there's a better way to do this, but I'm lazy
+				iphi_bin = 0;
+				for (double iphi = kinematics_yields_min_phi + kinematics_yields_step_phi/2; iphi < kinematics_yields_max_phi; iphi += kinematics_yields_step_phi)
+				{
+					iphi_bin++;
+					printf("\r                                                                             ");
+					printf("\rPhi: %12.04f    Theta: %12.04f",iphi,itheta);
+					fflush(stdout);	
+					pion_beta = dirc_model->get_beta(5,pimass); //High energy
+					dirc_model->sim_rand_n_photons(
+						sim_points,
+						kinematics_n_phots,
+						pion_angle,
+						1,
+						0, //particle_x
+						0, //particle_y
+						itheta,
+						iphi,
+						0, //ignore tracking
+						ckov_unc,
+						pion_beta);
+
+					kinematics_yields->SetBinContent(itheta_bin,iphi_bin,(1.0*sim_points.size())/kinematics_n_phots);
+				}
+			}
+			printf("\n");
+		}
+
+				 
 		
 	//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
 		double x,y,t_ns;
@@ -2263,6 +2313,7 @@ int main(int nargs, char* argv[])
 	kaon_cerenkov->Write();
 	pion_coverage_xy->Write();
 	kaon_coverage_xy->Write();
+	kinematics_yields->Write();
 	liquid_dist->Write();
 	pion_lambda->Write();
 	kaon_lambda->Write();

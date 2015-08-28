@@ -36,6 +36,7 @@ void outputDistro(TString ifile_pref)
 	pi_dist_yt->SetStats(false);
 	pi_dist_xt->SetStats(false);
 	pi_dist_t->SetStats(false);
+	pion_lambda->SetStats(false);
 
 	
 	pi_dist->SetTitle("");
@@ -43,7 +44,9 @@ void outputDistro(TString ifile_pref)
 	pi_dist_xt->SetTitle("");
 	pi_dist_t->SetTitle("");
 	pi_geant_dist->SetTitle("");
+	pion_lambda->SetTitle("");
 
+	pion_lambda->GetXaxis()->SetTitle("Wavelength (nm)");
 
    	const UInt_t Number = 3;
    	//Double_t Red[Number]    = { 0.016, 0.016, 0.336};
@@ -79,7 +82,7 @@ void outputDistro(TString ifile_pref)
 	pion_lambda->SetStats(false);
 	
 	pion_lambda->Draw();
-	c1->Print(ifile_pref + "_pion_lambda.gif");	
+	c1->Print(ifile_pref + "_pion_lambda.pdf");	
 
 
 }
