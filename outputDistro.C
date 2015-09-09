@@ -60,7 +60,7 @@ void outputDistro(TString ifile_pref)
    	TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
    	pi_dist->Draw("colz");
 
-	c1->SetWindowSize(3600,2400);
+	c1->SetWindowSize(1500,1000);
 
 	c1->Print(ifile_pref + "_pion_dist.gif");	
 

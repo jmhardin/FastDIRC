@@ -84,6 +84,21 @@ TH1F *hpion = (TH1F*) f1->Get("ll_diff_pion");
 TH1F *hkaon = (TH1F*) f1->Get("ll_diff_kaon");
 TH1F *phots_pion = (TH1F*) f1->Get("phot_found_pion");
 
+//Swap kaon and pion numbers
+
+for (int i = 1; i < hpion->GetNbinsX()/2; i++)
+{
+	double t_swap = hpion->GetBinContent(i);
+	hpion->SetBinContent(i,hpion->GetBinContent(hpion->GetNbinsX() - i + 1));
+	hpion->SetBinContent(hpion->GetNbinsX() - i + 1, t_swap);
+}
+for (int i = 1; i < hkaon->GetNbinsX()/2; i++)
+{
+	double t_swap = hkaon->GetBinContent(i);
+	hkaon->SetBinContent(i,hkaon->GetBinContent(hkaon->GetNbinsX() - i + 1));
+	hkaon->SetBinContent(hkaon->GetNbinsX() - i + 1, t_swap);
+}
+
 int rebin = 20;
 hpion->Rebin(rebin);
 hkaon->Rebin(rebin);
@@ -118,10 +133,11 @@ kaon_missid->SetName("kaon_missid");
 kaon_missid->SetTitle("");
 
 
+
 for (int i = 0; i < pion_veto_eff->GetNbinsX(); i++)
 {
-	pion_veto_eff->SetBinContent(i,hpion->Integral(i,pion_veto_eff->GetNbinsX()));
-	kaon_missid->SetBinContent(i,hkaon->Integral(0,i));
+	pion_veto_eff->SetBinContent(i,hpion->Integral(0,i));
+	kaon_missid->SetBinContent(i,hkaon->Integral(i,kaon_missid->GetNbinsX()));
 //	printf("%12.04f %12.04f %d\n",1,1,i);
 }
 
@@ -176,7 +192,7 @@ double last_y = kaon_missid->GetBinContent(0);
 
 for (int i = 0; i < pion_veto_eff->GetNbinsX()-1; i++)
 {
-	ival -= (yr[i]+last_y)*(xr[i] - last_x)/2;
+	ival += (yr[i]+last_y)*(xr[i] - last_x)/2;
 	last_x = xr[i];
 	last_y = yr[i];
 }

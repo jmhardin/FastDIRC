@@ -80,6 +80,9 @@ DircOpticalSim::DircOpticalSim(
 	largePlanarMirrorMinZ = -559;
 	largePlanarMirrorMaxZ = -130;
 
+	pmtPlaneMinZ = -559;
+	pmtPlaneMaxZ = -329;
+	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
@@ -194,6 +197,10 @@ void DircOpticalSim::fill_sens_plane_vecs() {
 void DircOpticalSim::set_sidemirror_reflectivity(double isr) {
 	sidemirror_reflectivity = isr;
 }
+void DircOpticalSim::set_foc_mirror_r(double ifoc_r) {
+	foc_r = ifoc_r;
+	build_system();
+}
 void DircOpticalSim::fill_foc_mirror_vecs() {
 	//is off by pi/2 to reduce rounding errors and such
 	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
@@ -230,18 +237,21 @@ void DircOpticalSim::fill_threeseg_plane_vecs() {
 	threeSeg1Ny = sin(theta_1);
 	threeSeg1Nz = cos(theta_1);
 	rotate_2d(threeSeg1Nx,threeSeg1Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
+	rotate_2d(threeSeg1Nx,threeSeg1Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
 	threeSeg1D = threeSeg1Ny*threeSeg1Y + threeSeg1Nz*threeSeg1Z;//Use point x=0 as reference
 
 	threeSeg2Nx = 0;
 	threeSeg2Ny = sin(theta_2);
 	threeSeg2Nz = cos(theta_2);
 	rotate_2d(threeSeg2Nx,threeSeg2Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
+	rotate_2d(threeSeg2Nx,threeSeg2Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
 	threeSeg2D = threeSeg2Ny*threeSeg2Y + threeSeg2Nz*threeSeg2Z;//Use point x=0 as reference
 
 	threeSeg3Nx = 0;
 	threeSeg3Ny = sin(theta_3);
 	threeSeg3Nz = cos(theta_3);
 	rotate_2d(threeSeg3Nx,threeSeg3Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
+	rotate_2d(threeSeg3Nx,threeSeg3Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
 	threeSeg3D = threeSeg3Ny*threeSeg3Y + threeSeg3Nz*threeSeg3Z;//Use point x=0 as reference
 
 }
@@ -345,9 +355,10 @@ void DircOpticalSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
 
 	upperWedgeFarPlaneD = upperWedgeBottom*upperWedgeFarPlaneNy;
 }
-void DircOpticalSim::set_focus_mirror_angle(double ang,double yang) {
+void DircOpticalSim::set_focus_mirror_angle(double ang,double yang, double zang) {
 	foc_rot = ang;
 	foc_yrot = yang;
+	foc_zrot = zang;
 	build_system();
 }
 void DircOpticalSim::set_pmt_angle(double ang) {
@@ -1958,6 +1969,12 @@ double DircOpticalSim::warp_sens_plane(\
 				     dx,\
 				     dy,\
 				     dz);
+	if (z < pmtPlaneMinZ || z > pmtPlaneMaxZ)
+	{
+//		printf("planarZ: %12.04f\n", tmpz);
+		z=1337;
+		return 100000;
+	}
 
 	fill_val.x = x;
 	fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;

@@ -14,6 +14,7 @@ private:
 	double foc_mirror_size;
 	double foc_rot;
 	double foc_yrot;
+	double foc_zrot;
 	double sens_size;
 	double sens_rot;
 	
@@ -43,6 +44,8 @@ private:
 	double largePlanarMirrorD;
 	double largePlanarMirrorMinZ;
 	double largePlanarMirrorMaxZ;
+	double pmtPlaneMinZ;
+	double pmtPlaneMaxZ;
 
 	double upperWedgeClosePlaneNx;
 	double upperWedgeClosePlaneNy;
@@ -275,6 +278,7 @@ private:
 		double &dz);
 public:
 	void set_focmirror_nonuniformity(double nonuni_deg);
+	void set_foc_mirror_r(double ifoc_r);
 	void set_sidemirror(double ixr, double ixl);
 	void set_sidemirror_reflectivity(double isr);
 	void sidemirror_reflect_point(dirc_point &ipt);
@@ -285,7 +289,7 @@ public:
 	void set_store_traveled(bool sst = true);
 	void set_liquid_index(double li);
 	void set_bar_box_angle(double ang);
-	void set_focus_mirror_angle(double ang,double yang = 0);
+	void set_focus_mirror_angle(double ang,double yang = 0, double zang = 0);
 	void set_pmt_angle(double ang);
 	void set_wedge_mirror_rand(double ispread);
 	double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength);
