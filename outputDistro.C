@@ -10,6 +10,7 @@ void outputDistro(TString ifile_pref)
 
 	TFile *f1 = new TFile(ifile_pref + ".root");
 	TH2F *pi_dist = (TH2F*) f1->Get("pion_dist_xy");
+	TH1F *pi_dist_y = (TH1F*) f1->Get("pion_dist_y");
 	TH2F *pi_dist_yt = (TH2F*) f1->Get("pion_dist_yt");
 	TH2F *pi_dist_xt = (TH2F*) f1->Get("pion_dist_xt");
 	TH1F *pi_dist_t = (TH1F*) f1->Get("pion_dist_t");
@@ -76,6 +77,15 @@ void outputDistro(TString ifile_pref)
 
 	pi_dist_t->Draw();
 	c1->Print(ifile_pref + "_pion_dist_t.gif");	
+
+
+	pi_dist_y->GetXaxis()->SetRangeUser(ymin,ymax);
+	pi_dist_y->Draw();
+	TLine *sl = new TLine(220,0,220,30000);
+	TLine *el = new TLine(-100,0,-100,30000);
+	sl->Draw("SAME");
+	el->Draw("SAME");
+	c1->Print(ifile_pref + "_pion_dist_y.gif");	
 
 	pion_lambda->SetTitle("");
 	pion_lambda->GetXaxis()->SetTitle("\\lambda (nm)");

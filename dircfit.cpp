@@ -74,6 +74,7 @@ int main(int nargs, char* argv[])
 	double particle_theta_mean = particle_theta;
 	double particle_theta_spread = 0;
 	double particle_phi = 40;
+	double particle_phi_mean = particle_phi;
 	
 	bool force_kinematics = false;
 	bool use_prog_sep = false;
@@ -83,6 +84,7 @@ int main(int nargs, char* argv[])
 	int num_runs = 1000;
 	int max_particles = 1000000;
 	int phi_phots_reduce = 1;
+	int refraction_sim_n = -1;
 
 	double mean_n_phot = 40;
 	double spread_n_phot = 0;
@@ -106,6 +108,10 @@ int main(int nargs, char* argv[])
 	
 	int broaden_events = 0;
 	
+	double tracking_unc = .0000*57.3; //mrad
+    // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
+	double ckov_unc = .003*57.3; //transport = 3mrad
+
 	double resx = 6;
 	double resy = 6;
 	double rest = 1;
@@ -205,6 +211,22 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				particle_phi = atof(argv[i]);
+				particle_phi_mean = particle_phi;
+			}
+			else if (strcmp(argv[i], "-tracking_unc") == 0)
+			{
+				i++;
+				tracking_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-ckov_unc") == 0)
+			{
+				i++;
+				ckov_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-refraction_sim_n") == 0)
+			{
+				i++;
+				refraction_sim_n = atoi(argv[i]);
 			}
 			else if (strcmp(argv[i], "-particle_theta") == 0)
 			{
@@ -237,7 +259,8 @@ int main(int nargs, char* argv[])
 				slac_run = true;
 				three_seg_mirror = false;
 				mirror_r_difference = 0;
-				mean_n_phot = 31.1;
+				//mean_n_phot = 31.1;
+				mean_n_phot = 32.4;
 				spread_n_phot = 6;
 				liquid_index = 1.47;
 				phi_phots_reduce = 10;
@@ -246,7 +269,8 @@ int main(int nargs, char* argv[])
 			{
 				three_seg_mirror = false;
 				mirror_r_difference = 0;
-				mean_n_phot = 31.1;
+				//mean_n_phot = 31.1;
+				mean_n_phot = 32.4;
 				spread_n_phot = 6;
 				liquid_index = 1.47;
 				phi_phots_reduce = 10;
@@ -427,9 +451,6 @@ int main(int nargs, char* argv[])
 
 	double res_enhance = 1;
 
-	double tracking_unc = .0000*57.3; //mrad
-    // 	double ckov_unc = .0077*57.3; //chromatic + optical aberation = 7.7mrad
-	double ckov_unc = .003*57.3; //transport = 3mrad
 
 
 	
@@ -716,7 +737,6 @@ int main(int nargs, char* argv[])
 			}
 			root_hits_array.push_back(root_hits_add);
 
-// 			std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r] << " " << root_hits_array[r][0].t <<std::endl; 
 			r++;
                 }
 		double high_avg = 0;
@@ -1284,7 +1304,6 @@ int main(int nargs, char* argv[])
 			theta.push_back(itheta);
 			phi.push_back(iphi);
 			E.push_back(iE);
-// 			std::cout<<PID[r]<<" "<<BAR[r]<<" "<<x[r]<<" "<<y[r]<<" "<<t[r]<<" "<<theta[r]<<" "<<phi[r]<<" "<<E[r]<<std::endl; 
 			r++;
 		}
 		f.close();
@@ -1913,7 +1932,7 @@ int main(int nargs, char* argv[])
 			hit_points_kaon,\
 			n_phi_phots,\
 			n_z_phots,\
-			pion_angle,\
+			kaon_angle,\
 			1,\
 			particle_x,\
 			particle_y,\
@@ -1971,6 +1990,14 @@ int main(int nargs, char* argv[])
 			pion_beta = dirc_model->get_beta(energy,pimass);
 			kaon_beta = dirc_model->get_beta(energy,kmass);
 			
+			if (kaleidoscope_plot == true)
+			{
+				pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
+				kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
+				pion_beta = -1;
+				kaon_beta = -1;
+				ckov_unc = 0;
+			}
 //			printf("%12.04f %12.04f %12.04f %12.04f\n",particle_x, particle_y, particle_theta, energy);
 	
 			printf("\r                                                    ");
@@ -2155,6 +2182,9 @@ int main(int nargs, char* argv[])
 			y = hit_points_pion[i].y;
 			t_ns = hit_points_pion[i].t;
 	// 		if (hit_points_pion[i].t > 0) continue;
+			pion_dist_x->Fill(x);
+			pion_dist_y->Fill(y);
+			pion_dist_t->Fill(t_ns);
 			pion_dist_xy->Fill(x,y);
 			pion_dist_xt->Fill(x,t_ns);
 			pion_dist_yt->Fill(y,t_ns);
@@ -2168,13 +2198,17 @@ int main(int nargs, char* argv[])
 			y = hit_points_kaon[i].y;
 			t_ns = hit_points_kaon[i].t;
 	// 		if (hit_points_pion[i].t > 0) continue;
+			kaon_dist_x->Fill(x);
+			kaon_dist_y->Fill(y);
+			kaon_dist_t->Fill(t_ns);
 			kaon_dist_xy->Fill(x,y);
 			kaon_dist_xt->Fill(x,t_ns);
 			kaon_dist_yt->Fill(y,t_ns);
 			kaon_dist_t->Fill(t_ns);
 		}
 	}
-/*	if (out_csv == true)
+/*
+	if (out_csv == true)
 	{
 		ofstream pion_csv;
 		ofstream kaon_csv;
@@ -2209,12 +2243,14 @@ int main(int nargs, char* argv[])
 	{
 		liquid_dist->Fill(dist_traveled[i]);
 	}
-	
+*/	
 	if (refraction_sim_n > 0)
 	{
 		std::vector<std::pair<double, double> > pion_theta_cphi;
 		std::vector<std::pair<double, double> > kaon_theta_cphi;
-		
+	
+		particle_theta=particle_theta_mean;	
+		particle_phi=particle_phi_mean;	
 		
 		printf("Creating Refraction histograms...\n");
 		std::vector<double> before_fill;
@@ -2229,14 +2265,17 @@ int main(int nargs, char* argv[])
 		      particle_y,\
 		      particle_theta,\
 		      particle_phi,\
-		      tracking_unc,\
-		      ckov_unc,\
+		      0,\
+		      0,\
 		      pion_beta);
-		
+		      //Since we're running this all at once, ignore tracking and other uncertainties
 		
 		for (unsigned int i = 0; i < before_fill.size(); i++)
 		{
 			ref_pion_before->Fill(before_fill[i]*rad_to_deg);
+		}
+		for (unsigned int i = 0; i < after_fill.size(); i++)
+		{
 			ref_pion_after->Fill(after_fill[i]*rad_to_deg);
 		}
 		for (unsigned int i = 0; i < pion_theta_cphi.size(); i++)
@@ -2253,14 +2292,17 @@ int main(int nargs, char* argv[])
 		      particle_y,\
 		      particle_theta,\
 		      particle_phi,\
-		      tracking_unc,\
-		      ckov_unc,\
+		      0,\
+		      0,\
 		      kaon_beta);
 		
 		
 		for (unsigned int i = 0; i < before_fill.size(); i++)
 		{
 			ref_kaon_before->Fill(before_fill[i]*rad_to_deg);
+		}
+		for (unsigned int i = 0; i < after_fill.size(); i++)
+		{
 			ref_kaon_after->Fill(after_fill[i]*rad_to_deg);
 		}
 		for (unsigned int i = 0; i < kaon_theta_cphi.size(); i++)
@@ -2269,7 +2311,7 @@ int main(int nargs, char* argv[])
 		}
 		printf("Refraction histograms created\n");
 	}
-*/	
+	
 
 	double t_lambda = 0;
 	for (int i = 0; i < 1000000; i++)
