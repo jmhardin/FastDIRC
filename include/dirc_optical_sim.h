@@ -123,6 +123,7 @@ private:
 	double liquidAbsorbtion;
 	std::vector<double> dist_traveled;
 	bool store_traveled;
+	bool kaleidoscope_plot;
 	
 	bool store_refraction;
 	std::vector<double> refraction_before;
@@ -283,6 +284,7 @@ public:
 	void set_sidemirror_reflectivity(double isr);
 	void sidemirror_reflect_point(dirc_point &ipt);
 	void set_three_seg_mirror(bool itsm);
+	void set_kaleidoscope_plot(bool ikp);
 	void set_pmt_offset(double r);
 	void set_liquid_absorbtion(double iabs);
 	std::vector<double> get_dist_traveled();

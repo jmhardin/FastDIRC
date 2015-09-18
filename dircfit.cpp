@@ -498,8 +498,9 @@ int main(int nargs, char* argv[])
 		47.87 + box_rot + mirror_angle_change);
     	
 	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
+	muon_beta=pion_beta=kaon_beta=-1;
 	double muon_angle, pion_angle, kaon_angle;
-	pion_angle=kaon_angle = -1;
+	muon_angle=pion_angle=kaon_angle = -1;
 	
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
@@ -573,7 +574,7 @@ int main(int nargs, char* argv[])
 	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
 	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
 	dirc_model->set_three_seg_mirror(three_seg_mirror);
-	
+	dirc_model->set_kaleidoscope_plot(kaleidoscope_plot);	
 	
 	DircDigitizer digitizer(\
 		minx,\
@@ -587,6 +588,7 @@ int main(int nargs, char* argv[])
 //  	
 	printf("Beginning Run\n");
 	double llc, llf, ll_diff;
+	llc=llf=ll_diff=0;
 	int pion_kaon_diff = 0;
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
@@ -649,7 +651,7 @@ int main(int nargs, char* argv[])
 		int tot_nhit = 0;
 		for (int i = 0; i < nentries; i++) {
 
-			if (r >= max_particles) break;
+			if (r >= (unsigned int) max_particles) break;
 
 	                in_tree->GetEntry(i);
 // 			if (iE > 4) continue;	
@@ -1220,8 +1222,8 @@ int main(int nargs, char* argv[])
 			}
 		}
 		printf("\n");//ensure we're on a new line at the end
-		printf("Kaon missID: %12.04f%\n",100.0*zero_kaon_id->GetBinContent(1)/(zero_kaon_id->GetBinContent(1)+zero_kaon_id->GetBinContent(2)));
-		printf("Pion missID: %12.04f%\n",100.0*zero_pion_id->GetBinContent(1)/(zero_pion_id->GetBinContent(1)+zero_pion_id->GetBinContent(2)));
+		printf("Kaon missID: %12.04f%% \n",(double) 100.0*zero_kaon_id->GetBinContent(1)/(zero_kaon_id->GetBinContent(1)+zero_kaon_id->GetBinContent(2)));
+		printf("Pion missID: %12.04f%% \n",(double) 100.0*zero_pion_id->GetBinContent(1)/(zero_pion_id->GetBinContent(1)+zero_pion_id->GetBinContent(2)));
 	}
 	else if(inputfile){
 	  
@@ -1286,7 +1288,7 @@ int main(int nargs, char* argv[])
 		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
 // 			if (iE > 4) continue;
-			if (r >= max_particles) break;
+			if (r >= (unsigned int) max_particles) break;
 			
 			if (force_kinematics == true)
 			{
@@ -1618,8 +1620,8 @@ int main(int nargs, char* argv[])
 			}
 		}
 		printf("\n");//ensure we're on a new line at the end
-		printf("Kaon missID: %12.04f%\n",100.0*zero_kaon_id->GetBinContent(1)/(zero_kaon_id->GetBinContent(1)+zero_kaon_id->GetBinContent(2)));
-		printf("Pion missID: %12.04f%\n",100.0*zero_pion_id->GetBinContent(1)/(zero_pion_id->GetBinContent(1)+zero_pion_id->GetBinContent(2)));
+		printf("Kaon missID: %12.04f%%\n",100.0*zero_kaon_id->GetBinContent(1)/(zero_kaon_id->GetBinContent(1)+zero_kaon_id->GetBinContent(2)));
+		printf("Pion missID: %12.04f%%\n",100.0*zero_pion_id->GetBinContent(1)/(zero_pion_id->GetBinContent(1)+zero_pion_id->GetBinContent(2)));
 		//end mc reading script
 	  
 	}
@@ -2173,7 +2175,42 @@ int main(int nargs, char* argv[])
 		}
 
 				 
-		
+	//Make the distribution - use random	
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+		if (kaleidoscope_plot == true)
+		{
+			pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
+			kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
+			pion_beta = -1;
+			kaon_beta = -1;
+			ckov_unc = 0;
+		}
+		dirc_model->sim_rand_n_photons(\
+			hit_points_pion,\
+			n_phi_phots*n_z_phots,\
+			pion_angle,\
+			1,\
+			particle_x,\
+			particle_y,\
+			particle_theta,\
+			particle_phi,\
+			0,\
+			ckov_unc/pdf_unc_red_fac,\
+			pion_beta);
+
+		dirc_model->sim_reg_n_photons(\
+			hit_points_kaon,\
+			n_phi_phots*n_z_phots,\
+			kaon_angle,\
+			1,\
+			particle_x,\
+			particle_y,\
+			particle_theta,\
+			particle_phi,\
+			0,\
+			ckov_unc/pdf_unc_red_fac,\
+			kaon_beta);
 	//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
 		double x,y,t_ns;
 		for (unsigned int i = 0; i < hit_points_pion.size(); i++)

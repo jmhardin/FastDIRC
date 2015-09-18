@@ -39,10 +39,13 @@ DircOpticalSim::DircOpticalSim(
 		printf("Removing the small wedge (prism) with a size of %12.02f mm\n",prism_height);
 	}
 
-
+	kaleidoscope_plot = false;
 	barLength=4900;
+//	barLength=100;
 	barWidth=35;
+//	barWidth=17.25;
 	barDepth=17.25;
+//	barDepth=5.25;
 	wedgeWidthOff = 1.75;
 	wedgeDepthOff = 10;
 	wedgeFarAngle = .006*57.3;
@@ -83,9 +86,9 @@ DircOpticalSim::DircOpticalSim(
 	pmtPlaneMinZ = -559;
 	pmtPlaneMaxZ = -329;
 
-//	pmtPlaneMinZ = -1000;
-//	pmtPlaneMaxZ = 1000;
-//	largePlanarMirrorMinZ = -1000;
+	pmtPlaneMinZ = -1000;
+	pmtPlaneMaxZ = 1000;
+	largePlanarMirrorMinZ = -1000;
 //	largePlanarMirrorMaxZ = 1000;
 	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
@@ -260,6 +263,9 @@ void DircOpticalSim::fill_threeseg_plane_vecs() {
 void DircOpticalSim::set_focmirror_nonuniformity(double nonuni_deg) {
 	foc_mirror_nonuni = nonuni_deg;
 	nonUniformFocMirror = (fabs(nonuni_deg) > .001);
+}
+void DircOpticalSim::set_kaleidoscope_plot(bool ikp) {
+	kaleidoscope_plot = ikp;
 }
 void DircOpticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points) {
 	double tmpx = 0;
@@ -639,7 +645,10 @@ void DircOpticalSim::fill_rand_phi(\
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		// 	randPhi = i*inv_numPhots;
 		sourceOff = -rand_gen->Uniform(0,barDepth);
-
+		if (kaleidoscope_plot == true)
+		{	
+			sourceOff = -barDepth/2;
+		}
 
 		if (beta < 0) {
 			rand_add = rand_gen->Gaus(0,ckov_theta_unc);
@@ -999,6 +1008,11 @@ void DircOpticalSim::fill_reg_phi(\
 
 	for (int i = 0; i < n_photons_z; i++) {
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
+
+		if (kaleidoscope_plot == true)
+		{
+			sourceOff = -sDepth/2;
+		}
 
 		for (int j = 0; j < adj_n_photons_phi; j++) {
 			regPhi = j*2*3.14159265357/(adj_n_photons_phi);
