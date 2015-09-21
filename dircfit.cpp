@@ -79,7 +79,9 @@ int main(int nargs, char* argv[])
 	bool force_kinematics = false;
 	bool use_prog_sep = false;
 	bool kaleidoscope_plot = false;
+	bool monochrome_plot = false;
 	bool flatten_time = false;
+	bool sep_updown = false;
 
 	int num_runs = 1000;
 	int max_particles = 1000000;
@@ -142,8 +144,6 @@ int main(int nargs, char* argv[])
 	double s_func_y = s_func_x;
 	double s_func_t = 2;
 	double sfunc_sig = 1;
-//	sm_xl = 10;
-//	sm_xr = 310;
 
 //	sm_xl = -50;
 //	sm_xr = sm_xl + 440;
@@ -201,6 +201,11 @@ int main(int nargs, char* argv[])
 			{
 				three_seg_mirror = false;	
 			}
+			else if (strcmp(argv[i], "-updown") == 0)
+			{
+				printf("Up-Down Histogram filling only implemented in loop mode, option currently does nothing in other modes\n");
+				sep_updown = true;	
+			}
 			else if (strcmp(argv[i], "-root_input") == 0)
 			{
 				i++;
@@ -249,6 +254,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-kaleidoscope_plot") == 0)
 			{
 				kaleidoscope_plot = true;
+			}
+			else if (strcmp(argv[i], "-monochrome_light") == 0)
+			{
+				monochrome_plot = true;
 			}
 			else if (strcmp(argv[i], "-prog_sep") == 0)
 			{
@@ -507,6 +516,10 @@ int main(int nargs, char* argv[])
 	
 	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",200000,-200,200);
 	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",200000,-200,200);
+	TH1F *ll_diff_pion_up = new TH1F("ll_diff_pion_up","Difference of log likelihood real = pion \"up\" going photons",200000,-200,200);
+	TH1F *ll_diff_kaon_up = new TH1F("ll_diff_kaon_up","Difference of log likelihood real = kaon \"up\" going photons",200000,-200,200);
+	TH1F *ll_diff_pion_down = new TH1F("ll_diff_pion_down","Difference of log likelihood real = pion \"down\" going photons",200000,-200,200);
+	TH1F *ll_diff_kaon_down = new TH1F("ll_diff_kaon_down","Difference of log likelihood real = kaon \"down\" going photons",200000,-200,200);
 	TH1F *phot_found_pion = new TH1F("phot_found_pion","number of photons found on pion angle", 1001,-.5,1000.5);
 	TH1F *phot_found_kaon = new TH1F("phot_found_kaon","number of photons found on kaon angle", 1001,-.5,1000.5);
 	
@@ -1890,7 +1903,7 @@ int main(int nargs, char* argv[])
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
 		
-		if (kaleidoscope_plot == true)
+		if (monochrome_plot == true)
 		{
 			pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 			kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
@@ -1992,7 +2005,7 @@ int main(int nargs, char* argv[])
 			pion_beta = dirc_model->get_beta(energy,pimass);
 			kaon_beta = dirc_model->get_beta(energy,kmass);
 			
-			if (kaleidoscope_plot == true)
+			if (monochrome_plot == true)
 			{
 				pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 				kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
@@ -2035,11 +2048,43 @@ int main(int nargs, char* argv[])
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 			
-//			printf("%12.04f\n",llc);	
-
 			ll_diff_pion->Fill(1*(llc-llf));
-					
 			phot_found_pion->Fill(sim_points.size());
+			
+			if (sep_updown == true)
+			{
+				std::vector<dirc_point> sim_points_up;
+				std::vector<dirc_point> sim_points_down;
+				for (unsigned int j = 0; j < sim_points.size(); j++)
+				{
+					if (sim_points[j].updown == 1)
+					{
+						sim_points_up.push_back(sim_points[j]);
+					}
+					else if (sim_points[j].updown == -1)
+					{
+						sim_points_down.push_back(sim_points[j]);
+					}
+					else
+					{
+						printf("Found a sim point without an updown flag.  This shouldn't happen.\n");
+					}
+				}
+				//just with the up
+				llc = pdf_pion->get_log_likelihood(sim_points_up);
+				llf = pdf_kaon->get_log_likelihood(sim_points_up);
+			
+				ll_diff_pion_up->Fill(1*(llc-llf));
+				
+				//just with the down
+				llc = pdf_pion->get_log_likelihood(sim_points_down);
+				llf = pdf_kaon->get_log_likelihood(sim_points_down);
+			
+				ll_diff_pion_down->Fill(1*(llc-llf));
+			}
+						
+						
+					
 			
 			dirc_model->sim_rand_n_photons(\
 				sim_points,\
@@ -2068,10 +2113,41 @@ int main(int nargs, char* argv[])
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 
 			ll_diff_kaon->Fill(1*(llc-llf));
+			phot_found_kaon->Fill(sim_points.size());
 			
+			if (sep_updown == true)
+			{
+				std::vector<dirc_point> sim_points_up;
+				std::vector<dirc_point> sim_points_down;
+				for (unsigned int j = 0; j < sim_points.size(); j++)
+				{
+					if (sim_points[j].updown == 1)
+					{
+						sim_points_up.push_back(sim_points[j]);
+					}
+					else if (sim_points[j].updown == -1)
+					{
+						sim_points_down.push_back(sim_points[j]);
+					}
+					else
+					{
+						printf("Found a sim point without an updown flag.  This shouldn't happen.\n");
+					}
+				}
+				//just with the up
+				llc = pdf_pion->get_log_likelihood(sim_points_up);
+				llf = pdf_kaon->get_log_likelihood(sim_points_up);
+			
+				ll_diff_kaon_up->Fill(1*(llc-llf));
+				
+				//just with the down
+				llc = pdf_pion->get_log_likelihood(sim_points_down);
+				llf = pdf_kaon->get_log_likelihood(sim_points_down);
+			
+				ll_diff_kaon_down->Fill(1*(llc-llf));
+			}
 	// 		ll_diff_kaon->Fill(sep_pdfs->get_log_likelihood_spread_diff(sim_points));
 			
-			phot_found_kaon->Fill(sim_points.size());
 		}
 		
 		printf("\nRun Completed\n");
@@ -2178,7 +2254,7 @@ int main(int nargs, char* argv[])
 	//Make the distribution - use random	
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
-		if (kaleidoscope_plot == true)
+		if (monochrome_plot == true)
 		{
 			pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 			kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
@@ -2386,6 +2462,10 @@ int main(int nargs, char* argv[])
 	kaon_dist_t->Write();
 	ll_diff_pion->Write();
 	ll_diff_kaon->Write();
+	ll_diff_pion_up->Write();
+	ll_diff_kaon_up->Write();
+	ll_diff_pion_down->Write();
+	ll_diff_kaon_down->Write();
 	phot_found_pion->Write();
 	phot_found_kaon->Write();
 	pion_cerenkov->Write();

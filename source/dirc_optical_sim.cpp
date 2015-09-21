@@ -85,12 +85,12 @@ DircOpticalSim::DircOpticalSim(
 
 	pmtPlaneMinZ = -559;
 	pmtPlaneMaxZ = -329;
-
+/*
 	pmtPlaneMinZ = -1000;
 	pmtPlaneMaxZ = 1000;
 	largePlanarMirrorMinZ = -1000;
-//	largePlanarMirrorMaxZ = 1000;
-	
+	largePlanarMirrorMaxZ = 1000;
+*/	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
@@ -200,6 +200,7 @@ void DircOpticalSim::fill_sens_plane_vecs() {
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
 
 	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
+	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
 }
 void DircOpticalSim::set_sidemirror_reflectivity(double isr) {
 	sidemirror_reflectivity = isr;
@@ -639,6 +640,8 @@ void DircOpticalSim::fill_rand_phi(\
 	double mm_index = 0;
 	double c_mm_ns = 300;
 
+	int tmp_updown = 0;
+
 	double inv_numPhots = 1./numPhots;
 
 	for (int i = 0; i < numPhots; i++) {
@@ -676,6 +679,15 @@ void DircOpticalSim::fill_rand_phi(\
 		x += particle_x;
 		y += particle_y;
 
+		//photon is now defined as up or down
+		if (dy > 0)
+		{
+			tmp_updown = 1;
+		}
+		else
+		{//Assume that zero doesn't count
+			tmp_updown = -1;
+		}
 
 		mm_index += warp_ray(\
 				x,\
@@ -752,7 +764,7 @@ void DircOpticalSim::fill_rand_phi(\
 		//
 		//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
 		out_val.x += get_bar_offset(particle_bar);
-
+		out_val.updown = tmp_updown;
 		ovals.push_back(out_val);
 	}
 }
@@ -977,6 +989,8 @@ void DircOpticalSim::fill_reg_phi(\
 	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
 	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
 
+	int tmp_updown = 0;
+
 	// 	srcrays.set_position(Math::Vector<3>(sourcex,sourcey,sourcez));
 	//Need to hand absolute positions to warp_ray
 	// 	srcrays.set_position(Math::Vector<3>(0,0,0));
@@ -1054,6 +1068,15 @@ void DircOpticalSim::fill_reg_phi(\
 			x += particle_x;
 			y += particle_y;
 
+			//photon is now defined as up or down
+			if (dy > 0)
+			{
+				tmp_updown = 1;
+			}
+			else
+			{//Assume that zero doesn't count
+				tmp_updown = -1;
+			}
 
 			mm_index += warp_ray(\
 					x,\
@@ -1133,6 +1156,7 @@ void DircOpticalSim::fill_reg_phi(\
 			//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
 			out_val.x += get_bar_offset(particle_bar);
 			out_val.t = mm_index/(c_mm_ns);
+			out_val.updown = tmp_updown;
 			ovals.push_back(out_val);
 		}
 	}
@@ -1964,7 +1988,8 @@ double DircOpticalSim::warp_sens_plane(\
 	}
 
 	fill_val.x = x;
-	fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
+	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
+	fill_val.y = (z+559)*sensPlaneYdistConversion - 100;
 
 	return rval*liquidIndex;
 }

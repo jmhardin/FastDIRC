@@ -59,7 +59,10 @@ void outputDistro(TString ifile_pref)
    	Double_t Length[Number] = { 0.00, 0.30, 1.00 };
    	Int_t nb=50;
    	TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
-   	pi_dist->Draw("colz");
+   	
+	pi_dist->GetXaxis()->SetTitle("PMT X (mm)");
+	pi_dist->GetYaxis()->SetTitle("PMT Y (mm)");
+	pi_dist->Draw("colz");
 
 	c1->SetWindowSize(1500,1000);
 
@@ -91,6 +94,7 @@ void outputDistro(TString ifile_pref)
 	pion_lambda->GetXaxis()->SetTitle("\\lambda (nm)");
 	pion_lambda->SetStats(false);
 	
+	c1->SetWindowSize(1500,900);
 	pion_lambda->Draw();
 	c1->Print(ifile_pref + "_pion_lambda.pdf");	
 

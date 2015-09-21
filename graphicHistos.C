@@ -84,6 +84,9 @@ TH1F *hpion = (TH1F*) f1->Get("ll_diff_pion");
 TH1F *hkaon = (TH1F*) f1->Get("ll_diff_kaon");
 TH1F *phots_pion = (TH1F*) f1->Get("phot_found_pion");
 
+printf("pion_ll mean, spread: %12.04f, %12.04f\n",hpion->GetMean(),hpion->GetRMS());
+printf("kaon_ll mean, spread: %12.04f, %12.04f\n",hkaon->GetMean(),hkaon->GetRMS());
+
 //Swap kaon and pion numbers
 
 for (int i = 1; i < hpion->GetNbinsX()/2; i++)

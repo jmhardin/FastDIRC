@@ -85,6 +85,7 @@ private:
 	double sensPlaneZ;
 	
 	double sensPlaneYdistConversion;
+	double sensPlaneZdistConversion;
 	
 	bool upperWedgeNonUniform;
 	double upperWedgeNonUniformSpread;
