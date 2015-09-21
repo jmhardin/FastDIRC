@@ -85,12 +85,12 @@ DircOpticalSim::DircOpticalSim(
 
 	pmtPlaneMinZ = -559;
 	pmtPlaneMaxZ = -329;
-/*
+
 	pmtPlaneMinZ = -1000;
 	pmtPlaneMaxZ = 1000;
 	largePlanarMirrorMinZ = -1000;
 	largePlanarMirrorMaxZ = 1000;
-*/	
+	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
