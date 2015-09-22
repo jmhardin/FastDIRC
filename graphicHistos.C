@@ -396,7 +396,7 @@ return spread;
 
 }
 
-void tmpgHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true, double ienergy = 5, int updown=0)
+void graphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true, double ienergy = 5, int updown=0)
 {
 	runGraphicHistos(ifile, verbose_out,ienergy,updown);
 }
