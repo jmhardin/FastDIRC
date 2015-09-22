@@ -43,7 +43,7 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 
 	return cur_sig;
 }
-double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true, double ienergy = 5)
+double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true, double ienergy = 5, int iupdown = 0)
 {
 double hmin = -100;
 double hmax = 100;
@@ -80,9 +80,32 @@ double spreadsq2 = 2*spread*spread;
 TRandom3* randgen = new TRandom3();
 
 TFile *f1 = new TFile(ifile);
-TH1F *hpion = (TH1F*) f1->Get("ll_diff_pion");
-TH1F *hkaon = (TH1F*) f1->Get("ll_diff_kaon");
-TH1F *phots_pion = (TH1F*) f1->Get("phot_found_pion");
+TH1F *hpion;
+TH1F *hkaon;
+TH1F *phots_pion;
+if (iupdown == 0)
+{
+	hpion = (TH1F*) f1->Get("ll_diff_pion");
+	hkaon = (TH1F*) f1->Get("ll_diff_kaon");
+	phots_pion = (TH1F*) f1->Get("phot_found_pion");
+}
+else if (iupdown == 1)
+{
+	hpion = (TH1F*) f1->Get("ll_diff_pion_up");
+	hkaon = (TH1F*) f1->Get("ll_diff_kaon_up");
+	phots_pion = (TH1F*) f1->Get("phot_found_pion_up");
+}
+if (iupdown == -1)
+{
+	hpion = (TH1F*) f1->Get("ll_diff_pion_down");
+	hkaon = (TH1F*) f1->Get("ll_diff_kaon_down");
+	phots_pion = (TH1F*) f1->Get("phot_found_pion_down");
+}
+else
+{
+	printf("Unrecognize updown arguement: %d \nFailing....\n",iupdown);
+	return -1;
+}
 
 printf("pion_ll mean, spread: %12.04f, %12.04f\n",hpion->GetMean(),hpion->GetRMS());
 printf("kaon_ll mean, spread: %12.04f, %12.04f\n",hkaon->GetMean(),hkaon->GetRMS());
@@ -373,7 +396,7 @@ return spread;
 
 }
 
-void graphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true, double ienergy = 5)
+void tmpgHistos(TString ifile = "tmpfitdirc.root", bool verbose_out = true, double ienergy = 5, int updown=0)
 {
-	runGraphicHistos(ifile, verbose_out,ienergy);
+	runGraphicHistos(ifile, verbose_out,ienergy,updown);
 }

@@ -41,7 +41,7 @@ DircOpticalSim::DircOpticalSim(
 
 	kaleidoscope_plot = false;
 	barLength=4900;
-//	barLength=100;
+	//barLength=100;
 	barWidth=35;
 //	barWidth=17.25;
 	barDepth=17.25;
@@ -1989,7 +1989,7 @@ double DircOpticalSim::warp_sens_plane(\
 
 	fill_val.x = x;
 	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
-	fill_val.y = (z+559)*sensPlaneYdistConversion - 100;
+	fill_val.y = (-z-559)*sensPlaneYdistConversion + 220;
 
 	return rval*liquidIndex;
 }

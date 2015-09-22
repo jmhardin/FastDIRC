@@ -75,6 +75,7 @@ int main(int nargs, char* argv[])
 	double particle_theta_spread = 0;
 	double particle_phi = 40;
 	double particle_phi_mean = particle_phi;
+	double const_track_off = 0;
 	
 	bool force_kinematics = false;
 	bool use_prog_sep = false;
@@ -222,6 +223,11 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				tracking_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-const_track_off") == 0)
+			{
+				i++;
+				const_track_off = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-ckov_unc") == 0)
 			{
@@ -522,6 +528,10 @@ int main(int nargs, char* argv[])
 	TH1F *ll_diff_kaon_down = new TH1F("ll_diff_kaon_down","Difference of log likelihood real = kaon \"down\" going photons",200000,-200,200);
 	TH1F *phot_found_pion = new TH1F("phot_found_pion","number of photons found on pion angle", 1001,-.5,1000.5);
 	TH1F *phot_found_kaon = new TH1F("phot_found_kaon","number of photons found on kaon angle", 1001,-.5,1000.5);
+	TH1F *phot_found_pion_up = new TH1F("phot_found_pion_up","number of photons found on pion angle \"up\" going photons", 1001,-.5,1000.5);
+	TH1F *phot_found_kaon_up = new TH1F("phot_found_kaon_up","number of photons found on kaon angle \"up\" going photons", 1001,-.5,1000.5);
+	TH1F *phot_found_pion_down = new TH1F("phot_found_pion_down","number of photons found on pion angle \"down\" going photons", 1001,-.5,1000.5);
+	TH1F *phot_found_kaon_down = new TH1F("phot_found_kaon_down","number of photons found on kaon angle \"down\" going photons", 1001,-.5,1000.5);
 	
 	TH1F *ref_pion_before = new TH1F("ref_pion_before","Angle of Pion Photons going into interface", 9000,0,90);
 	TH1F *ref_kaon_before = new TH1F("ref_kaon_before","Angle of Kaon Photons going into interface", 9000,0,90);
@@ -2081,6 +2091,9 @@ int main(int nargs, char* argv[])
 				llf = pdf_kaon->get_log_likelihood(sim_points_down);
 			
 				ll_diff_pion_down->Fill(1*(llc-llf));
+
+				phot_found_pion_up->Fill(sim_points_up.size());
+				phot_found_pion_down->Fill(sim_points_down.size());
 			}
 						
 						
@@ -2145,6 +2158,8 @@ int main(int nargs, char* argv[])
 				llf = pdf_kaon->get_log_likelihood(sim_points_down);
 			
 				ll_diff_kaon_down->Fill(1*(llc-llf));
+				phot_found_kaon_up->Fill(sim_points_up.size());
+				phot_found_kaon_down->Fill(sim_points_down.size());
 			}
 	// 		ll_diff_kaon->Fill(sep_pdfs->get_log_likelihood_spread_diff(sim_points));
 			
@@ -2262,6 +2277,7 @@ int main(int nargs, char* argv[])
 			kaon_beta = -1;
 			ckov_unc = 0;
 		}
+
 		dirc_model->sim_rand_n_photons(\
 			hit_points_pion,\
 			n_phi_phots*n_z_phots,\
@@ -2287,6 +2303,7 @@ int main(int nargs, char* argv[])
 			0,\
 			ckov_unc/pdf_unc_red_fac,\
 			kaon_beta);
+
 	//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
 		double x,y,t_ns;
 		for (unsigned int i = 0; i < hit_points_pion.size(); i++)
@@ -2468,6 +2485,10 @@ int main(int nargs, char* argv[])
 	ll_diff_kaon_down->Write();
 	phot_found_pion->Write();
 	phot_found_kaon->Write();
+	phot_found_pion_up->Write();
+	phot_found_kaon_up->Write();
+	phot_found_pion_down->Write();
+	phot_found_kaon_down->Write();
 	pion_cerenkov->Write();
 	kaon_cerenkov->Write();
 	pion_coverage_xy->Write();
