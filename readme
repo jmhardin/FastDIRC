@@ -25,4 +25,7 @@ where event_num comes from the Montecarlo and pid is the geant PID.  Bar is an i
 
 Use can use the command flag "-force_kinematics" to overide the last 3 colums.  Note that force kinematics will override them even if no other options are passed, as they have default values.
 
-the flag -t <ns> will cause events which are marked with a timestamp within that number of ns to produce hits on the PMT plane and "confound" the results.  Useful for testing windows and backgrounds.  Defaults to -1.
+The flag -t <ns> will cause events which are marked with a timestamp within that number of ns to produce hits on the PMT plane and "confound" the results.  Useful for testing windows and backgrounds.  Defaults to -1.
+
+To fit a resolution, rung graphicHistos.C(<file>,bool verbose, double Energy (GeV)) on the rootfile output from the simulation.
+
