@@ -41,7 +41,7 @@ DircOpticalSim::DircOpticalSim(
 
 	kaleidoscope_plot = false;
 	barLength=4900;
-	//barLength=100;
+//	barLength=100;
 	barWidth=35;
 //	barWidth=17.25;
 	barDepth=17.25;
@@ -86,11 +86,12 @@ DircOpticalSim::DircOpticalSim(
 	pmtPlaneMinZ = -559;
 	pmtPlaneMaxZ = -329;
 
+/*
 	pmtPlaneMinZ = -1000;
 	pmtPlaneMaxZ = 1000;
 	largePlanarMirrorMinZ = -1000;
 	largePlanarMirrorMaxZ = 1000;
-	
+*/	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
@@ -186,6 +187,16 @@ DircOpticalSim::DircOpticalSim(
 	fill_foc_mirror_vecs();
 	fill_sens_plane_vecs();
 	build_system();
+}
+void DircOpticalSim::set_pmt_plane_zs(double imin, double imax)
+{
+	pmtPlaneMinZ = imin;
+	pmtPlaneMaxZ = imax;
+}
+void DircOpticalSim::set_large_mirror_zs(double imin, double imax)
+{
+	largePlanarMirrorMinZ = imin;
+	largePlanarMirrorMaxZ = imax;
 }
 void DircOpticalSim::fill_sens_plane_vecs() {
 	double adjusted_sens_size = 312;
@@ -287,11 +298,13 @@ void DircOpticalSim::sidemirror_reflect_point(dirc_point &point) {
 	double tmpx = 0;
 	tmpx = point.x;
 	while (tmpx < sidemirror_xl || tmpx > sidemirror_xr) {
+		//printf("%12.04f ",tmpx);
 		if (rand_gen->Uniform(0,1) > sidemirror_reflectivity)
 		{
 			point.t = -1337;
 			break;
 		}
+		//printf("%12.04f ",tmpx);
 		if (tmpx < sidemirror_xl) {
 			tmpx = 2*sidemirror_xl - tmpx;
 		}
@@ -300,6 +313,7 @@ void DircOpticalSim::sidemirror_reflect_point(dirc_point &point) {
 		}
 	}
 	point.x = tmpx;
+	//printf("%12.04f \n",tmpx);
 }
 void DircOpticalSim::set_sidemirror(double ixr, double ixl) {
 	sidemirror_xr = ixr;
@@ -594,6 +608,105 @@ void DircOpticalSim::sim_reg_n_photons(\
 	//    sidemirror_reflect_points(out_points);
 	//     return out_points;
 }
+void DircOpticalSim::test_from_wedge_top(\
+		std::vector<dirc_point> &ovals,\
+		int n_photons, \
+		double particle_bar /*= 1*/, \
+		double particle_x /*= 0*/, \
+		double phot_theta /*= 0*/, \
+		double phot_phi /*= 0*/,\
+		double theta_unc, /*= 0*/
+		double phi_unc /* = 0*/,\
+		double overall_theta) {
+
+	ovals.clear();
+	//Note that Theta and Phi are defined along the bar axis, not as they are elsewhere
+	//negative bar number is - x axis?
+	int numPhots = n_photons;
+
+	double sourcez = -barDepth/2;
+	sourcez = -wedgeDepthHigh/2;
+	sourcez = 0;
+	double sourcey = barLength/2 + upperWedgeTop + .1;
+	double sourcex = particle_x;
+
+	double temit, randPhi;
+
+	double x,y,z,dx,dy,dz;
+
+	double mm_index = 0;
+	double c_mm_ns = 300;
+
+	for (int i = 0; i < numPhots; i++) {
+		mm_index = 0;
+		randPhi = phot_phi + rand_gen->Gaus(0,phi_unc);
+		temit = phot_theta + rand_gen->Gaus(0,theta_unc);
+
+		x = sourcex;
+		y = sourcey;
+		z = sourcez;
+		//Note, the geometry change again
+		dx = sin(temit/57.3)*sin(randPhi/57.3);
+		dy = cos(temit/57.3);
+		dz = sin(temit/57.3)*cos(randPhi/57.3);
+
+		rotate_2d(dy,dz,cos(overall_theta/57.3),sin(overall_theta/57.3));
+
+		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
+
+//		printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
+
+		mm_index += warp_box(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+
+//		printf("post; %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
+
+		if (z > 0) {
+			continue;
+		}
+		if (i == 0)
+		{
+			printf("%12.04f\n",mm_index/liquidIndex);
+		}
+		//Do not check absorbtion
+		dirc_point out_val;
+		mm_index += warp_sens_plane(\
+				out_val,\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+		if (i == 0)
+		{
+			printf("%12.04f\n",mm_index/liquidIndex);
+		}
+		if (z > 0) {
+			continue;
+		}
+		//printf("%12.04f\n",mm_index/liquidIndex);
+		//should be threading time information into this soon
+		out_val.t = mm_index/(liquidIndex);
+		out_val.x += get_bar_offset(particle_bar);
+
+		//printf("%12.04f\n",out_val.t);	
+	
+		//Must reflect after offset....
+		sidemirror_reflect_point(out_val);	
+		if (out_val.t < 0)
+		{
+			continue;
+		}	
+
+		ovals.push_back(out_val);
+	}
+}
 void DircOpticalSim::fill_rand_phi(\
 		std::vector<dirc_point> &ovals,\
 		int n_photons, \
@@ -614,16 +727,6 @@ void DircOpticalSim::fill_rand_phi(\
 	double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
 	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
 	int numPhots = n_photons/cos(particle_theta/57.3);
-
-	// 	double sourcez = -sDepth;
-	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
-	double sourcex = particle_x;
-	double tsy = sourcey;
-	double tsx = sourcex;
-	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
-	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
-
-	//Need to hand absolute positions to warp_ray
 
 	double sourceOff,randPhi;
 
@@ -750,11 +853,6 @@ void DircOpticalSim::fill_rand_phi(\
 		if (z > 0) {
 			continue;
 		}
-		sidemirror_reflect_point(out_val);	
-		if (out_val.t < 0)
-		{
-			continue;
-		}	
 
 		//should be threading time information into this soon
 		out_val.t = mm_index/(c_mm_ns);
@@ -764,6 +862,14 @@ void DircOpticalSim::fill_rand_phi(\
 		//
 		//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
 		out_val.x += get_bar_offset(particle_bar);
+		
+		//Must reflect after offset....
+		sidemirror_reflect_point(out_val);	
+		if (out_val.t < 0)
+		{
+			continue;
+		}	
+
 		out_val.updown = tmp_updown;
 		ovals.push_back(out_val);
 	}
@@ -980,21 +1086,7 @@ void DircOpticalSim::fill_reg_phi(\
 	double particleTheta = particle_theta;
 	double particlePhi = particle_phi;
 
-
-	// 	double sourcez = -sDepth;
-	double sourcey = particle_y-barDepth*tan(particleTheta/57.3);
-	double sourcex = particle_x;
-	double tsy = sourcey;
-	double tsx = sourcex;
-	sourcey = tsy*cos(particlePhi/57.3)-tsx*sin(particlePhi/57.3);
-	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
-
 	int tmp_updown = 0;
-
-	// 	srcrays.set_position(Math::Vector<3>(sourcex,sourcey,sourcez));
-	//Need to hand absolute positions to warp_ray
-	// 	srcrays.set_position(Math::Vector<3>(0,0,0));
-	// 	srcrays.set_material(oil);
 
 	double sourceOff,regPhi;
 
@@ -1050,9 +1142,6 @@ void DircOpticalSim::fill_reg_phi(\
 			cos_emit = sqrt(1-sin_emit*sin_emit);
 			cos_regphi = cos(regPhi);
 			sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
-
-			// 			sincos(temit/57.2957795131,&sin_emit,&cos_emit);
-			// 			sincos(regPhi,&sin_regphi,&cos_regphi);
 
 			dx = sin_emit*cos_regphi;
 			dy = sin_emit*sin_regphi;
@@ -1142,11 +1231,6 @@ void DircOpticalSim::fill_reg_phi(\
 			if (z > 0) {
 				continue;
 			}
-			sidemirror_reflect_point(out_val);	
-			if (out_val.t < 0)
-			{
-				continue;
-			}
 			//should be threading time information into this soon
 			//
 			//out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;
@@ -1155,6 +1239,14 @@ void DircOpticalSim::fill_reg_phi(\
 
 			//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
 			out_val.x += get_bar_offset(particle_bar);
+			
+			//Must be after offset
+			sidemirror_reflect_point(out_val);	
+			if (out_val.t < 0)
+			{
+				continue;
+			}
+
 			out_val.t = mm_index/(c_mm_ns);
 			out_val.updown = tmp_updown;
 			ovals.push_back(out_val);
@@ -1611,7 +1703,8 @@ double DircOpticalSim::warp_box(\
 
 			//Abuse the fact that this vector is normalized and hope it stays that way
 			dz = -dz;
-			rval += dt;
+			//?????
+			//rval += dt;
 		}
 	}
 

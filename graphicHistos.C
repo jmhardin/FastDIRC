@@ -95,7 +95,7 @@ else if (iupdown == 1)
 	hkaon = (TH1F*) f1->Get("ll_diff_kaon_up");
 	phots_pion = (TH1F*) f1->Get("phot_found_pion_up");
 }
-if (iupdown == -1)
+else if (iupdown == -1)
 {
 	hpion = (TH1F*) f1->Get("ll_diff_pion_down");
 	hkaon = (TH1F*) f1->Get("ll_diff_kaon_down");
@@ -131,6 +131,8 @@ hkaon->Rebin(rebin);
 
 hpion->SetAxisRange(hmin,hmax);
 hkaon->SetAxisRange(hmin,hmax);
+
+hkaon->GetXaxis()->SetTitle("Loglikelihood difference");
 
 hpion->SetStats(false);
 hkaon->SetStats(false);

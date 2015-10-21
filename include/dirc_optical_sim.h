@@ -150,6 +150,7 @@ private:
 	void spread_wedge_mirror();
 	bool quartz_transmission_mc(double R, double lambda);
 	bool absorbtion_mc(double dx, double dy);
+	
 
 	void fill_rand_phi(\
 		std::vector<dirc_point> &ovals,\
@@ -295,6 +296,8 @@ public:
 	void set_focus_mirror_angle(double ang,double yang = 0, double zang = 0);
 	void set_pmt_angle(double ang);
 	void set_wedge_mirror_rand(double ispread);
+	void set_pmt_plane_zs(double imin, double imax);
+	void set_large_mirror_zs(double imin, double imax);
 	double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength);
 	double get_beta(double E, double m);
 	void set_upper_wedge_angle_diff(double rads, double radsy_y = 0);	
@@ -345,5 +348,15 @@ public:
 		double phi_theta_unc = 0,\
 		double ckov_theta_unc = 0,\
 		double beta = -1);	
+	void test_from_wedge_top(\
+                std::vector<dirc_point> &ovals,\
+                int n_photons, \
+                double particle_bar /*= 1*/, \
+                double particle_x /*= 0*/, \
+                double phot_theta /*= 0*/, \
+                double phot_phi /*= 0*/,\
+                double theta_unc, /*= 0*/
+                double phi_unc /* = 0*/,\
+		double overall_theta); 
 };
 #endif

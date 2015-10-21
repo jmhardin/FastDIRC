@@ -91,7 +91,7 @@ void outputDistro(TString ifile_pref)
 	c1->Print(ifile_pref + "_pion_dist_y.gif");	
 
 	pion_lambda->SetTitle("");
-	pion_lambda->GetXaxis()->SetTitle("\\lambda (nm)");
+	pion_lambda->GetXaxis()->SetTitle("Wavelength (nm)");
 	pion_lambda->SetStats(false);
 	
 	c1->SetWindowSize(1500,900);
