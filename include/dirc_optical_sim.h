@@ -159,6 +159,7 @@ private:
         	double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*= 0*/, \
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= .0015*57.3*/,\
@@ -172,6 +173,7 @@ private:
 	        double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*= 0*/, \
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc, /*= 0*/
@@ -314,6 +316,7 @@ public:
 	std::vector<std::pair<double,double> > get_refraction_rand_phi(\
 		std::vector<double> &before_interface,\
 		std::vector<double> &after_interface,\
+		std::vector<double> &pmt_incidence,\
 		int n_photons, \
 		double ckov_theta = 47, \
 		double particle_x = 0, \
@@ -330,6 +333,7 @@ public:
         	double particle_bar= 0, \
 		double particle_x = 0, \
 		double particle_y = 0, \
+		double particle_t = 0, \
 		double particle_theta = 0, \
 		double particle_phi = 0,\
 		double phi_theta_unc = .08594,\
@@ -343,6 +347,7 @@ public:
         	double particle_bar= 0, \
 		double particle_x = 0, \
 		double particle_y = 0, \
+		double particle_t = 0, \
 		double particle_theta = 0, \
 		double particle_phi = 0,\
 		double phi_theta_unc = 0,\

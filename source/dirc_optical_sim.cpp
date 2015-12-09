@@ -1,7 +1,6 @@
 #include <vector>
 
 #include "../include/dirc_optical_sim.h"
-// #include "../include/dirc_optical_components.h"
 #include "../include/dirc_point.h"
 #include <iostream>
 #include <fstream>
@@ -15,7 +14,6 @@
 
 
 
-//Using close simplex
 DircOpticalSim::DircOpticalSim(
 		int rand_seed /*=4357*/,\
 		double ifoc_r/*=540.66*/, \
@@ -508,8 +506,6 @@ double DircOpticalSim::get_beta(double E, double m) {
 double DircOpticalSim::get_bar_offset(int bar)
 {
 	return fabs(bar)/bar*((150-0.5*(barWidth))+bar*(barWidth+.015));
-	//old version:
-	//        return fabs(bar)/bar*((150-0.5*(barWidth))+bar*(barWidth));
 }
 int DircOpticalSim::get_bar_from_x(double x)
 {
@@ -527,21 +523,6 @@ int DircOpticalSim::get_bar_from_x(double x)
 		return 0;
 	}
 
-	//Old version
-	/*
-	   if (x < -150)
-	   {
-	   return (x+150)/(barWidth) - 1;
-	   }
-	   else if (x > 150)
-	   {
-	   return  (x-150)/(barWidth) + 1;
-	   }
-	   else
-	   {
-	   return 0;
-	   }
-	 */
 }
 void DircOpticalSim::sim_rand_n_photons(\
 		std::vector<dirc_point> &out_points,\
@@ -550,6 +531,7 @@ void DircOpticalSim::sim_rand_n_photons(\
 		double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*=0*/,\
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= .0015*57.3*/,\
@@ -565,6 +547,7 @@ void DircOpticalSim::sim_rand_n_photons(\
 			particle_bar,\
 			particle_x,\
 			particle_y,\
+			particle_t /*=0*/,\
 			particle_theta,\
 			particle_phi,\
 			phi_theta_unc,\
@@ -584,6 +567,7 @@ void DircOpticalSim::sim_reg_n_photons(\
 		double particle_bar /*=0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*=0*/,\
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= 0*/,\
@@ -599,6 +583,7 @@ void DircOpticalSim::sim_reg_n_photons(\
 			particle_bar,\
 			particle_x,\
 			particle_y,\
+			particle_t,\
 			particle_theta,\
 			particle_phi,\
 			phi_theta_unc,\
@@ -690,6 +675,7 @@ void DircOpticalSim::test_from_wedge_top(\
 		if (z > 0) {
 			continue;
 		}
+
 		//printf("%12.04f\n",mm_index/liquidIndex);
 		//should be threading time information into this soon
 		out_val.t = mm_index/(liquidIndex);
@@ -714,6 +700,7 @@ void DircOpticalSim::fill_rand_phi(\
 		double particle_bar /*= 0*/, \
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*= 0*/, \
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc, /*= .0015*57.3*/
@@ -854,8 +841,7 @@ void DircOpticalSim::fill_rand_phi(\
 			continue;
 		}
 
-		//should be threading time information into this soon
-		out_val.t = mm_index/(c_mm_ns);
+		out_val.t = particle_t + mm_index/(c_mm_ns);
 		//
 		//
 		//cdd shift the x value to account for bar number here, units in mm
@@ -877,6 +863,7 @@ void DircOpticalSim::fill_rand_phi(\
 std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		std::vector<double> &before_interface,\
 		std::vector<double> &after_interface,\
+		std::vector<double> &pmt_incidence,\
 		int n_photons, \
 		double ckov_theta /*= 47*/, \
 		double particle_x /*= 0*/, \
@@ -894,6 +881,7 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 	after_interface.clear();
 	refraction_before.clear();
 	refraction_after.clear();
+	pmt_incidence.clear();
 	store_refraction = true;
 
 	double emitAngle = ckov_theta;
@@ -1046,6 +1034,11 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		{
 			continue;
 		}
+	
+//		printf("%12.04f\n",sensPlaneNx*dx + sensPlaneNy*dy + sensPlaneNz*dz);
+	
+		pmt_incidence.push_back(acos(fabs(sensPlaneNx*dx + sensPlaneNy*dy + sensPlaneNz*dz)));
+
 		//should be threading time information into this soon
 		out_val.t = mm_index/(c_mm_ns);
 		std::pair<double, double> add_val;
@@ -1075,6 +1068,7 @@ void DircOpticalSim::fill_reg_phi(\
 		double particle_bar /*= 0*/,\
 		double particle_x /*= 0*/, \
 		double particle_y /*= 0*/, \
+		double particle_t /*= 0*/, \
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= 0*/,\
@@ -1247,7 +1241,7 @@ void DircOpticalSim::fill_reg_phi(\
 				continue;
 			}
 
-			out_val.t = mm_index/(c_mm_ns);
+			out_val.t = particle_t + mm_index/(c_mm_ns);
 			out_val.updown = tmp_updown;
 			ovals.push_back(out_val);
 		}

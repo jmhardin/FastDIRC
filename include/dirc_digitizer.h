@@ -12,6 +12,7 @@ private:
 	double minx,maxx,miny,maxy;
 	double resx, resy;
 	double t_unc;
+	double t_bin_size;
 	
 	TRandom3 *dig_rand;
 	
@@ -23,7 +24,8 @@ public:
 		double iminy,\
 		double imaxy,\
 		double iresy,\
-		double it_unc);
+		double it_unc,\
+		double it_bin_size);
 
 	void digitize_point(dirc_point &pt);
 	void digitize_points(std::vector<dirc_point> &points);

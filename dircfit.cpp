@@ -24,18 +24,7 @@
 #include <TH2.h>
 #include <TH1.h>
 #include <TRandom3.h>
-//
-//
-//
-//
-//
-//cdd work on faster acos calculation, that is getting angle from beta (most of it comes out at 45 deg.....)
 
-//
-//
-//
-//
-//cdd move this fold_x(inpoints) to header?
 std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 	std::vector<dirc_point> outvec;
 	for (unsigned int i = 0; i < inpoints.size(); i++) {
@@ -45,7 +34,6 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 	}
 	return outvec;
 }
-
 int main(int nargs, char* argv[])
 {  
 	clock_t timing_clock;
@@ -76,6 +64,8 @@ int main(int nargs, char* argv[])
 	double particle_phi = 40;
 	double particle_phi_mean = particle_phi;
 	double const_track_off = 0;
+
+	double particle_flight_distance = 0;
 
 	int box_check_n = -1;
 	double box_check_theta = 0;
@@ -144,7 +134,8 @@ int main(int nargs, char* argv[])
 	double maxy = 1500;
 	double mint = 0;
 	double maxt = 1000;
-	double t_unc = 1;
+	double t_unc = .27;
+	double t_bin_size = 1;
 
 	double digit_miny = -50;
 	double digit_maxy = 300;
@@ -162,6 +153,14 @@ int main(int nargs, char* argv[])
 	double s_func_y = s_func_x;
 	double s_func_t = 2;
 	double sfunc_sig = 1;
+
+	int n_sim_phots = 40;
+
+	int n_phi_phots = 150000;
+	int n_z_phots = 4;
+	int n_step_phots = 1000;
+	// 	n_step_phots = n_z_phots*n_phi_phots;
+
 /*
 	sm_xl = -50;
 	sm_xr = sm_xl + 440;
@@ -239,6 +238,12 @@ int main(int nargs, char* argv[])
 				i++;
 				particle_phi = atof(argv[i]);
 				particle_phi_mean = particle_phi;
+			}
+			else if (strcmp(argv[i], "-particle_flight_distance") == 0)
+			{
+				//meters
+				i++;
+				particle_flight_distance = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-tracking_unc") == 0)
 			{
@@ -337,6 +342,26 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				s_func_t = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-t_unc") == 0)
+			{
+				i++;
+				t_unc = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-t_bin_size") == 0)
+			{
+				i++;
+				t_bin_size = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-n_phi_phots") == 0)
+			{
+				i++;
+				n_phi_phots = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-n_z_phots") == 0)
+			{
+				i++;
+				n_z_phots = atoi(argv[i]);
 			}
 			else if (strcmp(argv[i], "-spread_n_phot") == 0)
 			{
@@ -539,15 +564,6 @@ int main(int nargs, char* argv[])
 
 
 
-	int n_sim_phots = 40;
-
-	int n_phi_phots = 150000;
-	//	int n_phi_phots = 1003;
-	// 	int n_phi_phots =2;
-	// 	int n_z_phots = 10;
-	int n_z_phots = 4;
-	int n_step_phots = 1000;
-	// 	n_step_phots = n_z_phots*n_phi_phots;
 
 	double prog_thresh = 500;
 
@@ -613,6 +629,8 @@ int main(int nargs, char* argv[])
 	TH1F *ref_kaon_before = new TH1F("ref_kaon_before","Angle of Kaon Photons going into interface", 9000,0,90);
 	TH1F *ref_pion_after = new TH1F("ref_pion_after","Angle of Pion Photons going out of interface", 9000,0,90);
 	TH1F *ref_kaon_after = new TH1F("ref_kaon_after","Angle of Kaon Photons going out of interface", 9000,0,90);
+	TH1F *ref_pion_sens_plane = new TH1F("ref_pion_sens_plane","Angle of Pion Photons going into window to PMTs", 9000,0,90);
+	TH1F *ref_kaon_sens_plane = new TH1F("ref_kaon_sens_plane","Angle of Kaon Photons going into window to PMTs", 9000,0,90);
 
 
 
@@ -684,7 +702,8 @@ int main(int nargs, char* argv[])
 			digit_miny,\
 			digit_maxy,\
 			resy,\
-			t_unc);
+			t_unc,\
+			t_bin_size);
 
 	//  	
 	printf("Beginning Run\n");
@@ -965,11 +984,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,\
 							theta[n],\
 							phi[n],\
 							tracking_unc,\
 							ckov_unc,\
 							pion_mc_beta);
+				//TODO: Check timing
 					pion_kaon_diff = 1;
 				}
 				else{
@@ -980,11 +1001,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,\
 							theta[n],\
 							phi[n],\
 							tracking_unc,\
 							ckov_unc,\
 							kaon_mc_beta);
+				//TODO: Check timing
 					pion_kaon_diff = -1;
 				}
 
@@ -1138,11 +1161,13 @@ int main(int nargs, char* argv[])
 						BAR[n],\
 						x[n],\
 						y[n],\
+						0,
 						theta[n],\
 						phi[n],\
 						0,\
 						ckov_unc/pdf_unc_red_fac,\
 						pion_mc_beta);
+				//TODO: Check timing
 
 				dirc_model->sim_reg_n_photons(\
 						hits_trk_is_kaon,\
@@ -1152,11 +1177,13 @@ int main(int nargs, char* argv[])
 						BAR[n],\
 						x[n],\
 						y[n],\
+						0,
 						theta[n],\
 						phi[n],\
 						0,\
 						ckov_unc/pdf_unc_red_fac,\
 						kaon_mc_beta);
+				//TODO: Check timing
 				double avg_x = 0;	
 				double avg_y = 0;	
 				double avg_t = 0;	
@@ -1449,11 +1476,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,\
 							theta[n],\
 							phi[n],\
 							0,\
 							ckov_unc,\
 							pion_mc_beta);
+				//TODO: Check timing
 					pion_kaon_diff = 1;
 				}
 				else{
@@ -1464,11 +1493,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,\
 							theta[n],\
 							phi[n],\
 							0,\
 							ckov_unc,\
 							kaon_mc_beta);
+				//TODO: Check timing
 					pion_kaon_diff = -1;
 				}
 				for (unsigned int i = 0; i < sim_points.size(); i++)
@@ -1497,11 +1528,13 @@ int main(int nargs, char* argv[])
 									BAR[j],\
 									x[j],\
 									y[j],\
+									0,\
 									theta[j],\
 									phi[j],\
 									tracking_unc,\
 									ckov_unc,\
 									1);
+						//TODO: Check timing
 						}
 						else if(abs(PID[j])==8||PID[j]==9){
 							pion_beta = dirc_model->get_beta(E[j],pimass);
@@ -1550,11 +1583,13 @@ int main(int nargs, char* argv[])
 									BAR[j],\
 									x[j],\
 									y[j],\
+									0,\
 									theta[j],\
 									phi[j],\
 									tracking_unc,\
 									ckov_unc,\
 									muon_beta);
+							//TODO: Check timing
 						}
 					}
 					for (unsigned int i = 0; i < confound_points.size(); i++)
@@ -1611,11 +1646,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,
 							theta[n],\
 							phi[n],\
 							0,\
 							ckov_unc/pdf_unc_red_fac,\
 							pion_mc_beta);
+						//TODO: Check timing
 
 					dirc_model->sim_reg_n_photons(\
 							hits_trk_is_kaon,\
@@ -1625,11 +1662,13 @@ int main(int nargs, char* argv[])
 							BAR[n],\
 							x[n],\
 							y[n],\
+							0,
 							theta[n],\
 							phi[n],\
 							0,\
 							ckov_unc/pdf_unc_red_fac,\
 							kaon_mc_beta);
+						//TODO: Check timing
 
 					for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
 					{
@@ -1746,6 +1785,10 @@ int main(int nargs, char* argv[])
 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 		dirc_model->set_bar_box_angle(bar_box_box_angle);
 
+		//ns
+		double pion_time = particle_flight_distance/(pion_beta*.3);
+		double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
 		dirc_model->sim_reg_n_photons(\
 				hit_points_pion,\
 				n_phi_phots/10,\
@@ -1754,6 +1797,7 @@ int main(int nargs, char* argv[])
 				1,\
 				particle_x,\
 				particle_y,\
+				pion_time,\
 				particle_theta,\
 				particle_phi,\
 				0,\
@@ -1768,6 +1812,7 @@ int main(int nargs, char* argv[])
 				1,\
 				particle_x,\
 				particle_y,\
+				kaon_time,\
 				particle_theta,\
 				particle_phi,\
 				0,\
@@ -1807,6 +1852,11 @@ int main(int nargs, char* argv[])
 			particle_theta = spread_ang.Uniform(0,box_rot_unc);
 			particle_phi = spread_ang.Uniform(0,360);
 			//Sim new photons
+			
+			//ns
+			double pion_time = particle_flight_distance/(pion_beta*.3);
+			double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
 			dirc_model->sim_reg_n_photons(\
 					hit_points_pion,\
 					n_phi_phots/phi_phots_reduce,\
@@ -1815,6 +1865,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					pion_time,\
 					particle_theta,\
 					particle_phi,\
 					0,\
@@ -1829,6 +1880,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					kaon_time,\
 					particle_theta,\
 					particle_phi,\
 					0,\
@@ -1849,6 +1901,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					pion_time,\
 					particle_theta,\
 					particle_phi,\
 					tracking_unc,\
@@ -1872,6 +1925,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					kaon_time,\
 					particle_theta,\
 					particle_phi,\
 					tracking_unc,\
@@ -1917,6 +1971,7 @@ int main(int nargs, char* argv[])
 						1,\
 						particle_x,\
 						particle_y,\
+						0,\
 						particle_theta,\
 						particle_phi,\
 						tracking_unc,\
@@ -1936,6 +1991,7 @@ int main(int nargs, char* argv[])
 						1,\
 						particle_x,\
 						particle_y,\
+						0,\
 						particle_theta,\
 						particle_phi,\
 						tracking_unc,\
@@ -2017,6 +2073,10 @@ int main(int nargs, char* argv[])
 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 		dirc_model->set_bar_box_angle(bar_box_box_angle);
 
+		//ns
+		double pion_time = particle_flight_distance/(pion_beta*.3);
+		double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
 		dirc_model->sim_reg_n_photons(\
 				hit_points_pion,\
 				n_phi_phots,\
@@ -2025,6 +2085,7 @@ int main(int nargs, char* argv[])
 				1,\
 				particle_x,\
 				particle_y,\
+				pion_time,\
 				particle_theta,\
 				particle_phi,\
 				0,\
@@ -2039,6 +2100,7 @@ int main(int nargs, char* argv[])
 				1,\
 				particle_x,\
 				particle_y,\
+				kaon_time,\
 				particle_theta,\
 				particle_phi,\
 				0,\
@@ -2119,6 +2181,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					pion_time,\
 					particle_theta+const_track_off,\
 					particle_phi,\
 					tracking_unc,\
@@ -2184,6 +2247,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					kaon_time,\
 					particle_theta+const_track_off,\
 					particle_phi,\
 					tracking_unc,\
@@ -2269,6 +2333,7 @@ int main(int nargs, char* argv[])
 						1,\
 						particle_x,\
 						particle_y,\
+						0,\
 						particle_theta,\
 						particle_phi,\
 						tracking_unc,\
@@ -2288,6 +2353,7 @@ int main(int nargs, char* argv[])
 						1,\
 						particle_x,\
 						particle_y,\
+						0,\
 						particle_theta,\
 						particle_phi,\
 						tracking_unc,\
@@ -2331,6 +2397,7 @@ int main(int nargs, char* argv[])
 							1,
 							0, //particle_x
 							0, //particle_y
+							0,\
 							itheta,
 							iphi,
 							0, //ignore tracking
@@ -2518,6 +2585,7 @@ int main(int nargs, char* argv[])
 					1,\
 					particle_x,\
 					particle_y,\
+					0,\
 					phot_check_theta,\
 					phot_check_phi,\
 					tracking_unc,\
@@ -2545,10 +2613,12 @@ int main(int nargs, char* argv[])
 		printf("Creating Refraction histograms...\n");
 		std::vector<double> before_fill;
 		std::vector<double> after_fill;
+		std::vector<double> pmt_incidence;
 
 		pion_theta_cphi = dirc_model->get_refraction_rand_phi(\
 				before_fill,\
 				after_fill,\
+				pmt_incidence,\
 				refraction_sim_n,\
 				pion_angle ,
 				particle_x,\
@@ -2568,6 +2638,10 @@ int main(int nargs, char* argv[])
 		{
 			ref_pion_after->Fill(after_fill[i]*rad_to_deg);
 		}
+		for (unsigned int i = 0; i < pmt_incidence.size(); i++)
+		{
+			ref_pion_sens_plane->Fill(pmt_incidence[i]*rad_to_deg);
+		}
 		for (unsigned int i = 0; i < pion_theta_cphi.size(); i++)
 		{
 			ref_theta_cphi_pion->Fill(pion_theta_cphi[i].first*rad_to_deg,pion_theta_cphi[i].second*rad_to_deg);
@@ -2576,6 +2650,7 @@ int main(int nargs, char* argv[])
 		kaon_theta_cphi = dirc_model->get_refraction_rand_phi(\
 				before_fill,\
 				after_fill,\
+				pmt_incidence,\
 				refraction_sim_n,\
 				kaon_angle ,
 				particle_x,\
@@ -2594,6 +2669,10 @@ int main(int nargs, char* argv[])
 		for (unsigned int i = 0; i < after_fill.size(); i++)
 		{
 			ref_kaon_after->Fill(after_fill[i]*rad_to_deg);
+		}
+		for (unsigned int i = 0; i < pmt_incidence.size(); i++)
+		{
+			ref_kaon_sens_plane->Fill(pmt_incidence[i]*rad_to_deg);
 		}
 		for (unsigned int i = 0; i < kaon_theta_cphi.size(); i++)
 		{
@@ -2668,6 +2747,8 @@ int main(int nargs, char* argv[])
 	ref_pion_after->Write();
 	ref_kaon_before->Write();
 	ref_kaon_after->Write();
+	ref_pion_sens_plane->Write();
+	ref_kaon_sens_plane->Write();
 
 
 	ref_theta_cphi_pion->Write();
