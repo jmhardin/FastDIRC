@@ -32,6 +32,8 @@ private:
 	double upperWedgeTop;
 	double upperWedgeHeight;
 	double upperWedgeBottom;
+
+	double windowThickness;
 	
 	double wedgeClosePlaneNx;
 	double wedgeClosePlaneNy;
@@ -203,6 +205,16 @@ private:
 		double &dy,\
 		double &dz);
 	double warp_box(\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz);
+	void warp_readout_box(\
+		dirc_point &out_val,\
+		int particle_bar,\
+		double &mm_index,\
 		double &x,\
 		double &y,\
 		double &z,\

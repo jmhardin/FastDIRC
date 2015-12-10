@@ -61,8 +61,8 @@ void DircSpreadGaussian::support_x_weight()
 double DircSpreadGaussian::get_single_likelihood(dirc_point inpoint)
 {
 	double tprob = 0;
-	double log_mult = 1;
-	double weight = 1;
+//	double log_mult = 1;
+//	double weight = 1;
 // 	weight = get_weight(inpoint);
 	for (unsigned int j = 0; j < support_points.size(); j++)
 	{
@@ -110,17 +110,16 @@ void DircSpreadGaussian::fill_likelihood_new_support(\
 	//unnormailized to support point size
 	likelihood_vals.clear();
 	double tprob = 0;
-	double rval = 0;
+//	double rval = 0;
 	int eval_count = 0;
-	double log_mult = 1;
-	double weight = 1;
+//	double log_mult = 1;
+//	double weight = 1;
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
 		tprob = 0;
 		for (unsigned int j = 0; j < new_support.size(); j++)
 		{
 			tprob += support_spread_function(new_support[j],inpoints[i]);
-// 			printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n", new_support[j].x, inpoints[i].x, new_support[j].y, inpoints[i].y, new_support[j].t, inpoints[i].t, support_spread_function(new_support[j],inpoints[i]));
 			eval_count++;
 		}
 		tprob *= spread_func_norm_inv;
@@ -144,7 +143,6 @@ double DircSpreadGaussian::get_log_likelihood_new_support(std::vector<dirc_point
 	for (unsigned int i = 0; i < inpoints.size(); i++)
 	{
 		tprob = 0;
-// 		weight = get_weight(inpoints[i]);
 		for (unsigned int j = 0; j < t_support.size(); j++)
 		{
 			tprob += support_spread_function(t_support[j],inpoints[i]);
@@ -155,7 +153,6 @@ double DircSpreadGaussian::get_log_likelihood_new_support(std::vector<dirc_point
 		
 		rval += weight*log_mult*log(tprob+min_probability);
 		
-// 		printf("rval: %12.04f \n",rval);
 	}
 // 	rval -= log(inpoints.size());
 	

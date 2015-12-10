@@ -620,7 +620,6 @@ void DircOpticalSim::test_from_wedge_top(\
 	double x,y,z,dx,dy,dz;
 
 	double mm_index = 0;
-	double c_mm_ns = 300;
 
 	for (int i = 0; i < numPhots; i++) {
 		mm_index = 0;
@@ -639,52 +638,9 @@ void DircOpticalSim::test_from_wedge_top(\
 
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
 
-//		printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
-
-		mm_index += warp_box(\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-
-//		printf("post; %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
-
-		if (z > 0) {
-			continue;
-		}
-		if (i == 0)
-		{
-			printf("%12.04f\n",mm_index/liquidIndex);
-		}
-		//Do not check absorbtion
 		dirc_point out_val;
-		mm_index += warp_sens_plane(\
-				out_val,\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-		if (i == 0)
-		{
-			printf("%12.04f\n",mm_index/liquidIndex);
-		}
-		if (z > 0) {
-			continue;
-		}
-
-		//printf("%12.04f\n",mm_index/liquidIndex);
-		//should be threading time information into this soon
-		out_val.t = mm_index/(liquidIndex);
-		out_val.x += get_bar_offset(particle_bar);
-
-		//printf("%12.04f\n",out_val.t);	
-	
-		//Must reflect after offset....
-		sidemirror_reflect_point(out_val);	
+		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
+		
 		if (out_val.t < 0)
 		{
 			continue;
@@ -728,15 +684,11 @@ void DircOpticalSim::fill_rand_phi(\
 	double sin_pphi = sin(particlePhi/57.3);
 
 	double mm_index = 0;
-	double c_mm_ns = 300;
 
 	int tmp_updown = 0;
 
-	double inv_numPhots = 1./numPhots;
-
 	for (int i = 0; i < numPhots; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
-		// 	randPhi = i*inv_numPhots;
 		sourceOff = -rand_gen->Uniform(0,barDepth);
 		if (kaleidoscope_plot == true)
 		{	
@@ -809,56 +761,70 @@ void DircOpticalSim::fill_rand_phi(\
 		if (z > 0) {
 			continue;
 		}
-
-		mm_index += warp_box(\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-
-		if (z > 0) {
-			continue;
-		}
-
-		//check absorbtion
-		if (!(absorbtion_mc(dx,dy))) {
-			continue;
-		}
-
 		dirc_point out_val;
-		mm_index += warp_sens_plane(\
-				out_val,\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-	
-		if (z > 0) {
-			continue;
-		}
 
-		out_val.t = particle_t + mm_index/(c_mm_ns);
-		//
-		//
-		//cdd shift the x value to account for bar number here, units in mm
-		//
-		//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
-		out_val.x += get_bar_offset(particle_bar);
+		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
 		
-		//Must reflect after offset....
-		sidemirror_reflect_point(out_val);	
 		if (out_val.t < 0)
 		{
 			continue;
-		}	
+		}
 
+		out_val.t += particle_t;
 		out_val.updown = tmp_updown;
 		ovals.push_back(out_val);
 	}
+}
+void DircOpticalSim::warp_readout_box(
+	dirc_point &out_val,\
+	int particle_bar,\
+	double &mm_index,\
+	double &x,\
+	double &y,\
+	double &z,\
+	double &dx,\
+	double &dy,\
+	double &dz)
+{
+	double c_mm_ns = 300;
+	mm_index += warp_box(\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+
+	if (z > 0) {
+		out_val.t = -1337;
+		return;
+	}
+
+	//check absorbtion
+	if (!(absorbtion_mc(dx,dy))) {
+		out_val.t = -1337;
+		return;
+	}
+
+	mm_index += warp_sens_plane(\
+			out_val,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+
+	if (z > 0) {
+		out_val.t = -1337;
+		return;
+	}
+
+	out_val.t = mm_index/(c_mm_ns);
+	out_val.x += get_bar_offset(particle_bar);
+	
+	//Must reflect after offset....
+	sidemirror_reflect_point(out_val);
 }
 std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		std::vector<double> &before_interface,\
@@ -899,8 +865,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 	sourcex = tsy*sin(particlePhi/57.3)+tsx*cos(particlePhi/57.3);
 
 
-	double bar_dist_travelled;
-
 	double sourceOff,randPhi;
 
 	double temit, rand_add;
@@ -913,19 +877,12 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 	double cos_pphi = cos(particle_phi/57.3);
 	double sin_pphi = sin(particle_phi/57.3);
 
-//	printf("sincos ptheta: %12.04f %12.04f %12.04f\n",sin_ptheta,cos_ptheta,particleTheta);
-//	printf("sincos pphi: %12.04f %12.04f %12.04f\n",sin_pphi,cos_pphi,particle_phi);
-
 	double mm_index = 0;
 	double c_mm_ns = 300;
 
 	for (int i = 0; i < numPhots; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
-		//randPhi = rand_gen->Uniform(0,0);
-//		randPhi = 90/57.3;
 		sourceOff = -rand_gen->Uniform(0,barDepth);
-//		sourceOff = -barDepth/2;
-
 
 		if (beta < 0) {
 			rand_add = rand_gen->Gaus(0,ckov_theta_unc);
@@ -933,7 +890,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		} else {
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
-//		temit=47;
 		mm_index = (sourceOff - barDepth)*1.47;
 
 		x = 0;
@@ -943,10 +899,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		dx = sin(temit/57.3)*cos(randPhi);
 		dy = sin(temit/57.3)*sin(randPhi);
 		dz = cos(temit/57.3);
-		if (i==0)
-		{
-		//	printf("start: %12.04f %12.04f %12.04f\n",dx,dy,dz);
-		}
 
 		rotate_2d(z,y,cos_ptheta,sin_ptheta);
 		rotate_2d(x,y,cos_pphi,sin_pphi);
@@ -959,10 +911,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		y += particle_y;
 
 
-		if (i==0)
-		{
-		//	printf("pre warp: %12.04f %12.04f %12.04f\n",dx,dy,dz);
-		}
 		mm_index += warp_ray(\
 				x,\
 				y,\
@@ -979,10 +927,6 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 
 		spread_wedge_mirror();
 
-		if (i==0)
-		{
-		//	printf("pre wedge: %12.04f %12.04f %12.04f\n",dx,dy,dz);
-		}
 		mm_index += warp_wedge(\
 				x,\
 				y,\
@@ -1010,13 +954,14 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 			continue;
 		}
 
+		dirc_point out_val;
+		
 		//check absorbtion
 		//We have the distance now - should use the real version
 		if (!(absorbtion_mc(dx,dy))) {
 			continue;
 		}
 
-		dirc_point out_val;
 		mm_index += warp_sens_plane(\
 				out_val,\
 				x,\
@@ -1077,14 +1022,13 @@ void DircOpticalSim::fill_reg_phi(\
 {
 	double sDepth = .95*barDepth;
 	double emitAngle = ckov_theta;
-	double particleTheta = particle_theta;
-	double particlePhi = particle_phi;
+//	double particleTheta = particle_theta;
+//	double particlePhi = particle_phi;
 
 	int tmp_updown = 0;
 
 	double sourceOff,regPhi;
 
-	int num_through = 0;
 	double temit;
 	double rand_add;
 	double wavelength = 400;
@@ -1097,7 +1041,6 @@ void DircOpticalSim::fill_reg_phi(\
 	double sin_pphi = sin(particle_phi/57.3);
 
 	double mm_index = 0;
-	double c_mm_ns = 300;
 
 	double sin_emit;
 	double cos_emit;
@@ -1193,55 +1136,15 @@ void DircOpticalSim::fill_reg_phi(\
 				continue;
 			}
 
-			mm_index += warp_box(\
-					x,\
-					y,\
-					z,\
-					dx,\
-					dy,\
-					dz);
-
-			if (z > 0)
-			{
-				continue;
-			}
-
-			//check absorbtion
-			if (!(absorbtion_mc(dx,dy)))
-			{
-				continue;
-			}
-
 			dirc_point out_val;
-			mm_index += warp_sens_plane(\
-					out_val,\
-					x,\
-					y,\
-					z,\
-					dx,\
-					dy,\
-					dz);
-
-			if (z > 0) {
-				continue;
-			}
-			//should be threading time information into this soon
-			//
-			//out_val.x += fabs(particle_bar)/particle_bar*150+particle_bar*35;
-
-			//TODO - stick this in an inlided function to ensure consistency between reg and rand.
-
-			//out_val.x += fabs(particle_bar)/particle_bar*(150-0.5*barWidth)+particle_bar*barWidth;
-			out_val.x += get_bar_offset(particle_bar);
+			warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
 			
-			//Must be after offset
-			sidemirror_reflect_point(out_val);	
 			if (out_val.t < 0)
 			{
 				continue;
 			}
 
-			out_val.t = particle_t + mm_index/(c_mm_ns);
+			out_val.t += particle_t;
 			out_val.updown = tmp_updown;
 			ovals.push_back(out_val);
 		}
@@ -1697,7 +1600,6 @@ double DircOpticalSim::warp_box(\
 
 			//Abuse the fact that this vector is normalized and hope it stays that way
 			dz = -dz;
-			//?????
 			//rval += dt;
 		}
 	}

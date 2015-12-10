@@ -31,6 +31,10 @@ vpath %.cpp ./source/
 all: dircfit.cpp $(OBJFILES)
 	g++ -Wall dircfit.cpp $(OBJLOC) $(CFLAGS) $(INCLUDE) -o $(OUT)
 
+.PHONY : libs
+libs: $(OBJFILES)
+	echo libraries built
+
 .PHONY : clean
 clean:
 	rm lib/*.o

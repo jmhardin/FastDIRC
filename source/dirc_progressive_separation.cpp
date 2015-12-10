@@ -155,8 +155,8 @@ double DircProgressiveSeparation::get_ll_progressive(\
 	double cur_ll = 0;
 	double cur_ll_1 = 0;
 	double cur_ll_2 = 0;
-	double add_ll_1 = 0;
-	double add_ll_2 = 0;
+//	double add_ll_1 = 0;
+//	double add_ll_2 = 0;
 	
 	for (int i = 0; i < max_sim_phots/step_sim_phots; i++)
 	{

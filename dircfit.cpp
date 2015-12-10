@@ -168,7 +168,7 @@ int main(int nargs, char* argv[])
 //	sm_xl = 0;
 //	sm_xr = sm_xl + 1100;
 
-	double overlap_x = -1;
+//	double overlap_x = -1;
 
 	bool three_seg_mirror = true;
 	bool fill_distributions	= false;
@@ -759,9 +759,11 @@ int main(int nargs, char* argv[])
 
 		unsigned int r = 0;
 
-		int iPID, iBAR,ievent_index;
+		int iPID, iBAR;
+		//int ievent_index;
 		double ix,iy,it,itheta,iphi,iE;
-		std::vector<int> PID,BAR,event_index;
+		std::vector<int> PID,BAR;
+		std::vector<int> event_index;
 		std::vector<double> x,y,t,theta,phi,E;
 
 		double min_t = 1000;
@@ -897,7 +899,7 @@ int main(int nargs, char* argv[])
 		inputrootfile->Close("R");
 
 		int mc_tally=0;
-		int confounded_tally=0;
+//		int confounded_tally=0;
 		num_runs=0;
 		coverage_plot=false;
 
@@ -2550,7 +2552,7 @@ int main(int nargs, char* argv[])
 
 		printf("Box Check Results\n");
 		printf("n-phots XSpread YSpread Dist X/Dist Y/Dist\n");
-		printf("%07d %12.04f %12.04f %12.04f %12.04e %12.04e\n",box_check_points.size(),box_check_x->GetRMS(),box_check_y->GetRMS(),dist_mean,box_check_x->GetRMS()/dist_mean,box_check_y->GetRMS()/dist_mean);
+		printf("%07d %12.04f %12.04f %12.04f %12.04e %12.04e\n",(int) box_check_points.size(),box_check_x->GetRMS(),box_check_y->GetRMS(),dist_mean,box_check_x->GetRMS()/dist_mean,box_check_y->GetRMS()/dist_mean);
 
 
 	}
