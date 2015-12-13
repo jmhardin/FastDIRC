@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "include/dirc_optical_sim.h"
+#include "include/dirc_threesegbox_sim.h"
 #include "include/dirc_point.h"
 #include "include/dirc_probability_spread.h"
 #include "include/dirc_probability_separation.h"
@@ -587,8 +588,7 @@ int main(int nargs, char* argv[])
 
 	TRandom3 spread_ang(rseed+3);
 
-
-	DircOpticalSim *dirc_model = new DircOpticalSim(\
+	DircOpticalSim *dirc_model_2 = new DircOpticalSim(\
 			rseed,\
 			-1200 + mirror_r_difference,\
 			300.38,\
@@ -596,7 +596,17 @@ int main(int nargs, char* argv[])
 			600,\
 			47.87 + box_rot + mirror_angle_change);
 
+	DircThreeSegBoxSim *dirc_model = new DircThreeSegBoxSim(\
+			rseed,\
+			-1200 + mirror_r_difference,\
+			300.38,\
+			main_mirror_angle,\
+			600,\
+			47.87 + box_rot + mirror_angle_change);
+
+
 	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
+	dirc_model->set_liquid_index(liquid_index);
 	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
 	dirc_model->set_three_seg_mirror(three_seg_mirror);
 	dirc_model->set_kaleidoscope_plot(kaleidoscope_plot);	
@@ -928,7 +938,7 @@ int main(int nargs, char* argv[])
 				min_pval);//could make this an array that is filled...
 		//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
-
+/*
 		DircProgressiveSeparation *progressive_separation = \
 								    new DircProgressiveSeparation(\
 										    dirc_model,\
@@ -941,7 +951,7 @@ int main(int nargs, char* argv[])
 										    kmass,\
 										    pimass,\
 										    prog_thresh);
-
+*/
 		//		r = 100;
 
 		for(unsigned int n=0;n < r; n++){
@@ -1399,7 +1409,7 @@ int main(int nargs, char* argv[])
 				min_pval);//could make this an array that is filled...
 		//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
-
+/*
 		DircProgressiveSeparation *progressive_separation = \
 								    new DircProgressiveSeparation(\
 										    dirc_model,\
@@ -1413,7 +1423,7 @@ int main(int nargs, char* argv[])
 										    pimass,\
 										    prog_thresh);
 
-
+*/
 		unsigned int r=0;
 		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
@@ -1619,7 +1629,8 @@ int main(int nargs, char* argv[])
 					dirc_model->set_upper_wedge_angle_diff(\
 							spread_ang.Gaus(0,0),\
 							spread_ang.Gaus(0,0));
-
+					printf("Progressive separation removed pending optical sim upgrade\n");
+/*
 					ll_diff = progressive_separation->get_ll_progressive(\
 							sim_points,\
 							BAR[n],\
@@ -1630,6 +1641,7 @@ int main(int nargs, char* argv[])
 							phi[n],\
 							tracking_unc,\
 							ckov_unc);
+*/
 				}
 				else
 				{

@@ -9,6 +9,8 @@ LIBLOC = ./lib/
 OUT = ./dircfit
 
 OBJFILES = dirc_optical_sim.o
+OBJFILES += dirc_threesegbox_sim.o
+OBJFILES += dirc_base_sim.o
 OBJFILES += dirc_digitizer.o
 OBJFILES += dirc_probability_spread.o
 OBJFILES += dirc_spread_relative.o

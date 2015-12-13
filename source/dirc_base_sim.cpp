@@ -1,6 +1,6 @@
 #include <vector>
 
-#include "../include/dirc_optical_sim.h"
+#include "../include/dirc_base_sim.h"
 #include "../include/dirc_point.h"
 #include <iostream>
 #include <fstream>
@@ -14,36 +14,16 @@
 
 
 
-DircOpticalSim::DircOpticalSim(
+DircBaseSim::DircBaseSim(
 		int rand_seed /*=4357*/,\
-		double ifoc_r/*=540.66*/, \
-		double ifoc_mirror_size/*=300.38*/, \
-		double ifoc_rot/*=-74.11*/, \
-		double isens_size/*=600*/, \
-		double isens_rot/*=90*/) {
-	foc_r = ifoc_r;
-	foc_mirror_size = ifoc_mirror_size;
-	foc_rot = ifoc_rot;
-	foc_yrot = 0;
-	sens_size = isens_size;
-	sens_rot = isens_rot;
+		double ibarLength/*=4900*/, \
+		double ibarWidth/*=35*/, \
+		double ibarDepth/*=17.25*/,
+		double iupperWedgeTop/*=178.6*/) {
 
-	double prism_height = 0;
-	bool remove_prism = true;
-	if (remove_prism == true)
-	{
-		prism_height = 20;
-		upperWedgeGap = prism_height;
-		printf("Removing the small wedge (prism) with a size of %12.02f mm\n",prism_height);
-	}
-
-	kaleidoscope_plot = false;
-	barLength=4900;
-//	barLength=100;
-	barWidth=35;
-//	barWidth=17.25;
-	barDepth=17.25;
-//	barDepth=5.25;
+	barLength=ibarLength;
+	barWidth=ibarWidth;
+	barDepth=ibarDepth;
 	wedgeWidthOff = 1.75;
 	wedgeDepthOff = 10;
 	wedgeFarAngle = .006*57.3;
@@ -51,21 +31,16 @@ DircOpticalSim::DircOpticalSim(
 	wedgeWidth=barWidth - wedgeWidthOff;
 	wedgeDepthHigh = 79;
 	wedgeHeight = 91;
-//	upperWedgeDepthHigh = 130;
-	upperWedgeTop = 178.6;
-	upperWedgeHeight = 78;
-	upperWedgeBottom = upperWedgeTop-upperWedgeHeight;
-	
-//	printf("window thickness calc: %12.04f\n",upperWedgeBottom-wedgeHeight);
 
-	//not, this is about 4mm off from the original BaBar schematic - the angles and 
-        upperWedgeDepthHigh = wedgeDepthHigh + (upperWedgeTop-wedgeHeight)*sin(wedgeCloseAngle/57.3);
+	windowThickness = 9.6;
 
+	upperWedgeTop = iupperWedgeTop;
+	upperWedgeBottom = wedgeHeight + windowThickness;
+	upperWedgeHeight = upperWedgeTop - upperWedgeBottom;
+	upperWedgeDepthHigh = wedgeDepthHigh + (upperWedgeTop-wedgeHeight)*sin(wedgeCloseAngle/57.3);
 
 	lowerWedgeExtensionZ = -wedgeDepthHigh\
 			       - tan(wedgeCloseAngle/57.296)*(upperWedgeBottom - wedgeHeight);
-
-	printf("Lower Wedge Top: %12.04f Upper Wedge Bottom: %12.04f\n",wedgeHeight, upperWedgeBottom);
 
 	//Variables used for plane intersection
 	wedgeClosePlaneNx = 0; //Shouldn't be needed
@@ -79,23 +54,6 @@ DircOpticalSim::DircOpticalSim(
 	upperWedgeNonUniform = false;
 	upperWedgeNonUniformSpread = 0;
 
-	//only used for checking collision
-	largePlanarMirrorNx = 0; //Shouldn't be needed
-	largePlanarMirrorNy = 1;
-	largePlanarMirrorNz = 0;
-	largePlanarMirrorD = upperWedgeTop + barLength/2;
-	largePlanarMirrorMinZ = -559;
-	largePlanarMirrorMaxZ = -130;
-
-	pmtPlaneMinZ = -559;
-	pmtPlaneMaxZ = -329;
-
-/*
-	pmtPlaneMinZ = -1000;
-	pmtPlaneMaxZ = 1000;
-	largePlanarMirrorMinZ = -1000;
-	largePlanarMirrorMaxZ = 1000;
-*/	
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
@@ -106,21 +64,10 @@ DircOpticalSim::DircOpticalSim(
 
 	upperWedgeFarPlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeFarPlaneNy;
 
-	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
-
-
-
-
-	sidemirror_xl = -1000000;
-	sidemirror_xr = 1000000;
-	sidemirror_reflectivity = .9;
-
-
 	//Take average
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
-	quartzLiquidY = upperWedgeBottom;
-
+	quartzLiquidY = upperWedgeBottom + 15;
 
 	//Negative to make reflections easier
 	wedgeFarPlaneNx = 0; //Shouldn't be needed
@@ -131,39 +78,11 @@ DircOpticalSim::DircOpticalSim(
 
 	upperWedgeFarZ = 0;//Change based on geometry
 
-	boxCloseZ = -614;
-
-	reflOff = 9;
-
-	three_seg_mirror = false;
-
 	rand_gen = new TRandom3(rand_seed);
 
 	box_angle_off_cval = 1;
 	box_angle_off_sval = 0;
 
-
-	num_QE = 31;
-	min_QE = 300;
-	max_QE = 600;
-	sep_QE = (max_QE - min_QE)/(num_QE - 1);
-
-	double t_QE[31] = {\
-		0.016415, 0.074064, 0.141658, 0.184219, 0.20634,  0.217191, 0.223244,
-	       0.222296, 0.215232, 0.206302, 0.195574, 0.183007, 0.169403, 0.155447,
-	       0.140014, 0.127696, 0.115716, 0.104086, 0.092256, 0.084083, 0.075418,
-	       0.067311, 0.060243, 0.053588, 0.047765, 0.04344,  0.037999, 0.034177,
-	       0.030869, 0.027848, 0.024141
-	};
-
-
-	// Transmittance of quartz per 1m
-
-
-
-	for (int i = 0; i < num_QE; i++) {
-		vals_QE.push_back(t_QE[i]);
-	}
 
 	num_transmittance = 36;
 	min_transmittance = 300;
@@ -183,182 +102,36 @@ DircOpticalSim::DircOpticalSim(
 	for (int i = 0; i < num_transmittance; i++) {
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
-	set_focmirror_nonuniformity(0);
-	fill_threeseg_plane_vecs();
-	fill_foc_mirror_vecs();
-	fill_sens_plane_vecs();
 	build_system();
 }
-void DircOpticalSim::set_pmt_plane_zs(double imin, double imax)
-{
-	pmtPlaneMinZ = imin;
-	pmtPlaneMaxZ = imax;
-}
-void DircOpticalSim::set_large_mirror_zs(double imin, double imax)
-{
-	largePlanarMirrorMinZ = imin;
-	largePlanarMirrorMaxZ = imax;
-}
-void DircOpticalSim::fill_sens_plane_vecs() {
-	double adjusted_sens_size = 312;
-
-	sensPlaneNx = 0;
-	sensPlaneNy = sin(sens_rot/57.3);
-	sensPlaneNz = cos(sens_rot/57.3);
-
-	sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
-	sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
-
-	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
-
-	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
-	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
-}
-void DircOpticalSim::set_sidemirror_reflectivity(double isr) {
-	sidemirror_reflectivity = isr;
-}
-void DircOpticalSim::set_foc_mirror_r(double ifoc_r) {
-	foc_r = ifoc_r;
-	build_system();
-}
-void DircOpticalSim::fill_foc_mirror_vecs() {
-	//is off by pi/2 to reduce rounding errors and such
-	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
-	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
-	focMirrorZ = foc_r*sin(foc_center_ang);
-}
-void DircOpticalSim::fill_threeseg_plane_vecs() {
-	focMirrorTop = focMirrorBottom + foc_mirror_size*cos(foc_rot/57.3);
-	focMirrorZDim = foc_mirror_size*sin(foc_rot/57.3);
-	//If we ever go to more than 3 segments, use a loop
-
-	double theta_m = foc_rot/57.3;//radians of rotation to go through
-	double theta_c = fabs(2*asin(focMirrorZDim/(2*foc_r)));//angle subtended by the mirror
-	double seg_h = fabs(2*foc_r*sin(theta_c/6));//length of each segment;
-
-	//I had to do some geometry and algebra to get these numbers, but in hindsight, it's obvious.  Always that way.
-	double theta_1 = theta_m - theta_c/3;
-	double theta_2 = theta_m;
-	double theta_3 = theta_m + theta_c/3;
-
-	threeSeg1Y = focMirrorBottom;
-	threeSeg1Z = 0;
-
-	threeSeg2Y = threeSeg1Y + seg_h*cos(theta_1);
-	threeSeg2Z = threeSeg1Z - seg_h*sin(theta_1);
-
-	threeSeg3Y = threeSeg2Y + seg_h*cos(theta_2);
-	threeSeg3Z = threeSeg2Z - seg_h*sin(theta_2);
-
-
-	threeSeg1Nx = 0;
-	threeSeg1Ny = sin(theta_1);
-	threeSeg1Nz = cos(theta_1);
-	rotate_2d(threeSeg1Nx,threeSeg1Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
-	rotate_2d(threeSeg1Nx,threeSeg1Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
-	threeSeg1D = threeSeg1Ny*threeSeg1Y + threeSeg1Nz*threeSeg1Z;//Use point x=0 as reference
-
-	threeSeg2Nx = 0;
-	threeSeg2Ny = sin(theta_2);
-	threeSeg2Nz = cos(theta_2);
-	rotate_2d(threeSeg2Nx,threeSeg2Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
-	rotate_2d(threeSeg2Nx,threeSeg2Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
-	threeSeg2D = threeSeg2Ny*threeSeg2Y + threeSeg2Nz*threeSeg2Z;//Use point x=0 as reference
-
-	threeSeg3Nx = 0;
-	threeSeg3Ny = sin(theta_3);
-	threeSeg3Nz = cos(theta_3);
-	rotate_2d(threeSeg3Nx,threeSeg3Nz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
-	rotate_2d(threeSeg3Nx,threeSeg3Ny,cos(foc_zrot/57.3),sin(foc_zrot/57.3));//I think this is a slightly wrong rotation if the mirrors are carved out of a solid block, but it should be good enough at small angles
-	threeSeg3D = threeSeg3Ny*threeSeg3Y + threeSeg3Nz*threeSeg3Z;//Use point x=0 as reference
-
-}
-void DircOpticalSim::set_focmirror_nonuniformity(double nonuni_deg) {
-	foc_mirror_nonuni = nonuni_deg;
-	nonUniformFocMirror = (fabs(nonuni_deg) > .001);
-}
-void DircOpticalSim::set_kaleidoscope_plot(bool ikp) {
+void DircBaseSim::set_kaleidoscope_plot(bool ikp) {
 	kaleidoscope_plot = ikp;
 }
-void DircOpticalSim::sidemirror_reflect_points(std::vector<dirc_point> &points) {
-	double tmpx = 0;
-	for (unsigned int i = 0; i < points.size(); i++) {
-		tmpx = points[i].x;
-		while (tmpx < sidemirror_xl || tmpx > sidemirror_xr) {
-			if (tmpx < sidemirror_xl) {
-				tmpx = 2*sidemirror_xl - tmpx;
-			}
-			if (tmpx > sidemirror_xr) {
-				tmpx = 2*sidemirror_xr - tmpx;
-			}
-		}
-		points[i].x = tmpx;
-	}
+void DircBaseSim::rotate_2d(double &x, double &y, double cval, double sval) {
+        //Standard rotatation allows precomputation of matrix elements
+        //Only store one variable for speed
+        //Sin should be actual sin (not negative sin)
+        double tx = x;
+        x = cval*tx - sval*y;
+        y = sval*tx + cval*y;
 }
-void DircOpticalSim::sidemirror_reflect_point(dirc_point &point) {
-	double tmpx = 0;
-	tmpx = point.x;
-	while (tmpx < sidemirror_xl || tmpx > sidemirror_xr) {
-		//printf("%12.04f ",tmpx);
-		if (rand_gen->Uniform(0,1) > sidemirror_reflectivity)
-		{
-			point.t = -1337;
-			break;
-		}
-		//printf("%12.04f ",tmpx);
-		if (tmpx < sidemirror_xl) {
-			tmpx = 2*sidemirror_xl - tmpx;
-		}
-		if (tmpx > sidemirror_xr) {
-			tmpx = 2*sidemirror_xr - tmpx;
-		}
-	}
-	point.x = tmpx;
-	//printf("%12.04f \n",tmpx);
+
+void DircBaseSim::set_bar_box_angle(double ang) {
+        //expect degrees
+	//sets angle between readout box and bars - rotates angle coming out of bars
+        box_angle_off_cval = cos(ang/57.3);
+        box_angle_off_sval = sin(ang/57.3);
 }
-void DircOpticalSim::set_sidemirror(double ixr, double ixl) {
-	sidemirror_xr = ixr;
-	sidemirror_xl = ixl;
-}
-void DircOpticalSim::set_three_seg_mirror(bool itsm) {
-	if (three_seg_mirror != itsm) {
-		three_seg_mirror = itsm;
-		build_system();
-	}
-}
-void DircOpticalSim::set_pmt_offset(double r) {
-	//positive r increases path length
-	boxCloseZ = -614 - r*cos(sens_rot/57.3);
-	reflOff = 9 + r*sin(sens_rot/57.3);
-	build_system();
-}
-void DircOpticalSim::set_liquid_absorbtion(double iabs) {
-	liquidAbsorbtion = iabs;
-}
-std::vector<double> DircOpticalSim::get_dist_traveled() {
+std::vector<double> DircBaseSim::get_dist_traveled() {
 	return dist_traveled;
 }
-void DircOpticalSim::set_store_traveled(bool sst/* = true*/) {
-	store_traveled = sst;
-}
-void DircOpticalSim::set_liquid_index(double li) {
+void DircBaseSim::set_liquid_index(double li) {
+	//Sets the index of the upper quartz wedge
 	liquidIndex = li;
-	printf("Liquid Index: %12.04f\n",liquidIndex);
+	printf("Liquid index set: %12.04f\n",liquidIndex);
+
 }
-void DircOpticalSim::rotate_2d(double &x, double &y, double cval, double sval) {
-	//Standard rotatation allows precomputation of matrix elements
-	//Only store one variable for speed
-	//Sin should be actual sin (not negative sin)
-	double tx = x;
-	x = cval*tx - sval*y;
-	y = sval*tx + cval*y;
-}
-void DircOpticalSim::set_bar_box_angle(double ang) {
-	//expect degrees
-	box_angle_off_cval = cos(ang/57.3);
-	box_angle_off_sval = sin(ang/57.3);
-}
-void DircOpticalSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
+void DircBaseSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
 	upperWedgeClosePlaneNx = 0; //Shouldn't be needed
 	upperWedgeClosePlaneNy = sin(wedgeCloseAngle/57.296 + rads);
 	upperWedgeClosePlaneNz = cos(wedgeCloseAngle/57.296 + rads);
@@ -373,17 +146,7 @@ void DircOpticalSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
 
 	upperWedgeFarPlaneD = upperWedgeBottom*upperWedgeFarPlaneNy;
 }
-void DircOpticalSim::set_focus_mirror_angle(double ang,double yang, double zang) {
-	foc_rot = ang;
-	foc_yrot = yang;
-	foc_zrot = zang;
-	build_system();
-}
-void DircOpticalSim::set_pmt_angle(double ang) {
-	sens_rot = ang;
-	build_system();
-}
-void DircOpticalSim::set_wedge_mirror_rand(double ispread) {
+void DircBaseSim::set_wedge_mirror_rand(double ispread) {
 	if (ispread > 0) {
 		upperWedgeNonUniform = true;
 		upperWedgeNonUniformSpread = ispread;
@@ -393,7 +156,7 @@ void DircOpticalSim::set_wedge_mirror_rand(double ispread) {
 	}
 	spread_wedge_mirror();
 }
-void DircOpticalSim::spread_wedge_mirror() {
+void DircBaseSim::spread_wedge_mirror() {
 
 	if (upperWedgeNonUniform == true) {
 		double spread_ang = wedgeCloseAngle;
@@ -404,13 +167,10 @@ void DircOpticalSim::spread_wedge_mirror() {
 		upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
 	}
 }
-void DircOpticalSim::build_system() {
-	fill_foc_mirror_vecs();
+void DircBaseSim::build_system() {
 	spread_wedge_mirror();
-	fill_threeseg_plane_vecs();
-	fill_sens_plane_vecs();
 }
-double DircOpticalSim::get_quartz_n(double lambda) {
+double DircBaseSim::get_quartz_n(double lambda) {
 	double B1,B2,B3,C1,C2,C3;
 	B1 = 0.6961663;             // B1
 	B2 = 0.4079426;             // B2
@@ -426,47 +186,7 @@ double DircOpticalSim::get_quartz_n(double lambda) {
 
 	return n_lam;
 }
-double DircOpticalSim::get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength) {
-	//May be slow enough to consider approximating in distribution generation
-	double out_ang = 0;
-	double tmp_lam = 0;
-	double tmp_QE_val;
-	double above_ind;
-	int ind_QE;
-	double n_lam;
-
-	while (true) {
-		tmp_lam = rand_gen->Uniform(min_QE,max_QE);
-		wavelength = tmp_lam;
-
-		//Ignoring that the QE points are right on multiples of 10.  Assuming they are for speed.
-		//This may not be neccessary, but I doubt it matters.
-		ind_QE = (tmp_lam - min_QE)/sep_QE;
-
-		above_ind = tmp_lam - (min_QE + sep_QE*ind_QE);
-
-		//Simple linear interp between values.  5th order poly fit looked like it worked too
-		tmp_QE_val = vals_QE[ind_QE]*(sep_QE-above_ind)/sep_QE + vals_QE[ind_QE+1]*above_ind/sep_QE;
-
-		//Max QE val is ~.23, this saves lot of loops
-		if (rand_gen->Uniform(0,.25) > tmp_QE_val) continue;
-
-		//Test emission distribution, second b/c it's a less stringent cut
-		if (rand_gen->Uniform(0,1/(min_QE*min_QE)) > 1/(tmp_lam*tmp_lam)) continue;
-
-
-		n_lam = get_quartz_n(tmp_lam);
-
-		out_ang = 57.3*acos(1/(beta*n_lam));
-		break;
-	}
-
-	out_ang += rand_gen->Gaus(0,additional_spread);
-
-	return out_ang;
-}
-
-bool DircOpticalSim::quartz_transmission_mc(double R, double lambda) {
+bool DircBaseSim::quartz_transmission_mc(double R, double lambda) {
 	int ind_transmittance;
 	double above_ind;
 	double tmp_transmittance;
@@ -491,7 +211,7 @@ bool DircOpticalSim::quartz_transmission_mc(double R, double lambda) {
 	return (rand_gen->Uniform(0,1) < trans_prob);
 
 }
-double DircOpticalSim::get_beta(double E, double m) {
+double DircBaseSim::get_beta(double E, double m) {
 	double gam = E/m;
 	if (gam > 5) {
 		//Approximate and possibly save time
@@ -501,11 +221,11 @@ double DircOpticalSim::get_beta(double E, double m) {
 	}
 
 }
-double DircOpticalSim::get_bar_offset(int bar)
+double DircBaseSim::get_bar_offset(int bar)
 {
 	return fabs(bar)/bar*((150-0.5*(barWidth))+bar*(barWidth+.015));
 }
-int DircOpticalSim::get_bar_from_x(double x)
+int DircBaseSim::get_bar_from_x(double x)
 {
 
 	if (x < -150)
@@ -522,7 +242,7 @@ int DircOpticalSim::get_bar_from_x(double x)
 	}
 
 }
-void DircOpticalSim::sim_rand_n_photons(\
+void DircBaseSim::sim_rand_n_photons(\
 		std::vector<dirc_point> &out_points,\
 		int n_photons, \
 		double ckov_theta /*= 47*/, \
@@ -536,7 +256,6 @@ void DircOpticalSim::sim_rand_n_photons(\
 		double ckov_theta_unc /* = .0055*57.3*/,\
 		double beta /* = -1*/) {
 
-	//     std::vector<dirc_point> out_points;
 	out_points.clear();
 	fill_rand_phi(\
 			out_points,\
@@ -551,13 +270,8 @@ void DircOpticalSim::sim_rand_n_photons(\
 			phi_theta_unc,\
 			ckov_theta_unc,\
 			beta);
-	//Reflection inside loops
-	//    sidemirror_reflect_points(out_points);
-
-
-	//     return out_points;
 }
-void DircOpticalSim::sim_reg_n_photons(\
+void DircBaseSim::sim_reg_n_photons(\
 		std::vector<dirc_point> &out_points,\
 		int n_photons_phi, \
 		int n_photons_z,\
@@ -591,7 +305,7 @@ void DircOpticalSim::sim_reg_n_photons(\
 	//    sidemirror_reflect_points(out_points);
 	//     return out_points;
 }
-void DircOpticalSim::test_from_wedge_top(\
+void DircBaseSim::test_from_wedge_top(\
 		std::vector<dirc_point> &ovals,\
 		int n_photons, \
 		double particle_bar /*= 1*/, \
@@ -647,7 +361,7 @@ void DircOpticalSim::test_from_wedge_top(\
 		ovals.push_back(out_val);
 	}
 }
-void DircOpticalSim::fill_rand_phi(\
+void DircBaseSim::fill_rand_phi(\
 		std::vector<dirc_point> &ovals,\
 		int n_photons, \
 		double ckov_theta /*= 47*/, \
@@ -660,10 +374,6 @@ void DircOpticalSim::fill_rand_phi(\
 		double phi_theta_unc, /*= .0015*57.3*/
 		double ckov_theta_unc /* = .0055*57.3*/,\
 		double beta/* = -1*/) {
-	// 	double sDepth = .95*barDepth;
-
-	//cdd
-	//negative bar number is - x axis?
 	double emitAngle = ckov_theta;
 	double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
 	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
@@ -704,13 +414,13 @@ void DircOpticalSim::fill_rand_phi(\
 		x = 0;
 		y = 0;
 		z = sourceOff;
-/*             
-		x = 0;
-		y = 0;
-		z = barDepth/2;
- 
+/*
+                x = 0;
+                y = 0;
+                z = barDepth/2;
+
 		temit = 47;
-                randPhi = 2.7635;
+		randPhi = 2.7635;
 */
 		dx = sin(temit/57.3)*cos(randPhi);
 		dy = sin(temit/57.3)*sin(randPhi);
@@ -725,6 +435,8 @@ void DircOpticalSim::fill_rand_phi(\
 		z -= barDepth;
 		x += particle_x;
 		y += particle_y;
+
+
 
 		//photon is now defined as up or down
 		if (dy > 0)
@@ -759,7 +471,6 @@ void DircOpticalSim::fill_rand_phi(\
 				dx,\
 				dy,\
 				dz);
-
 		//account (quickly) for the bar box having a different angle than the readout
 		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
@@ -767,9 +478,10 @@ void DircOpticalSim::fill_rand_phi(\
 			continue;
 		}
 		dirc_point out_val;
-              
+
+		
 		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
-	        
+		
 		if (out_val.t < 0)
 		{
 			continue;
@@ -780,58 +492,7 @@ void DircOpticalSim::fill_rand_phi(\
 		ovals.push_back(out_val);
 	}
 }
-void DircOpticalSim::warp_readout_box(
-	dirc_point &out_val,\
-	int particle_bar,\
-	double &mm_index,\
-	double &x,\
-	double &y,\
-	double &z,\
-	double &dx,\
-	double &dy,\
-	double &dz)
-{
-	double c_mm_ns = 300;
-	mm_index += warp_box(\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-
-	if (z > 0) {
-		out_val.t = -1337;
-		return;
-	}
-
-	//check absorbtion
-	if (!(absorbtion_mc(dx,dy))) {
-		out_val.t = -1337;
-		return;
-	}
-
-	mm_index += warp_sens_plane(\
-			out_val,\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-
-	if (z > 0) {
-		out_val.t = -1337;
-		return;
-	}
-
-	out_val.t = mm_index/(c_mm_ns);
-	out_val.x += get_bar_offset(particle_bar);
-	
-	//Must reflect after offset....
-	sidemirror_reflect_point(out_val);
-}
-std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
+std::vector<std::pair<double,double> > DircBaseSim::get_refraction_rand_phi(\
 		std::vector<double> &before_interface,\
 		std::vector<double> &after_interface,\
 		std::vector<double> &pmt_incidence,\
@@ -841,7 +502,7 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		double particle_y /*= 0*/, \
 		double particle_theta /*= 0*/, \
 		double particle_phi /*= 0*/,\
-		double phi_theta_unc, /*= .0015*57.3*/
+		double phi_theta_unc /*= .0015*57.3*/,\
 		double ckov_theta_unc /* = .0055*57.3*/,\
 		double beta/* = -1*/) {
 	//returns theta versus cerenkov phi_theta_unc
@@ -946,49 +607,23 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 		if (z > 0) {
 			continue;
 		}
-
-		mm_index += warp_box(\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-
-		if (z > 0) {
-			continue;
-		}
-
 		dirc_point out_val;
-		
-		//check absorbtion
-		//We have the distance now - should use the real version
-		if (!(absorbtion_mc(dx,dy))) {
-			continue;
-		}
 
-		mm_index += warp_sens_plane(\
+		warp_readout_box(\
 				out_val,\
+				0,\
+				mm_index,\
 				x,\
 				y,\
 				z,\
 				dx,\
 				dy,\
 				dz);
-
-		if (z > 0) {
-			continue;
-		}
-		sidemirror_reflect_point(out_val);	
 		if (out_val.t < 0)
 		{
 			continue;
 		}
 	
-//		printf("%12.04f\n",sensPlaneNx*dx + sensPlaneNy*dy + sensPlaneNz*dz);
-	
-		pmt_incidence.push_back(acos(fabs(sensPlaneNx*dx + sensPlaneNy*dy + sensPlaneNz*dz)));
-
 		//should be threading time information into this soon
 		out_val.t = mm_index/(c_mm_ns);
 		std::pair<double, double> add_val;
@@ -1010,7 +645,7 @@ std::vector<std::pair<double,double> > DircOpticalSim::get_refraction_rand_phi(\
 	return rval;
 }
 
-void DircOpticalSim::fill_reg_phi(\
+void DircBaseSim::fill_reg_phi(\
 		std::vector<dirc_point> &ovals,\
 		int n_photons_phi, \
 		int n_photons_z,\
@@ -1156,7 +791,7 @@ void DircOpticalSim::fill_reg_phi(\
 	}
 
 }
-double DircOpticalSim::warp_ray(\
+double DircBaseSim::warp_ray(\
 		double &x,\
 		double &y,\
 		double &z,\
@@ -1263,7 +898,7 @@ double DircOpticalSim::warp_ray(\
 
 	return sqrt(rval)*quartzIndex;
 }
-double DircOpticalSim::warp_wedge(\
+double DircBaseSim::warp_wedge(\
 		double &x,\
 		double &y,\
 		double &z,\
@@ -1427,8 +1062,8 @@ double DircOpticalSim::warp_wedge(\
 	}
 
 	//Now we just finish
-//	printf("liquidIndex: %12.04f  quartzIndex: %12.04f\n",liquidIndex,quartzIndex);
-//      printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
+//        printf("liquidIndex: %12.04f  quartzIndex: %12.04f\n",liquidIndex,quartzIndex);
+//	printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
 	dt = (upperWedgeTop + barLength/2 - y)/dy;
 	mm_index += dt*liquidIndex;
 	if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
@@ -1446,7 +1081,7 @@ double DircOpticalSim::warp_wedge(\
 
 }
 //Possibly inline these or something for speed, but right now, leave them for sanity
-bool DircOpticalSim::optical_interface_z(\
+bool DircBaseSim::optical_interface_z(\
 		double n1,\
 		double n2,\
 		double &dx,\
@@ -1482,7 +1117,7 @@ bool DircOpticalSim::optical_interface_z(\
 
 	return true;
 }
-bool DircOpticalSim::x_wedge_coerce_check(\
+bool DircBaseSim::x_wedge_coerce_check(\
 		double &x,\
 		double &y,\
 		double &z,\
@@ -1553,101 +1188,7 @@ bool DircOpticalSim::x_wedge_coerce_check(\
 
 	return true;//not out the window for the whole trip
 }
-bool DircOpticalSim::absorbtion_mc(double dx, double dy) {
-	//True if the particle makes it
-	//expects vector pointing after bounce
-	//Magic number corresponding to minimal distancel traveled
-	double min_dist = 650+56;
-
-	//approximating here - assume yz distance is independent of where on mirror it hit
-	//measuring side plots with a ruler seems to mean this is good to ~5-10%
-	double approx_dist = min_dist*sqrt(dx*dx+dy*dy)/dy;
-
-	if (store_traveled == true) {
-		dist_traveled.push_back(approx_dist);
-	}
-
-	double prob_transmitted = exp(-liquidAbsorbtion*approx_dist);
-	if (rand_gen->Uniform(0,1) < prob_transmitted) {
-		return true;
-	} else {
-		return false;
-	}
-}
-double DircOpticalSim::warp_box(\
-		double &x,\
-		double &y,\
-		double &z,\
-		double &dx,\
-		double &dy,\
-		double &dz) {
-	//propagates light from the top of the wedge until just after bouncing off of the focusing mirrors
-	//Consider branch profiling or some such other optimizations
-	//Also, Fast Math, but don't tell the people in the penthouse
-
-	//does not currently include x bouncing off the side - need to add that later
-	//possibly in the last "warp to plane" bit
-	double rval = 0; //distance traveled
-
-	//first reflect off the back of the bar
-	double dt;
-
-	if (dz > 0) {
-		//Condition may not be needed - try without for speed later
-		dt = -z/dz;
-
-		if (y + dy*dt < focMirrorBottom) {
-			//reflects off of back
-			x += dx*dt;
-			y += dy*dt;
-			z += dz*dt;
-
-			rval += dt*liquidIndex;
-
-			//Abuse the fact that this vector is normalized and hope it stays that way
-			dz = -dz;
-			//rval += dt;
-		}
-	}
-
-
-	double trval  = 0;
-
-	if (three_seg_mirror == true) {
-		trval = three_seg_reflect(\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-	} else {
-		trval = cylindrical_reflect(\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz);
-	}
-
-	if (trval < 0) {
-		z = 1337;
-		return -1;
-	}
-
-	//short propagate in front of the mirrors:
-	//TODO remove later for speed
-	x += .1*dx;
-	y += .1*dy;
-	z += .1*dz;
-
-
-	rval += trval;
-
-	return rval;
-}
-void DircOpticalSim::plane_reflect(\
+void DircBaseSim::plane_reflect(\
 		double Nx,\
 		double Ny,\
 		double Nz,\
@@ -1681,7 +1222,7 @@ void DircOpticalSim::plane_reflect(\
 	dy -= 2*n_dot_v*Ny;
 	dz -= 2*n_dot_v*Nz;
 }
-double DircOpticalSim::get_z_intercept(\
+double DircBaseSim::get_z_intercept(\
 		double Nx,\
 		double Ny,\
 		double Nz,\
@@ -1702,7 +1243,7 @@ double DircOpticalSim::get_z_intercept(\
 
 	return z + dt*dz;
 }
-double DircOpticalSim::get_intercept_plane(\
+double DircBaseSim::get_intercept_plane(\
 		double Nx,\
 		double Ny,\
 		double Nz,\
@@ -1728,264 +1269,8 @@ double DircOpticalSim::get_intercept_plane(\
 
 	return dt;
 }
-double DircOpticalSim::three_seg_reflect(\
-		double &x,\
-		double &y,\
-		double &z,\
-		double &dx,\
-		double &dy,\
-		double &dz) {
-	//Intersects and reflects the three segment plane
-	double rval = 0;
-	//definitely losing time here - combuting the n_dot_v and n_dot_v0 and dt twice for the chosen plane
-	//TODO fix this once the code is correct
-
-	//I hope there's a fast way to do these reflections
-
-	double tz = 0;
-
-	//check first seg (again, loop this if we go more than 3)
-	tz = get_z_intercept(\
-			threeSeg1Nx,\
-			threeSeg1Ny,\
-			threeSeg1Nz,\
-			threeSeg1D,\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-	double offang = 0;
-	if (tz > threeSeg2Z && tz < 0) {
-		//reflect off mirror closest to box
-		if (nonUniformFocMirror == true) {
-			//obviously not in the real run
-			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
-			// 			rotate_2d(threeSeg1Nz,threeSeg1Ny,cos(offang),sin(offang));
-		}
-		plane_reflect(\
-				threeSeg1Nx,\
-				threeSeg1Ny,\
-				threeSeg1Nz,\
-				threeSeg1D,\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz,\
-				rval,\
-				offang);
-		return rval*liquidIndex;
-	}
-
-	tz = get_z_intercept(\
-			threeSeg2Nx,\
-			threeSeg2Ny,\
-			threeSeg2Nz,\
-			threeSeg2D,\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-	// 	printf("tz2: %12.04f\n",tz);
-	if (tz > threeSeg3Z && tz < 0) {
-		//reflect off middle mirror
-		if (nonUniformFocMirror == true) {
-			//obviously not in the real run
-			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
-			// 			rotate_2d(threeSeg2Nz,threeSeg2Ny,cos(offang),sin(offang));
-		}
-		plane_reflect(\
-				threeSeg2Nx,\
-				threeSeg2Ny,\
-				threeSeg2Nz,\
-				threeSeg2D,\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz,\
-				rval,\
-				offang);
-		return rval*liquidIndex;
-	}
-
-	tz = get_z_intercept(\
-			threeSeg3Nx,\
-			threeSeg3Ny,\
-			threeSeg3Nz,\
-			threeSeg3D,\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-	// 	printf("tz3: %12.04f\n",tz);
-	if (tz > -focMirrorZDim && tz < 0) {
-		//reflect off mirror closest to box
-		if (nonUniformFocMirror == true) {
-			//obviously not in the real run
-			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
-			// 			printf("%12.04e\n",offang);
-			// 			rotate_2d(threeSeg3Nz,threeSeg3Ny,cos(offang),sin(offang));
-		}
-		plane_reflect(\
-				threeSeg3Nx,\
-				threeSeg3Ny,\
-				threeSeg3Nz,\
-				threeSeg3D,\
-				x,\
-				y,\
-				z,\
-				dx,\
-				dy,\
-				dz,\
-				rval,\
-				offang);
-		return rval*liquidIndex;
-	}
-	//reflects off of nothing :(
-	z = 1337;
-	return -1;
-}
-double DircOpticalSim::sgn(double val) {
+double DircBaseSim::sgn(double val) {
 	//stolen from http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 	return (0 < val) - (val < 0);
 }
-double DircOpticalSim::cylindrical_reflect(\
-		double &x,\
-		double &y,\
-		double &z,\
-		double &dx,\
-		double &dy,\
-		double &dz) {
-	//intersects and reflects the focusing cylinder
-	//Pretending the cylinder has no Nx for intersection purposes
-	//Should be a valid approximation, and saves a ton of speed
-	//could be implemented on the threeseg mirror (at least the branching part
 
-	double rval = 0;
-
-	double dydz_norm = sqrt(dz*dz+dy*dy);
-	double dy_norm = dy/dydz_norm;
-	double dz_norm = dz/dydz_norm;
-
-	double localNx = 0;
-	double localNy = 0;
-	double localNz = 0;
-
-	//there's gotta be a faster way to do all of this
-	//different than plane intercept D.  Took this algorithm from internet (wolfram Mathworld)
-	//Parametric intercept sucks
-	double D = (z - focMirrorZ)*dy_norm - (y - focMirrorY)*dz_norm;
-	double detD = sqrt(foc_r*foc_r - D*D);
-
-	//dy > 0 always (or should be.  Remove sgn and fabs function calls after confirming)
-	double zrel = D*dy_norm + sgn(dy_norm)*dz_norm*detD;
-	double yrel = -D*dz_norm + fabs(dy_norm)*detD;
-
-	double newy = yrel + focMirrorY;
-	double newz = zrel + focMirrorZ;
-
-	double ydiff = newy - y;
-	double zdiff = newz - z;
-
-	rval += sqrt((ydiff*ydiff+zdiff*zdiff))/dydz_norm;
-
-	x += dx*rval;
-	y = newy;
-	z = newz;
-
-	//combine later to save speed
-	localNy = yrel;
-	localNz = zrel;
-
-	if (nonUniformFocMirror == true) {
-		//obviously not in the real run
-		double offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
-		rotate_2d(localNz,localNy,cos(offang),sin(offang));
-	}
-
-
-	double norm_loc = sqrt(localNy*localNy + localNz*localNz);//there's gotta be a better way to normalize this
-
-	localNy /= norm_loc;
-	localNz /= norm_loc;
-
-	//remove for speed in ideal case
-	// 	rotate_2d(localNx,localNz,cos(foc_yrot/57.3),sin(foc_yrot/57.3));
-
-	double n_dot_v = -(dx*localNx + dy*localNy + dz*localNz);
-
-	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
-
-	dx += 2*n_dot_v*localNx;
-	dy += 2*n_dot_v*localNy;
-	dz += 2*n_dot_v*localNz;
-
-	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
-
-	return rval*liquidIndex;
-}
-
-double DircOpticalSim::warp_sens_plane(\
-		dirc_point &fill_val,\
-		double &x,\
-		double &y,\
-		double &z,\
-		double &dx,\
-		double &dy,\
-		double &dz) {
-	//don't strictly need to modify the z, could be sped up
-	//First check to see if it goes through the large planar mirror - it probably doesn't
-
-	double tmpz = get_z_intercept(\
-			largePlanarMirrorNx,\
-			largePlanarMirrorNy,\
-			largePlanarMirrorNz,\
-			largePlanarMirrorD,\
-			x,\
-			y,\
-			z,\
-			dx,\
-			dy,\
-			dz);
-
-	if (tmpz < largePlanarMirrorMinZ || tmpz > largePlanarMirrorMaxZ)
-	{
-//		printf("planarZ: %12.04f\n", tmpz);
-		z=1337;
-		return 100000;
-	}
-	double rval =\
-		     get_intercept_plane(\
-				     sensPlaneNx,\
-				     sensPlaneNy,\
-				     sensPlaneNz,\
-				     sensPlaneD,\
-				     x,\
-				     y,\
-				     z,\
-				     dx,\
-				     dy,\
-				     dz);
-	if (z < pmtPlaneMinZ || z > pmtPlaneMaxZ)
-	{
-//		printf("planarZ: %12.04f\n", tmpz);
-		z=1337;
-		return 100000;
-	}
-
-	fill_val.x = x;
-	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
-	fill_val.y = (-z-559)*sensPlaneYdistConversion + 220;
-
-	return rval*liquidIndex;
-
-}
