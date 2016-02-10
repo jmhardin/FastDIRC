@@ -55,7 +55,7 @@ DircOpticalSim::DircOpticalSim(
 	upperWedgeTop = 178.6;
 	upperWedgeHeight = 78;
 	upperWedgeBottom = upperWedgeTop-upperWedgeHeight;
-	
+
 //	printf("window thickness calc: %12.04f\n",upperWedgeBottom-wedgeHeight);
 
 	//not, this is about 4mm off from the original BaBar schematic - the angles and 

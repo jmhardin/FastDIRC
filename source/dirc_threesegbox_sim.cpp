@@ -21,15 +21,17 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 		double ifoc_rot/*=-74.11*/, \
 		double isens_size/*=600*/, \
 		double isens_rot/*=90*/,\
-		double ibar_width/*=35*/,\
 		double ibar_length/*=4900*/,\
+		double ibar_width/*=35*/,\
 		double ibar_depth/*=17.25*/,
 		double iupper_wedge_top/*=178.6*/) : 
 			DircBaseSim(
 				rand_seed,\
-				ibar_width,\
 				ibar_length,\
+				ibar_width,\
 				ibar_depth) {
+
+	printf("BarLWD: %12.04f %12.04f %12.04f\n",barLength,barWidth,barDepth);
 	foc_r = ifoc_r;
 	foc_mirror_size = ifoc_mirror_size;
 	foc_rot = ifoc_rot;

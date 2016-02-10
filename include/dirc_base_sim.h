@@ -60,6 +60,10 @@ protected:
 	double quartzIndex;
 	double quartzLiquidY;
 
+	int wedge_bounces;
+	int lastWallX;
+	int wedgeBeforeInterface;
+
 	double liquidIndex;
 	double liquidAbsorbtion;
 	std::vector<double> dist_traveled;
@@ -259,7 +263,40 @@ public:
 		double phi_theta_unc = 0,\
 		double ckov_theta_unc = 0,\
 		double beta = -1);	
-
+	bool track_single_photon(\
+	        dirc_point &out_val,\
+	        double emit_theta,\
+	        double emit_phi,\
+       		double particle_theta,\
+	        double particle_phi,\
+	        double particle_x,\
+	        double particle_y,\
+	        double particle_z,\
+	        double particle_t,\
+		int particle_bar);
+	bool track_single_photon_beta(\
+	        dirc_point &out_val,\
+	        double particle_beta,\
+	        double emit_phi,\
+       		double particle_theta,\
+	        double particle_phi,\
+	        double particle_x,\
+	        double particle_y,\
+	        double particle_z,\
+	        double particle_t,\
+		int particle_bar);
+	bool track_line_photon(\
+	        dirc_point &out_val,\
+	        double particle_beta,\
+	        double emit_phi,\
+       		double particle_theta,\
+	        double particle_phi,\
+	        double particle_x,\
+	        double particle_y,\
+	        double particle_z,\
+	        double particle_t,\
+		int particle_bar,\
+		double z_at_top = 1);
 	void test_from_wedge_top(\
                 std::vector<dirc_point> &ovals,\
                 int n_photons, \

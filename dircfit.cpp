@@ -89,6 +89,9 @@ int main(int nargs, char* argv[])
 	int max_particles = 1000000;
 	int phi_phots_reduce = 1;
 	int refraction_sim_n = -1;
+	int sparse_sim_n = -1;
+	int sparse_recon_n = -1;
+	int line_recon_n = -1;
 
 	double mean_n_phot = 40;
 	double spread_n_phot = 0;
@@ -265,6 +268,21 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				refraction_sim_n = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-sparse_sim_n") == 0)
+			{
+				i++;
+				sparse_sim_n = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-sparse_recon_n") == 0)
+			{
+				i++;
+				sparse_recon_n = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-line_recon_n") == 0)
+			{
+				i++;
+				line_recon_n = atoi(argv[i]);
 			}
 			else if (strcmp(argv[i], "-particle_theta") == 0)
 			{
@@ -2054,6 +2072,887 @@ int main(int nargs, char* argv[])
 			kaon_dist_t->Fill(t_ns);
 		}
 	}
+	else if (sparse_recon_n > 0)
+	{ 
+		printf("Trying sparse reconstruction loop mode\n");
+		
+		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
+		{
+			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the sparse reconstruction.\n");
+		}
+
+		int num_provisional_points = 25000;
+		double points_dist_sq = 100;
+		double rethrown_phi_width = .1;
+		int num_rethrown_phots = 1200000 * rethrown_phi_width/(3.14159);
+
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+
+		std::vector<dirc_point> hit_points_pion;
+		std::vector<dirc_point> hit_points_kaon;
+
+		dirc_model->set_liquid_absorbtion(liquid_absorbtion);
+		dirc_model->set_liquid_index(liquid_index);
+		dirc_model->set_three_seg_mirror(three_seg_mirror);
+		dirc_model->set_sidemirror(sm_xr,sm_xl);
+
+
+		dirc_model->set_pmt_offset(pmt_offset);
+		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
+		dirc_model->set_bar_box_angle(bar_box_box_angle);
+
+		//ns
+		double pion_time = particle_flight_distance/(pion_beta*.3);
+		double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
+
+		DircSpreadGaussian* pdf_pion = new DircSpreadGaussian(\
+				sfunc_sig,\
+				hit_points_pion,\
+				s_func_x,\
+				s_func_y,\
+				s_func_t);
+		DircSpreadGaussian* pdf_kaon = new DircSpreadGaussian(\
+				sfunc_sig,\
+				hit_points_kaon,\
+				s_func_x,\
+				s_func_y,\
+				s_func_t);
+
+		for (int i = 0; i < sparse_recon_n; i++)
+		{
+			dirc_model->set_focus_mirror_angle(\
+					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
+					spread_ang.Gaus(0,mirror_angle_change_yunc));
+			dirc_model->set_upper_wedge_angle_diff(\
+					spread_ang.Gaus(0,wedge_uncertainty),\
+					spread_ang.Gaus(0,upper_wedge_yang_spread));
+			dirc_model->set_bar_box_angle(spread_ang.Gaus(0,box_rot_unc));
+
+			if (particle_theta_mean < .01)
+			{
+				particle_phi = spread_ang.Uniform(0,360);
+			}
+
+			particle_theta = spread_ang.Gaus(particle_theta_mean, particle_theta_spread);
+			particle_x = spread_ang.Gaus(particle_x_mean, particle_x_spread);
+			particle_y = spread_ang.Gaus(particle_y_mean, particle_y_spread);
+			energy = spread_ang.Gaus(energy_mean,energy_spread);
+			pion_beta = dirc_model->get_beta(energy,pimass);
+			kaon_beta = dirc_model->get_beta(energy,kmass);
+
+			printf("\r                                                    ");
+			printf("\rrunning iter %8d/%d  ",i+1,sparse_recon_n);
+
+
+			fflush(stdout);
+
+			n_sim_phots = spread_ang.Gaus(mean_n_phot,spread_n_phot);
+
+			//assume its a middle bar
+			dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					pion_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					pion_time,\
+					particle_theta+const_track_off,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					pion_beta);
+			digitizer.digitize_points(sim_points);
+
+			llc = 0;
+			llf = 0;
+			
+			std::vector<double> start_phi;
+			std::vector<dirc_point> provisional_points;
+
+			double pion_emit_angle = 57.3*acos(pion_beta/1.47);
+			double kaon_emit_angle = 57.3*acos(kaon_beta/1.47);
+
+
+			for (int i = 0; i < num_provisional_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_provisional_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_single_photon_beta(\
+				        tmp_pro_point,\
+				        pion_beta,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17/2,\
+        				0,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					start_phi.push_back(cur_phi);
+					provisional_points.push_back(tmp_pro_point);
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double cur_mean_phi = 0;
+				double cur_mean_x = 0;
+				double cur_mean_y = 0;
+				
+				int total_prov_points = 0;
+				double cur_dist_sq = 0;
+				for (unsigned int j = 0; j < provisional_points.size(); j++)
+				{
+					cur_dist_sq = 0;
+					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
+					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
+					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
+					
+					if (cur_dist_sq < points_dist_sq)
+					{
+						cur_mean_phi += start_phi[j];
+						cur_mean_x += cos(start_phi[j]);
+						cur_mean_y += sin(start_phi[j]);
+						total_prov_points++;
+					}
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				cur_mean_phi = atan2(cur_mean_y,cur_mean_x);
+				hit_points_pion.clear();
+				for (int j = 0; j < num_rethrown_phots; j++)
+				{
+					double cur_phi = spread_ang.Uniform(cur_mean_phi-rethrown_phi_width,cur_mean_phi+rethrown_phi_width);
+					double cur_z = spread_ang.Uniform(-17,0);
+					dirc_point tmp_point;
+					double hit_pmt = dirc_model->track_single_photon_beta(\
+					        tmp_point,\
+					        pion_beta,\
+       	 					cur_phi,\
+       	 					particle_theta,\
+        					particle_phi,\
+        					particle_x,\
+        					particle_y,\
+        					cur_z,\
+        					0,\
+        					1);
+					if (hit_pmt == true)
+					{
+						hit_points_pion.push_back(tmp_point);
+					}
+				}	
+				pdf_pion->set_support(hit_points_pion);
+				if (hit_points_pion.size() > 0)
+				{
+					std::vector<dirc_point> single_point;
+					single_point.push_back(sim_points[i]);
+					double add_ll = pdf_pion->get_log_likelihood_new_support(single_point,hit_points_pion);
+//					printf("pion/pion: %d/%d: %12.04f\n",i,sim_points.size(),add_ll);
+					llc += add_ll;
+					//printf("pion llc: %12.04f\n",llc);
+					if (add_ll != add_ll)
+					{
+						for (unsigned int j = 0; j < hit_points_pion.size(); j++)
+						{
+					//		printf("pion/pion: %12.04f %12.04f %12.04f : %12.04f %12.04f %12.04f\n",sim_points[i].x,sim_points[i].y,sim_points[i].t,hit_points_pion[j].x,hit_points_pion[j].y,hit_points_pion[j].t);
+						}
+					}
+				}
+	
+			}
+			start_phi.clear();
+			provisional_points.clear();	
+			for (int i = 0; i < num_provisional_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_provisional_points;
+				bool hit_pmt = false;
+				hit_pmt = dirc_model->track_single_photon_beta(\
+				        tmp_pro_point,\
+				        kaon_beta,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17/2,\
+        				0,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					start_phi.push_back(cur_phi);
+					provisional_points.push_back(tmp_pro_point);
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double cur_mean_phi = 0;
+				double cur_mean_x = 0;
+				double cur_mean_y = 0;
+				int total_prov_points = 0;
+				double cur_dist_sq = 0;
+				for (unsigned int j = 0; j < provisional_points.size(); j++)
+				{
+					cur_dist_sq = 0;
+					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
+					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
+					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
+					
+					if (cur_dist_sq < points_dist_sq)
+					{
+						cur_mean_phi += start_phi[j];
+						cur_mean_x += cos(start_phi[j]);
+						cur_mean_y += sin(start_phi[j]);
+						total_prov_points++;
+					}
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/kaon: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				cur_mean_phi = atan2(cur_mean_y,cur_mean_x);
+				hit_points_kaon.clear();
+				for (int j = 0; j < num_rethrown_phots; j++)
+				{
+					double cur_phi = spread_ang.Uniform(cur_mean_phi-rethrown_phi_width,cur_mean_phi+rethrown_phi_width);
+					double cur_z = spread_ang.Uniform(-17,0);
+					dirc_point tmp_point;
+					double hit_pmt = dirc_model->track_single_photon_beta(\
+					        tmp_point,\
+					        kaon_beta,\
+       	 					cur_phi,\
+       	 					particle_theta,\
+        					particle_phi,\
+        					particle_x,\
+        					particle_y,\
+        					cur_z,\
+        					0,\
+        					1);
+					if (hit_pmt == true)
+					{
+						hit_points_kaon.push_back(tmp_point);
+					}
+				}	
+				pdf_kaon->set_support(hit_points_kaon);
+				if (hit_points_kaon.size() > 0)
+				{
+					std::vector<dirc_point> single_point;
+					single_point.push_back(sim_points[i]);
+					double add_ll = pdf_kaon->get_log_likelihood_new_support(single_point,hit_points_kaon);
+//					printf("pion/kaon: %d/%d: %12.04f\n",i,sim_points.size(),add_ll);
+					llf += add_ll;
+					//printf("kaon llf: %12.04f\n",llf);
+					if (add_ll != add_ll)
+					{
+						for (unsigned int j = 0; j < hit_points_kaon.size(); j++)
+						{
+					//		printf("pion/kaon: %12.04f %12.04f %12.04f : %12.04f %12.04f %12.04f\n",sim_points[i].x,sim_points[i].y,sim_points[i].t,hit_points_kaon[j].x,hit_points_kaon[j].y,hit_points_kaon[j].t);
+						}
+					}
+				}
+	
+			}
+
+
+//			llc = pdf_pion->get_log_likelihood(sim_points);
+//			llf = pdf_kaon->get_log_likelihood(sim_points);
+
+			ll_diff_pion->Fill(1*(llc-llf));
+			phot_found_pion->Fill(sim_points.size());
+			printf("\nll_diff pion: %12.04f\n",llc-llf);
+
+
+			dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					kaon_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					kaon_time,\
+					particle_theta+const_track_off,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					kaon_beta);
+
+
+			digitizer.digitize_points(sim_points);
+
+			start_phi.clear();
+			provisional_points.clear();	
+			llc=0;
+			llf=0;
+			for (int i = 0; i < num_provisional_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_provisional_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_single_photon_beta(\
+				        tmp_pro_point,\
+				        pion_beta,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17/2,\
+        				0,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					start_phi.push_back(cur_phi);
+					provisional_points.push_back(tmp_pro_point);
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double cur_mean_phi = 0;
+				double cur_mean_x = 0;
+				double cur_mean_y = 0;
+				int total_prov_points = 0;
+				double cur_dist_sq = 0;
+				for (unsigned int j = 0; j < provisional_points.size(); j++)
+				{
+					cur_dist_sq = 0;
+					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
+					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
+					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
+					
+					if (cur_dist_sq < points_dist_sq)
+					{
+						cur_mean_phi += start_phi[j];
+						cur_mean_x += cos(start_phi[j]);
+						cur_mean_y += sin(start_phi[j]);
+						total_prov_points++;
+					}
+				}
+				//cur_mean_phi /= total_prov_points;
+				cur_mean_phi = atan2(cur_mean_y,cur_mean_x);
+				hit_points_pion.clear();
+				for (int j = 0; j < num_rethrown_phots; j++)
+				{
+					double cur_phi = spread_ang.Uniform(cur_mean_phi-rethrown_phi_width,cur_mean_phi+rethrown_phi_width);
+					double cur_z = spread_ang.Uniform(-17,0);
+					dirc_point tmp_point;
+					double hit_pmt = dirc_model->track_single_photon_beta(\
+					        tmp_point,\
+					        pion_beta,\
+       	 					cur_phi,\
+       	 					particle_theta,\
+        					particle_phi,\
+        					particle_x,\
+        					particle_y,\
+        					cur_z,\
+        					pion_time,\
+        					1);
+					if (hit_pmt == true)
+					{
+						hit_points_pion.push_back(tmp_point);
+					}
+				}	
+				pdf_pion->set_support(hit_points_pion);
+				if (hit_points_pion.size() > 0)
+				{
+					std::vector<dirc_point> single_point;
+					single_point.push_back(sim_points[i]);
+					double add_ll = pdf_pion->get_log_likelihood_new_support(single_point,hit_points_pion);
+				//	printf("pion/kaon: %12.04f\n",add_ll);
+					llc += add_ll;
+				}
+	
+			}
+			start_phi.clear();
+			provisional_points.clear();	
+			for (int i = 0; i < num_provisional_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_provisional_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_single_photon_beta(\
+				        tmp_pro_point,\
+				        kaon_beta,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17.25/2,\
+        				kaon_time,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					start_phi.push_back(cur_phi);
+					provisional_points.push_back(tmp_pro_point);
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double cur_mean_phi = 0;
+				double cur_mean_x = 0;
+				double cur_mean_y = 0;
+				int total_prov_points = 0;
+				double cur_dist_sq = 0;
+				for (unsigned int j = 0; j < provisional_points.size(); j++)
+				{
+					cur_dist_sq = 0;
+					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
+					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
+					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
+					
+					if (cur_dist_sq < points_dist_sq)
+					{
+						cur_mean_phi += start_phi[j];
+						cur_mean_x += cos(start_phi[j]);
+						cur_mean_y += sin(start_phi[j]);
+						total_prov_points++;
+					}
+				}
+				//cur_mean_phi /= total_prov_points;
+				cur_mean_phi = atan2(cur_mean_y,cur_mean_x);
+				hit_points_kaon.clear();
+				for (int j = 0; j < num_rethrown_phots; j++)
+				{
+					double cur_phi = spread_ang.Uniform(cur_mean_phi-rethrown_phi_width,cur_mean_phi+rethrown_phi_width);
+					double cur_z = spread_ang.Uniform(-17,0);
+					dirc_point tmp_point;
+					double hit_pmt = dirc_model->track_single_photon_beta(\
+					        tmp_point,\
+					        kaon_beta,\
+       	 					cur_phi,\
+       	 					particle_theta,\
+        					particle_phi,\
+        					particle_x,\
+        					particle_y,\
+        					cur_z,\
+        					kaon_time,\
+        					1);
+					if (hit_pmt == true)
+					{
+						hit_points_kaon.push_back(tmp_point);
+					}
+				}	
+				pdf_kaon->set_support(hit_points_kaon);
+				if (hit_points_kaon.size() > 0)
+				{
+					std::vector<dirc_point> single_point;
+					single_point.push_back(sim_points[i]);
+					double add_ll = pdf_kaon->get_log_likelihood(single_point);
+				//	printf("kaon/kaon: %12.04f\n",add_ll);
+					llf += add_ll;
+				}
+	
+			}
+//			llc = pdf_pion->get_log_likelihood(sim_points);
+//			llf = pdf_kaon->get_log_likelihood(sim_points);
+
+			ll_diff_kaon->Fill(1*(llc-llf));
+			phot_found_kaon->Fill(sim_points.size());
+			printf("ll_diff kaon: %12.04f\n",llc-llf);
+
+		}
+
+		printf("\nSparse Run Completed\n");
+	}
+	else if (line_recon_n > 0)
+	{ 
+		printf("Trying line reconstruction loop mode\n");
+		
+		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
+		{
+			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the sparse reconstruction.\n");
+		}
+
+		int num_line_points = 10000;
+		double points_dist_sq = 100;
+		double time_spread = 40;
+		double dist_spread = 100;
+		double max_dev_sq = 3;
+		max_dev_sq *= max_dev_sq;
+
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+
+		std::vector<dirc_point> hit_points_pion;
+		std::vector<dirc_point> hit_points_kaon;
+
+		dirc_model->set_liquid_absorbtion(liquid_absorbtion);
+		dirc_model->set_liquid_index(liquid_index);
+		dirc_model->set_three_seg_mirror(three_seg_mirror);
+		dirc_model->set_sidemirror(sm_xr,sm_xl);
+
+
+		dirc_model->set_pmt_offset(pmt_offset);
+		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
+		dirc_model->set_bar_box_angle(bar_box_box_angle);
+
+		//ns
+		double pion_time = particle_flight_distance/(pion_beta*.3);
+		double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
+
+		for (int i = 0; i < line_recon_n; i++)
+		{
+			dirc_model->set_focus_mirror_angle(\
+					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
+					spread_ang.Gaus(0,mirror_angle_change_yunc));
+			dirc_model->set_upper_wedge_angle_diff(\
+					spread_ang.Gaus(0,wedge_uncertainty),\
+					spread_ang.Gaus(0,upper_wedge_yang_spread));
+			dirc_model->set_bar_box_angle(spread_ang.Gaus(0,box_rot_unc));
+
+			particle_theta = spread_ang.Gaus(particle_theta_mean, particle_theta_spread);
+			particle_x = spread_ang.Gaus(particle_x_mean, particle_x_spread);
+			particle_y = spread_ang.Gaus(particle_y_mean, particle_y_spread);
+			energy = spread_ang.Gaus(energy_mean,energy_spread);
+			pion_beta = dirc_model->get_beta(energy,pimass);
+			kaon_beta = dirc_model->get_beta(energy,kmass);
+
+			printf("\r                                                    ");
+			printf("\rrunning iter %8d/%d  ",i+1,line_recon_n);
+
+
+			fflush(stdout);
+
+			n_sim_phots = spread_ang.Gaus(mean_n_phot,spread_n_phot);
+
+			//assume its a middle bar
+			dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					pion_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					pion_time,\
+					particle_theta+const_track_off,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					pion_beta);
+			digitizer.digitize_points(sim_points);
+
+			llc = 0;
+			llf = 0;
+			
+			std::vector<double> phi_last_wall_neg;
+			std::vector<double> phi_last_wall_pos;
+			std::vector<dirc_point> provisional_points_lwn;
+			std::vector<dirc_point> provisional_points_lwp;
+			double pion_refrac_mod = .998;
+			double kaon_refrac_mod = .998;
+
+			double pion_emit_angle = 57.3*acos(pion_beta/(pion_refrac_mod*refrac_index));
+			double kaon_emit_angle = 57.3*acos(kaon_beta/(kaon_refrac_mod*refrac_index));
+
+
+			for (int i = 0; i < num_line_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_line_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_line_photon(\
+				        tmp_pro_point,\
+				        pion_emit_angle,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17.25/2,\
+        				pion_time,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					if (tmp_pro_point.last_wall_x == -1)
+					{
+						phi_last_wall_neg.push_back(cur_phi);
+						provisional_points_lwn.push_back(tmp_pro_point);
+					}
+					if (tmp_pro_point.last_wall_x == 1)
+					{
+						phi_last_wall_pos.push_back(cur_phi);
+						provisional_points_lwp.push_back(tmp_pro_point);
+					}
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double min_dist_sq = 10000;
+				double cur_dist_sq = -1;
+				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+	
+				llc += std::min(min_dist_sq,max_dev_sq);
+
+			}
+			phi_last_wall_neg.clear();
+			phi_last_wall_pos.clear();
+			provisional_points_lwn.clear();	
+			provisional_points_lwp.clear();	
+
+			for (int i = 0; i < num_line_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_line_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_line_photon(\
+				        tmp_pro_point,\
+				        kaon_emit_angle,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17.25/2,\
+        				kaon_time,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					if (tmp_pro_point.last_wall_x == -1)
+					{
+						phi_last_wall_neg.push_back(cur_phi);
+						provisional_points_lwn.push_back(tmp_pro_point);
+					}
+					if (tmp_pro_point.last_wall_x == 1)
+					{
+						phi_last_wall_pos.push_back(cur_phi);
+						provisional_points_lwp.push_back(tmp_pro_point);
+					}
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double min_dist_sq = 10000;
+				double cur_dist_sq = -1;
+				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				llf += std::min(min_dist_sq,max_dev_sq);
+
+			}
+
+
+			ll_diff_pion->Fill(1*(llc-llf));
+			phot_found_pion->Fill(sim_points.size());
+			printf("\nll_diff pion: %12.04f\n",llc-llf);
+
+
+			dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					kaon_angle,\
+					1,\
+					particle_x,\
+					particle_y,\
+					kaon_time,\
+					particle_theta+const_track_off,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					kaon_beta);
+
+
+			digitizer.digitize_points(sim_points);
+
+			phi_last_wall_neg.clear();
+			phi_last_wall_pos.clear();
+			provisional_points_lwn.clear();	
+			provisional_points_lwp.clear();	
+			llc=0;
+			llf=0;
+
+			for (int i = 0; i < num_line_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_line_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_line_photon(\
+				        tmp_pro_point,\
+				        pion_emit_angle,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17.25/2,\
+        				pion_time,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					if (tmp_pro_point.last_wall_x == -1)
+					{
+						phi_last_wall_neg.push_back(cur_phi);
+						provisional_points_lwn.push_back(tmp_pro_point);
+					}
+					if (tmp_pro_point.last_wall_x == 1)
+					{
+						phi_last_wall_pos.push_back(cur_phi);
+						provisional_points_lwp.push_back(tmp_pro_point);
+					}
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double min_dist_sq = 10000;
+				double cur_dist_sq = -1;
+				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				llc += std::min(min_dist_sq,max_dev_sq);
+
+			}
+			phi_last_wall_neg.clear();
+			phi_last_wall_pos.clear();
+			provisional_points_lwn.clear();	
+			provisional_points_lwp.clear();	
+
+			for (int i = 0; i < num_line_points; i++)
+			{
+				dirc_point tmp_pro_point;
+				double cur_phi = i*2*3.14159/num_line_points;
+				bool hit_pmt;
+				hit_pmt = dirc_model->track_line_photon(\
+				        tmp_pro_point,\
+				        kaon_emit_angle,\
+       	 				cur_phi,\
+       	 				particle_theta,\
+        				particle_phi,\
+        				particle_x,\
+        				particle_y,\
+        				-17.25/2,\
+        				kaon_time,\
+        				1);
+					//last 3 are z, t, and bar;
+
+				if (hit_pmt == true)
+				{
+					//I could have done these as a pair, but I'll just keep them synchronized;
+					if (tmp_pro_point.last_wall_x == -1)
+					{
+						phi_last_wall_neg.push_back(cur_phi);
+						provisional_points_lwn.push_back(tmp_pro_point);
+					}
+					if (tmp_pro_point.last_wall_x == 1)
+					{
+						phi_last_wall_pos.push_back(cur_phi);
+						provisional_points_lwp.push_back(tmp_pro_point);
+					}
+				}
+			}
+
+			for (unsigned int i = 0; i < sim_points.size(); i++)
+			{
+				double min_dist_sq = 10000;
+				double cur_dist_sq = -1;
+				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
+				{
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq /= dist_spread;
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				}
+				//cur_mean_phi /= total_prov_points;
+				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				llf += std::min(min_dist_sq,max_dev_sq);
+
+			}
+
+
+			ll_diff_kaon->Fill(1*(llc-llf));
+			phot_found_kaon->Fill(sim_points.size());
+			printf("ll_diff kaon: %12.04f\n",llc-llf);
+
+		}
+
+		printf("\nSparse Run Completed\n");
+	}
 	else
 	{ 
 		printf("no input file specified.  Running in loop mode\n");
@@ -2616,6 +3515,51 @@ int main(int nargs, char* argv[])
 
 
 	}
+	if (sparse_sim_n > 0)
+	{
+		printf("Sparse Sim Output for %d Phi steps\n",sparse_sim_n);
+		dirc_point out_val;
+		double phi_step = 3.14159*2/sparse_sim_n;
+		//assume speed of light particle and "thin" cone.
+		double emit_angle;
+		double cur_phi;
+		bool hit_pmt;
+		double pion_beta = dirc_model->get_beta(energy,pimass);
+		double kaon_beta = dirc_model->get_beta(energy,kmass);
+		double wavelength = 0;
+		for (int phi_ind = 0; phi_ind < sparse_sim_n; phi_ind++)
+		{
+			emit_angle = 57.3*acos(kaon_beta/refrac_index) + spread_ang.Gaus(0,particle_theta_spread);
+			//emit_angle = dirc_model->get_cerenkov_angle_rand(pion_beta,0,wavelength);
+			double emit_z = spread_ang.Uniform(-17.25,0);
+			cur_phi = (2*3.14159*phi_ind)/sparse_sim_n;
+
+			emit_z = -17.25/2;
+
+			hit_pmt = dirc_model->track_line_photon(\
+			        out_val,\
+			        emit_angle,\
+        			cur_phi,\
+        			particle_theta,\
+        			particle_phi,\
+        			particle_x,\
+        			particle_y,\
+        			emit_z,\
+        			0,\
+        			1);
+				//last 3 are z, t, and bar;
+
+			if (hit_pmt == true)
+			{
+				if (out_val.last_wall_x == -1)
+				{
+					printf("%05d %12.04f %12.04f %12.04f %12.04f %12.04f\n",phi_ind,emit_angle,cur_phi,out_val.x,out_val.y,out_val.t);
+				}
+			}
+		}
+	}
+
+			
 	if (refraction_sim_n > 0)
 	{
 		std::vector<std::pair<double, double> > pion_theta_cphi;

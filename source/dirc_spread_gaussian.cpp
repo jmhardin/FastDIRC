@@ -89,12 +89,13 @@ double DircSpreadGaussian::get_log_likelihood(std::vector<dirc_point> inpoints)
 			tprob += support_spread_function(support_points[j],inpoints[i]);
 			eval_count++;
 		}
+//		printf("b: %19.13f\n",tprob);	
 		tprob /= support_points.size();
 		tprob *= spread_func_norm_inv;
 		
 		//TODO deal with normalization....
 // 		tprob = std::max(tprob,min_probability);
-		
+//		printf("a: %19.13f\n",tprob);	
 		rval += weight*log_mult*log(tprob+min_probability);
 // 		printf("tprob: %04d %12.04f \n",i,tprob+min_probability);
 	}

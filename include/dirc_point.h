@@ -7,6 +7,8 @@ struct dirc_point
 	double y;
 	double t;
 	int updown;
+	int last_wall_x;
+	int wedge_before_interface;
 	double weight;
 };
 #endif

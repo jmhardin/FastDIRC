@@ -42,7 +42,7 @@ public:
 		}
 		else
 		{
-			 return 0;
+			return 0;
 		}
 	};
 	inline double support_spread_function(dirc_point support, dirc_point test)__attribute__((always_inline))
