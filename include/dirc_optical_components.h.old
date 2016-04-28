@@ -1,0 +1,177 @@
+#include <Goptical/Curve/Sphere>
+#include <Goptical/Curve/Base>
+#include <Goptical/Curve/Flat>
+#include <Goptical/Shape/Ellipse>
+#include <Goptical/Shape/Rectangle>
+#include <Goptical/Shape/Disk>
+
+#include <Goptical/Math/Vector>
+#include <Goptical/Math/VectorPair>
+
+#include <Goptical/Material/Base>
+#include <Goptical/Material/Sellmeier>
+#include <Goptical/Material/Metal>
+#include <Goptical/Material/Mirror>
+#include <Goptical/Material/Vacuum>
+#include <Goptical/Material/Dielectric>
+
+#include <Goptical/Io/RendererSvg>
+#include <Goptical/Io/Rgb>
+#include <Goptical/Io/RendererViewport>
+
+#include <Goptical/Sys/System>
+#include <Goptical/Sys/SourcePoint>
+#include <Goptical/Sys/SourceRays>
+#include <Goptical/Sys/Source>
+#include <Goptical/Sys/Group>
+#include <Goptical/Design/Telescope/Newton>
+#include <Goptical/Sys/Image>
+#include <Goptical/Sys/Lens>
+#include <Goptical/Sys/OpticalSurface>
+#include <Goptical/Sys/Mirror>
+#include <Goptical/Sys/Mirror>
+#include <Goptical/Data/Plot>
+#include <Goptical/Data/PlotData>
+#include <Goptical/Data/Set>
+
+
+#include <Goptical/Shape/Disk>
+#include <Goptical/Shape/EllipticalRing>
+
+
+#ifndef DIRC_GOPTICAL_COMPONENTS
+#define DIRC_GOPTICAL_COMPONENTS
+using namespace Goptical;
+
+class qwartzCrystal : public Material::Base
+{
+public:
+	Io::Rgb get_color() const
+	{
+		return Io::Rgb(0,.8,.8);
+	}
+	double get_internal_transmittance(double wavelength,double thickness) const
+	{
+		return 1;//perfect for now
+	}
+	double get_refractive_index(double wavelength) const
+	{
+		return 1.47;
+	}
+	bool is_opaque() const
+	{
+		return false;
+	}
+	bool is_reflecting() const
+	{
+		return false;
+	}
+};
+class mineralOil : public Material::Base
+{
+public:
+	Io::Rgb get_color() const
+	{
+		return Io::Rgb(.8,.8,0);
+	}
+	double get_internal_transmittance(double wavelength,double thickness) const
+	{
+		return 1;//perfect for now
+	}
+	double get_refractive_index(double wavelength) const
+	{
+		return 1.54427;
+// 		return 1.473;
+		//Edge Kludge for now
+// 			return 1.3579;
+	}
+	bool is_opaque() const
+	{
+		return false;
+	}
+	bool is_reflecting() const
+	{
+		return false;
+	}
+};
+
+class offSphere : public Curve::Base
+{
+private:
+	double r,x0,y0;
+public:
+	offSphere(double ir, double ix0, double iy0)
+	{
+		r = ir;
+		x0 = ix0;
+		y0 = iy0;
+	}
+	void derivative(const Math::Vector2 &xy, Math::Vector2 &dxdy) const
+	{
+		Curve::Sphere onSphere(r);
+		Math::Vector<2> offset(x0,y0);
+		(dynamic_cast<Curve::Base*>(&onSphere))->derivative(xy-offset,dxdy);
+	}
+	bool intersect(Math::Vector3 &point, const Math::VectorPair3 &ray) const
+	{
+		Curve::Sphere onSphere(r);
+		Math::Vector<2> offset(x0,y0);
+		Math::Vector<3>  offset3(x0,y0,0);
+		bool rval;
+		Math::Vector3 tpoint;
+		rval = onSphere.intersect(*(&tpoint),Math::VectorPair<3>(ray[0]-offset3,ray[1]));
+		point = tpoint+offset3;
+		return rval;
+	}
+	void normal(Math::Vector3 &normal, const Math::Vector3 &point) const
+	{
+		Curve::Sphere onSphere(r);
+		Math::Vector<2> offset(x0,y0);
+		Math::Vector<3>  offset3(x0,y0,0);
+		onSphere.normal(normal,point-offset3);
+	} 
+	double sagitta(const Math::Vector2 &xy) const
+	{
+		Curve::Sphere onSphere(r);
+		Math::Vector<2> offset(x0,y0);
+		return (dynamic_cast<Curve::Base*>(&onSphere))->sagitta(xy-offset);
+	}
+};
+class cylinderY : public Curve::Base
+{//Slow implementation - faster with symbolic detrivatives and such
+private:
+	double r,r2;
+	double s;
+public:
+	cylinderY(double ir)
+	{
+		r = ir;
+		r2 = r*r;
+		s=1;
+		if (r < 0) s = -1;
+	}
+	double sagitta(const Math::Vector2 &xy) const
+	{
+		double y = xy.y();
+		double y2 = y*y;
+		if (y2>r2){
+			return 0;
+		}
+		else{
+			return s*sqrt(r2-y2)-r;
+		}
+	}
+	void derivative(const Math::Vector2 &xy, Math::Vector2 &dxdy) const
+	{
+		Base::derivative(xy,dxdy);
+	}
+	void normal(Math::Vector3 &normal, const Math::Vector3 &point) const
+	{
+		Base::normal(normal,point);
+	}
+	bool intersect(Math::Vector3 &point, const Math::VectorPair3 &ray) const
+	{
+		return Base::intersect(point,ray);
+	}
+};
+#endif

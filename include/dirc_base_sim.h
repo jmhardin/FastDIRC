@@ -77,7 +77,12 @@ protected:
 	int num_transmittance;
 	std::vector<double> quartz_transmittance;
 	TRandom3 *rand_gen;
-	
+
+	bool midLineMode;
+	int midLineWedgeWallFlip;
+
+	bool upperWedgeAngleStore;
+	std::vector<double> upper_wedge_incident;	
 	
 	void build_system();
 	void spread_wedge_mirror();
@@ -206,6 +211,8 @@ public:
 
 	void set_kaleidoscope_plot(bool ikp);
 	std::vector<double> get_dist_traveled();
+	void set_upper_wedge_angle_store(bool istore);
+	std::vector<double> get_upper_wedge_incident();
 	void set_liquid_index(double li);
 	void set_bar_box_angle(double ang);
 	void set_wedge_mirror_rand(double ispread);
@@ -297,6 +304,26 @@ public:
 	        double particle_t,\
 		int particle_bar,\
 		double z_at_top = 1);
+	bool track_all_line_photons(\
+                std::vector<dirc_point> &left_vals,\
+                std::vector<dirc_point> &right_vals,\
+                int points_per_side,\
+                double emit_theta,\
+                double particle_theta,\
+                double particle_phi,\
+                double particle_x,\
+                double particle_y,\
+                double particle_z,\
+                double particle_t,\
+                int particle_bar,\
+                double z_at_top =1);
+	void sim_lut_points(\
+                std::vector<dirc_point> &ovals,\
+                std::vector<double> &phis,\
+                std::vector<double> &thetas,\
+                int n_photons, \
+                double particle_bar /*= 0*/);
+
 	void test_from_wedge_top(\
                 std::vector<dirc_point> &ovals,\
                 int n_photons, \

@@ -10,5 +10,6 @@ struct dirc_point
 	int last_wall_x;
 	int wedge_before_interface;
 	double weight;
+	double init_phi; //internal validation only
 };
 #endif

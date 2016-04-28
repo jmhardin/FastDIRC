@@ -84,10 +84,16 @@ protected:
 	bool store_refraction;
 	std::vector<double> refraction_before;
 	std::vector<double> refraction_after;
+
+	bool storeOpticalAngles;
+	std::vector<double> focus_photon_angles;
+	std::vector<double> side_photon_angles;
+	std::vector<double> large_flat_photon_angles;
 	
 	double min_QE,max_QE,sep_QE;
 	int num_QE;
 	std::vector<double> vals_QE;
+
 
 	double min_transmittance,max_transmittance,sep_transmittance;
 	int num_transmittance;
@@ -163,6 +169,10 @@ public:
 	void set_pmt_plane_zs(double imin, double imax);
 	void set_large_mirror_zs(double imin, double imax);
 	
+	void set_store_optical_angles(bool ibool);
+	std::vector<double> get_focus_photon_angles();
+	std::vector<double> get_side_photon_angles();
+	std::vector<double> get_large_flat_photon_angles();
 	DircThreeSegBoxSim(\
 		int rand_seed = 4357,\
 		double ifoc_r = -1200, \

@@ -32,7 +32,7 @@ DircBaseSim::DircBaseSim(
 	wedgeDepthHigh = 79;
 	wedgeHeight = 91;
 
-
+	upperWedgeAngleStore = false;
 
 	wedgeDepthHigh = wedgeDepthOff+barDepth+wedgeHeight*sin(wedgeCloseAngle/57.296);
 
@@ -62,7 +62,7 @@ DircBaseSim::DircBaseSim(
 
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
-//	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
+	//	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
 
 	//upperWedgeClosePlaneD = wedgeClosePlaneD; //should be in the same plane;
 
@@ -111,25 +111,29 @@ DircBaseSim::DircBaseSim(
 	for (int i = 0; i < num_transmittance; i++) {
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
+
+	midLineMode = false;
+	midLineWedgeWallFlip = 1;
+
 	build_system();
 }
 void DircBaseSim::set_kaleidoscope_plot(bool ikp) {
 	kaleidoscope_plot = ikp;
 }
 void DircBaseSim::rotate_2d(double &x, double &y, double cval, double sval) {
-        //Standard rotatation allows precomputation of matrix elements
-        //Only store one variable for speed
-        //Sin should be actual sin (not negative sin)
-        double tx = x;
-        x = cval*tx - sval*y;
-        y = sval*tx + cval*y;
+	//Standard rotatation allows precomputation of matrix elements
+	//Only store one variable for speed
+	//Sin should be actual sin (not negative sin)
+	double tx = x;
+	x = cval*tx - sval*y;
+	y = sval*tx + cval*y;
 }
 
 void DircBaseSim::set_bar_box_angle(double ang) {
-        //expect degrees
+	//expect degrees
 	//sets angle between readout box and bars - rotates angle coming out of bars
-        box_angle_off_cval = cos(ang/57.3);
-        box_angle_off_sval = sin(ang/57.3);
+	box_angle_off_cval = cos(ang/57.3);
+	box_angle_off_sval = sin(ang/57.3);
 }
 std::vector<double> DircBaseSim::get_dist_traveled() {
 	return dist_traveled;
@@ -251,6 +255,14 @@ int DircBaseSim::get_bar_from_x(double x)
 	}
 
 }
+void DircBaseSim::set_upper_wedge_angle_store(bool istore)
+{
+	upperWedgeAngleStore = istore;
+}
+std::vector<double> DircBaseSim::get_upper_wedge_incident()
+{
+	return upper_wedge_incident;
+}
 void DircBaseSim::sim_rand_n_photons(\
 		std::vector<dirc_point> &out_points,\
 		int n_photons, \
@@ -361,13 +373,77 @@ void DircBaseSim::test_from_wedge_top(\
 
 		dirc_point out_val;
 		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
-		
+
 		if (out_val.t < 0)
 		{
 			continue;
 		}	
 
 		ovals.push_back(out_val);
+	}
+}
+void DircBaseSim::sim_lut_points(\
+		std::vector<dirc_point> &ovals,\
+		std::vector<double> &phis,\
+		std::vector<double> &thetas,\
+		int n_photons, \
+		double particle_bar /*= 0*/){
+	
+	ovals.clear();
+	phis.clear();
+	thetas.clear();
+	
+
+	double x,y,z,dx,dy,dz;
+
+	double randPhi;
+	double randTheta;	
+
+	double mm_index = 0;
+
+	for (int i = 0; i < n_photons; i++) {
+		randPhi = rand_gen->Uniform(0,2*3.14159265);
+		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
+		//This timing won't be correct
+		mm_index = 0;
+
+		x = 0;
+		y = barLength/2;
+		z = -barDepth/2;
+
+		dx = sin(randTheta)*sin(randPhi);
+		dy = cos(randTheta);
+		dz = sin(randTheta)*cos(randPhi); 
+
+		mm_index += warp_wedge(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+		//account (quickly) for the bar box having a different angle than the readout
+		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+
+		if (z > 0) {
+			continue;
+		}
+		dirc_point out_val;
+
+
+		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
+
+		if (out_val.t < 0)
+		{
+			continue;
+		}
+
+		//Timing is hard...
+		out_val.t += 0;
+		out_val.updown = 0;
+		ovals.push_back(out_val);
+		phis.push_back(randPhi);
+		thetas.push_back(randTheta);
 	}
 }
 void DircBaseSim::fill_rand_phi(\
@@ -383,6 +459,8 @@ void DircBaseSim::fill_rand_phi(\
 		double phi_theta_unc, /*= .0015*57.3*/
 		double ckov_theta_unc /* = .0055*57.3*/,\
 		double beta/* = -1*/) {
+
+
 	double emitAngle = ckov_theta;
 	double particleTheta = particle_theta + rand_gen->Gaus(0,phi_theta_unc);
 	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
@@ -418,7 +496,7 @@ void DircBaseSim::fill_rand_phi(\
 		} else {
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
-		mm_index = (sourceOff - barDepth)*1.47;
+		mm_index = (sourceOff - barDepth)*1.47/cos(particleTheta/57.3);
 
 		x = 0;
 		y = 0;
@@ -481,9 +559,9 @@ void DircBaseSim::fill_rand_phi(\
 		}
 		dirc_point out_val;
 
-		
+
 		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
-		
+
 		if (out_val.t < 0)
 		{
 			continue;
@@ -625,11 +703,11 @@ std::vector<std::pair<double,double> > DircBaseSim::get_refraction_rand_phi(\
 		{
 			continue;
 		}
-	
+
 		//should be threading time information into this soon
 		out_val.t = mm_index/(c_mm_ns);
 		std::pair<double, double> add_val;
-		
+
 		add_val.first = randPhi;
 		add_val.second = refraction_before[refraction_before.size() - 1];
 		rval.push_back(add_val);
@@ -778,7 +856,7 @@ void DircBaseSim::fill_reg_phi(\
 
 			dirc_point out_val;
 			warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
-			
+
 			if (out_val.t < 0)
 			{
 				continue;
@@ -792,23 +870,23 @@ void DircBaseSim::fill_reg_phi(\
 
 }
 bool DircBaseSim::track_single_photon(\
-	dirc_point &out_val,\
-	double emit_theta,\
-	double emit_phi,\
-	double particle_theta,\
-	double particle_phi,\
-	double particle_x,\
-	double particle_y,\
-	double particle_z,\
-	double particle_t,\
-	int particle_bar)
+		dirc_point &out_val,\
+		double emit_theta,\
+		double emit_phi,\
+		double particle_theta,\
+		double particle_phi,\
+		double particle_x,\
+		double particle_y,\
+		double particle_z,\
+		double particle_t,\
+		int particle_bar)
 {
 	double x,y,z,dx,dy,dz;
 	double mm_index;
 
 	double temit = emit_theta;
 	double regPhi = emit_phi;
-	
+
 	double cos_emit, sin_emit;
 	double cos_regphi, sin_regphi;
 	int tmp_updown = 0;
@@ -819,7 +897,7 @@ bool DircBaseSim::track_single_photon(\
 	double sin_pphi = sin(particle_phi/57.3);
 
 	double sourceOff = particle_z + barDepth;
-	
+
 	mm_index = (sourceOff - barDepth)*1.47;
 
 	x = 0;
@@ -876,14 +954,14 @@ bool DircBaseSim::track_single_photon(\
 
 
 	if (dx < 0)
-        {
-                lastWallX = 1;
-        }
-        else
-        {
-                lastWallX = -1;
-        }
-        int beforeWedgeLastWall = lastWallX;
+	{
+		lastWallX = 1;
+	}
+	else
+	{
+		lastWallX = -1;
+	}
+	int beforeWedgeLastWall = lastWallX;
 
 	mm_index += warp_wedge(\
 			x,\
@@ -902,7 +980,7 @@ bool DircBaseSim::track_single_photon(\
 		lastWallX = -1;
 	}
 	out_val.last_wall_x = lastWallX;
-//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
+	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
 	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
@@ -915,7 +993,7 @@ bool DircBaseSim::track_single_photon(\
 	warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
 
 	out_val.wedge_before_interface = wedgeBeforeInterface;
-	
+
 	if (out_val.t < 0)
 	{
 		return false;
@@ -927,26 +1005,29 @@ bool DircBaseSim::track_single_photon(\
 	return true;
 }
 bool DircBaseSim::track_line_photon(\
-	dirc_point &out_val,\
-	double emit_theta,\
-	double emit_phi,\
-	double particle_theta,\
-	double particle_phi,\
-	double particle_x,\
-	double particle_y,\
-	double particle_z,\
-	double particle_t,\
-	int particle_bar,\
-	double z_at_top /*=1*/)
+		dirc_point &out_val,\
+		double emit_theta,\
+		double emit_phi,\
+		double particle_theta,\
+		double particle_phi,\
+		double particle_x,\
+		double particle_y,\
+		double particle_z,\
+		double particle_t,\
+		int particle_bar,\
+		double z_at_top /*=1*/)
 {
 	//I'm being bad and breaking encapsulation here, but it's for the greater good
 	//Think of the children
 	double saveBarWidth = barWidth;
 	double saveWedgeWidthOff = wedgeWidthOff;
 
-	double width_fraction = .01;
+	midLineMode = true;
+	midLineMode = false;
+	double width_fraction = 1;
 	barWidth *= width_fraction;
 	wedgeWidthOff *= width_fraction;
+	wedgeWidthOff = 0;
 	build_system();
 
 	double x,y,z,dx,dy,dz;
@@ -954,7 +1035,7 @@ bool DircBaseSim::track_line_photon(\
 
 	double temit = emit_theta;
 	double regPhi = emit_phi;
-	
+
 	double cos_emit, sin_emit;
 	double cos_regphi, sin_regphi;
 	int tmp_updown = 0;
@@ -965,7 +1046,7 @@ bool DircBaseSim::track_line_photon(\
 	double sin_pphi = sin(particle_phi/57.3);
 
 	double sourceOff = particle_z + barDepth;
-	
+
 	mm_index = (sourceOff - barDepth)*1.47;
 
 	x = 0;
@@ -1018,6 +1099,7 @@ bool DircBaseSim::track_line_photon(\
 		barWidth = saveBarWidth;
 		wedgeWidthOff = saveWedgeWidthOff;
 		build_system();
+		midLineMode = false;
 		return false;
 	}
 
@@ -1025,28 +1107,28 @@ bool DircBaseSim::track_line_photon(\
 
 
 	if (dx < 0)
-        {
-                lastWallX = 1;
-        }
-        else
-        {
-                lastWallX = -1;
-        }
-        int beforeWedgeLastWall = lastWallX;
+	{
+		lastWallX = 1;
+	}
+	else
+	{
+		lastWallX = -1;
+	}
+	int beforeWedgeLastWall = lastWallX;
 
-	
+
 	double target_z = -17.25/2;
 
 	if (z_at_top < 0)
 	{
 		target_z = z_at_top;
 	}
-	
-	z = target_z;
+
+	//z = target_z;
 	if (dz > 0)
 	{
 		//y += dy/dz*(-z);
-		dz = -dz;
+	//	dz = -dz;
 	}
 
 
@@ -1067,7 +1149,7 @@ bool DircBaseSim::track_line_photon(\
 		lastWallX = -1;
 	}
 	out_val.last_wall_x = lastWallX;
-//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
+	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
 	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
@@ -1076,27 +1158,29 @@ bool DircBaseSim::track_line_photon(\
 		barWidth = saveBarWidth;
 		wedgeWidthOff = saveWedgeWidthOff;
 		build_system();
+		midLineMode = false;
 		return false;
 	}
 	if (lastWallX == 1)
 	{
-		x += saveBarWidth/2 - 3;
+	//	x += saveBarWidth/2 - 3;
 	}
 	else if (lastWallX == -1)
 	{
 		//x += saveBarWidth/2 - saveWedgeWidthOff;
-		x += saveBarWidth/2 - 3;
+	//	x += saveBarWidth/2 - 3;
 	}	
 	out_val.wedge_before_interface = -1;
 	warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
 
 	out_val.wedge_before_interface = wedgeBeforeInterface;
-	
+
 	if (out_val.t < 0)
 	{
 		barWidth = saveBarWidth;
 		wedgeWidthOff = saveWedgeWidthOff;
 		build_system();
+		midLineMode = false;
 		return false;
 	}
 
@@ -1106,20 +1190,20 @@ bool DircBaseSim::track_line_photon(\
 	barWidth = saveBarWidth;
 	wedgeWidthOff = saveWedgeWidthOff;
 	build_system();
-
+	midLineMode = false;
 	return true;
 }
 bool DircBaseSim::track_single_photon_beta(\
-	dirc_point &out_val,\
-	double particle_beta,\
-	double emit_phi,\
-	double particle_theta,\
-	double particle_phi,\
-	double particle_x,\
-	double particle_y,\
-	double particle_z,\
-	double particle_t,\
-	int particle_bar)
+		dirc_point &out_val,\
+		double particle_beta,\
+		double emit_phi,\
+		double particle_theta,\
+		double particle_phi,\
+		double particle_x,\
+		double particle_y,\
+		double particle_z,\
+		double particle_t,\
+		int particle_bar)
 {
 	double x,y,z,dx,dy,dz;
 	double mm_index;
@@ -1128,7 +1212,7 @@ bool DircBaseSim::track_single_photon_beta(\
 
 	double temit = get_cerenkov_angle_rand(particle_beta,0,wavelength);
 	double regPhi = emit_phi;
-	
+
 	double cos_emit, sin_emit;
 	double cos_regphi, sin_regphi;
 	int tmp_updown = 0;
@@ -1139,7 +1223,7 @@ bool DircBaseSim::track_single_photon_beta(\
 	double sin_pphi = sin(particle_phi/57.3);
 
 	double sourceOff = particle_z + barDepth;
-	
+
 	mm_index = (sourceOff - barDepth)*1.47;
 
 	x = 0;
@@ -1196,14 +1280,14 @@ bool DircBaseSim::track_single_photon_beta(\
 
 
 	if (dx < 0)
-        {
-                lastWallX = 1;
-        }
-        else
-        {
-                lastWallX = -1;
-        }
-        int beforeWedgeLastWall = lastWallX;
+	{
+		lastWallX = 1;
+	}
+	else
+	{
+		lastWallX = -1;
+	}
+	int beforeWedgeLastWall = lastWallX;
 
 	mm_index += warp_wedge(\
 			x,\
@@ -1222,7 +1306,7 @@ bool DircBaseSim::track_single_photon_beta(\
 		lastWallX = -1;
 	}
 	out_val.last_wall_x = lastWallX;
-//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
+	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
 	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
@@ -1235,7 +1319,7 @@ bool DircBaseSim::track_single_photon_beta(\
 	warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
 
 	out_val.wedge_before_interface = wedgeBeforeInterface;
-	
+
 	if (out_val.t < 0)
 	{
 		return false;
@@ -1244,6 +1328,314 @@ bool DircBaseSim::track_single_photon_beta(\
 	out_val.t += particle_t;
 	out_val.updown = tmp_updown;
 
+	return true;
+}
+bool DircBaseSim::track_all_line_photons(\
+		std::vector<dirc_point> &left_vals,\
+		std::vector<dirc_point> &right_vals,\
+		int points_per_side,\
+		double emit_theta,\
+		double particle_theta,\
+		double particle_phi,\
+		double particle_x,\
+		double particle_y,\
+		double particle_z,\
+		double particle_t,\
+		int particle_bar,\
+		double z_at_top /*=1*/)
+{
+	//I'm being bad and breaking encapsulation here, but it's for the greater good
+	//Think of the children
+	double saveBarWidth = barWidth;
+	double saveWedgeWidthOff = wedgeWidthOff;
+
+	left_vals.clear();
+	right_vals.clear();
+
+	midLineMode = true;
+	double width_fraction = .001;
+	barWidth *= width_fraction;
+	wedgeWidthOff *= width_fraction;
+	wedgeWidthOff = 0;
+	build_system();
+
+	std::vector<double> mustache_phi;
+
+	double x,y,z,dx,dy,dz;
+	//righthand side versions
+	double x_r,y_r,z_r,dx_r,dy_r,dz_r;
+	double mm_index;
+	double mm_index_r;
+
+	double temit = emit_theta;
+	double regPhi;
+
+	double cos_emit, sin_emit;
+	double cos_regphi, sin_regphi;
+	int tmp_updown = 0;
+
+	double cos_ptheta = cos(particle_theta/57.3);
+	double sin_ptheta = sin(particle_theta/57.3);
+	double cos_pphi = cos(particle_phi/57.3);
+	double sin_pphi = sin(particle_phi/57.3);
+
+	double sourceOff = particle_z + barDepth;
+
+	double phi_inc = (2*3.14159265359)/points_per_side;
+	regPhi = 0;
+	for (int i = 0; i < points_per_side; i++)
+	{
+		x = 0;
+		y = 0;
+		z = sourceOff;
+		mm_index = (sourceOff - barDepth)*1.47;
+		regPhi += phi_inc;
+
+		//save some time ~31ms per 400k
+		//could compute sin even faster with a taylor series
+		sin_emit = sin(temit/57.2957795131);
+		cos_emit = sqrt(1-sin_emit*sin_emit);
+		cos_regphi = cos(regPhi);
+		sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
+
+		dx = sin_emit*cos_regphi;
+		dy = sin_emit*sin_regphi;
+		dz = cos_emit;
+
+		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+		rotate_2d(x,y,cos_pphi,sin_pphi);
+
+		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
+		rotate_2d(dy,dx,cos_pphi,sin_pphi);
+
+		z -= barDepth;
+		x += particle_x;
+		y += particle_y;
+
+		//photon is now defined as up or down
+		if (dy > 0)
+		{
+			tmp_updown = 1;
+		}
+		else
+		{//Assume that zero doesn't count
+			tmp_updown = -1;
+		}
+
+
+
+		mm_index += warp_ray(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz,\
+				sqrt(1-1/(1.47*1.47)));
+
+
+		if (z > 0)
+		{
+			continue;
+		}
+
+		spread_wedge_mirror();
+
+
+		int beforeWedgeLastWall = lastWallX;
+
+
+		double target_z = -17.25/2;
+
+		if (z_at_top < 0)
+		{
+			target_z = z_at_top;
+		}
+
+		z = target_z;
+		if (dz > 0)
+		{
+			dz = -dz;
+		}
+
+		dirc_point out_val;
+
+		//branch here
+	
+		if (upperWedgeBottom/(upperWedgeBottom*tan(wedgeCloseAngle/57.3)+1.5*barDepth+wedgeDepthOff) < -dy/dz)
+		{
+			mustache_phi.push_back(regPhi);
+		//	printf("%12.04f\n",regPhi);
+		}
+	
+		mm_index += warp_wedge(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+		
+		mm_index_r = mm_index;
+
+		int dx_lr = sgn(dx);
+
+		out_val.last_wall_x = -1;
+		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+
+		x += saveBarWidth/2-3;
+	
+		//And this set of ifs is why we try and do one photon at a time normally
+		if (z < 0)
+		{
+			out_val.wedge_before_interface = -1;
+			warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
+			out_val.wedge_before_interface = wedgeBeforeInterface;
+			if (out_val.t > 0)
+			{
+				out_val.t += particle_t;
+				out_val.updown = tmp_updown;
+				out_val.init_phi = regPhi;
+				if (dx_lr < 0)
+				{
+					left_vals.push_back(out_val);
+				}
+				else
+				{
+					right_vals.push_back(out_val);
+				}
+			}
+		}
+	}
+	for (unsigned int i = 0; i < mustache_phi.size(); i++)
+	{
+		x = 0;
+		y = 0;
+		z = sourceOff;
+		mm_index = (sourceOff - barDepth)*1.47;
+		regPhi = mustache_phi[i];
+		
+
+		//save some time ~31ms per 400k
+		//could compute sin even faster with a taylor series
+		sin_emit = sin(temit/57.2957795131);
+		cos_emit = sqrt(1-sin_emit*sin_emit);
+		cos_regphi = cos(regPhi);
+		sin_regphi = sgn(3.14159265359 - regPhi)*sqrt(1-cos_regphi*cos_regphi);
+
+		dx = sin_emit*cos_regphi;
+		dy = sin_emit*sin_regphi;
+		dz = cos_emit;
+
+		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+		rotate_2d(x,y,cos_pphi,sin_pphi);
+
+		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
+		rotate_2d(dy,dx,cos_pphi,sin_pphi);
+
+		z -= barDepth;
+		x += particle_x;
+		y += particle_y;
+
+		//photon is now defined as up or down
+		if (dy > 0)
+		{
+			tmp_updown = 1;
+		}
+		else
+		{//Assume that zero doesn't count
+			tmp_updown = -1;
+		}
+
+
+
+		mm_index += warp_ray(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz,\
+				sqrt(1-1/(1.47*1.47)));
+
+
+		if (z > 0)
+		{
+			continue;
+		}
+
+		spread_wedge_mirror();
+
+
+		int beforeWedgeLastWall = lastWallX;
+
+		//now in the mustache => at wall
+		//And going up
+		double target_z = 0;
+
+		if (z_at_top < 0)
+		{
+			target_z = z_at_top;
+		}
+
+		z = target_z;
+		if (dz > 0)
+		{
+			dz = -dz;
+		}
+		//Goes backwards first and reflects off of wall.  Could account for 6mrad here as well, consider later.
+		y += -dy/dz*barDepth;
+		//perform proper reflection - factor of 2 for the reflection, and an additional 1 for the corrected wedge.
+		double enhance_rot_fac = 3;
+		rotate_2d(dy,dz,cos(enhance_rot_fac*wedgeFarAngle/57.3),-sin(enhance_rot_fac*wedgeFarAngle/57.3));
+
+		dirc_point out_val;
+
+		//branch here
+	
+		mm_index += warp_wedge(\
+				x,\
+				y,\
+				z,\
+				dx,\
+				dy,\
+				dz);
+		
+		mm_index_r = mm_index;
+
+		int dx_lr = sgn(dx);
+
+		out_val.last_wall_x = -1;
+		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+
+		x += saveBarWidth/2-3;
+	
+		//And this set of ifs is why we try and do one photon at a time normally
+		if (z < 0)
+		{
+			out_val.wedge_before_interface = -1;
+			warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
+			out_val.wedge_before_interface = wedgeBeforeInterface;
+			if (out_val.t > 0)
+			{
+				out_val.t += particle_t;
+				out_val.updown = tmp_updown;
+				out_val.init_phi = regPhi;
+				if (dx_lr < 0)
+				{
+					left_vals.push_back(out_val);
+				}
+				else
+				{
+					right_vals.push_back(out_val);
+				}
+			}
+		}
+	}
+	barWidth = saveBarWidth;
+	wedgeWidthOff = saveWedgeWidthOff;
+	build_system();
+	midLineMode = false;
 	return true;
 }
 double DircBaseSim::warp_ray(\
@@ -1344,8 +1736,8 @@ double DircBaseSim::warp_ray(\
 	}
 	nbouncesz = delz/barDepth + 1;
 	remainderz = delz - barDepth*(nbouncesz-1);
-//	double bar_front = -barDepth/2;
-//	double bar_front = -17.25/2;
+	//	double bar_front = -barDepth/2;
+	//	double bar_front = -17.25/2;
 	double bar_front = 0;
 	if (nbouncesz % 2 == 1) {
 		dz = -dz;
@@ -1486,7 +1878,12 @@ double DircBaseSim::warp_wedge(\
 				z = 1337;
 				return -1;
 			}
-
+			
+			if (upperWedgeAngleStore == true)
+			{
+				upper_wedge_incident.push_back(57.3*acos(n_dot_v));
+			}
+			
 			dx += 2*n_dot_v*upperWedgeClosePlaneNx;
 			dy += 2*n_dot_v*upperWedgeClosePlaneNy;
 			dz += 2*n_dot_v*upperWedgeClosePlaneNz;
@@ -1525,12 +1922,12 @@ double DircBaseSim::warp_wedge(\
 	}
 
 	//Now we just finish
-//        printf("liquidIndex: %12.04f  quartzIndex: %12.04f\n",liquidIndex,quartzIndex);
-//	printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
+	//        printf("liquidIndex: %12.04f  quartzIndex: %12.04f\n",liquidIndex,quartzIndex);
+	//	printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y,z,dx,dy,dz);
 
 	if (wedge_bounces > 2)
 	{	
-//		printf("Wedge Before Interface   :  bounces: %d  :  %d\n",wedgeBeforeInterface,wedge_bounces);
+		//		printf("Wedge Before Interface   :  bounces: %d  :  %d\n",wedgeBeforeInterface,wedge_bounces);
 	}
 	dt = (upperWedgeTop + barLength/2 - y)/dy;
 	mm_index += dt*liquidIndex;
@@ -1560,8 +1957,8 @@ bool DircBaseSim::optical_interface_z(\
 	//(this will change the ordering when called in our current geometry)
 
 	//dz and dy are flipped, so this is really acos
- 	double before_ang = acos(dz);
-//	printf("%12.04f\n",before_ang);
+	double before_ang = acos(dz);
+	//	printf("%12.04f\n",before_ang);
 
 	double n12rat = n1/n2;
 	double n12rat2 = n12rat*n12rat;
@@ -1575,13 +1972,13 @@ bool DircBaseSim::optical_interface_z(\
 	dx *= n12rat;
 	dy *= n12rat;
 
-// 	printf("in optical interface store_refraction: %s\n",store_refraction ? "true" : "false");
- 	if (store_refraction == true)
- 	{
- 		double after_ang = acos(dz);
- 	  	refraction_before.push_back(before_ang);
- 	  	refraction_after.push_back(after_ang);
- 	}
+	// 	printf("in optical interface store_refraction: %s\n",store_refraction ? "true" : "false");
+	if (store_refraction == true)
+	{
+		double after_ang = acos(dz);
+		refraction_before.push_back(before_ang);
+		refraction_after.push_back(after_ang);
+	}
 
 	return true;
 }
@@ -1608,6 +2005,38 @@ bool DircBaseSim::x_wedge_coerce_check(\
 	double tdt = 0;
 	double ty = y - barLength/2;
 
+	//This is bad and encapsulation breaking, but much faster and reduces code duplication
+	if (midLineMode == true)
+	{
+		if (ty < wedgeHeight)
+		{
+			tdt = (wedgeHeight - ty)/dy;
+
+			if (tdt > dt)
+			{
+				//does not go above wedge
+				tdt = dt;
+			}
+			//only randomize if bouncing in infinitely thin wall
+			//dx = midLineWedgeWallFlip*fabs(dx);
+			//dx = midLineWedgeWallFlip*fabs(dx);
+			//x starts at 0
+			x = 0;
+			midLineWedgeWallFlip *= -1;
+		}
+		else
+		{
+			//does not bounce
+			tdt = dt;
+			x += dx*tdt;
+		}
+
+		x += dx*(dt - tdt);
+		y += dy*dt;
+		z += dz*dt;
+		//ignores possibility of bouncing out - only care about that below window anyway
+		return true;
+	}
 
 	while (true) {
 		//Get time of this bounce based on x direction

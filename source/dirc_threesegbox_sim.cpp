@@ -39,6 +39,8 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	sens_size = isens_size;
 	sens_rot = isens_rot;
 
+	storeOpticalAngles = false;
+
 	//only used for checking collision
 	largePlanarMirrorNx = 0; //Shouldn't be needed
 	largePlanarMirrorNy = 1;
@@ -132,7 +134,7 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
                 above_ind = tmp_lam - (min_QE + sep_QE*ind_QE);
 
                 //Simple linear interp between values.  5th order poly fit looked like it worked too
-                tmp_QE_val = vals_QE[ind_QE]*(sep_QE-above_ind)/sep_QE + vals_QE[ind_QE+1]*above_ind/sep_QE;
+                tmp_QE_val = vals_QE[ind_QE]*(sep_QE-above_ind)/sep_QE + vals_QE[ind_QE+2]*above_ind/sep_QE;
 
                 //Max QE val is ~.23, this saves lot of loops
                 if (rand_gen->Uniform(0,.25) > tmp_QE_val) continue;
@@ -142,6 +144,7 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
 
 
                 n_lam = get_quartz_n(tmp_lam);
+
 
                 out_ang = 57.3*acos(1/(beta*n_lam));
                 break;
@@ -319,6 +322,22 @@ void DircThreeSegBoxSim::set_focus_mirror_angle(double ang,double yang, double z
 void DircThreeSegBoxSim::set_pmt_angle(double ang) {
 	sens_rot = ang;
 	build_readout_box();
+}
+void DircThreeSegBoxSim::set_store_optical_angles(bool istore)
+{
+	storeOpticalAngles = istore;
+}
+std::vector<double> DircThreeSegBoxSim::get_focus_photon_angles()
+{
+	return focus_photon_angles;
+}
+std::vector<double> DircThreeSegBoxSim::get_large_flat_photon_angles()
+{
+	return large_flat_photon_angles;
+}
+std::vector<double> DircThreeSegBoxSim::get_side_photon_angles()
+{
+	return side_photon_angles;
 }
 void DircThreeSegBoxSim::warp_readout_box(
 	dirc_point &out_val,\
@@ -501,6 +520,11 @@ double DircThreeSegBoxSim::three_seg_reflect(\
 			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
 			// 			rotate_2d(threeSeg1Nz,threeSeg1Ny,cos(offang),sin(offang));
 		}
+		if (storeOpticalAngles == true)
+		{
+			double ndotv = dx*threeSeg1Nx + dy*threeSeg1Ny + dz*threeSeg1Nz;
+			focus_photon_angles.push_back(57.3*acos(ndotv));
+		}
 		plane_reflect(\
 				threeSeg1Nx,\
 				threeSeg1Ny,\
@@ -536,6 +560,12 @@ double DircThreeSegBoxSim::three_seg_reflect(\
 			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
 			// 			rotate_2d(threeSeg2Nz,threeSeg2Ny,cos(offang),sin(offang));
 		}
+		if (storeOpticalAngles == true)
+		{
+			double ndotv = dx*threeSeg2Nx + dy*threeSeg2Ny + dz*threeSeg2Nz;
+			focus_photon_angles.push_back(57.3*acos(ndotv));
+		}
+		
 		plane_reflect(\
 				threeSeg2Nx,\
 				threeSeg2Ny,\
@@ -571,6 +601,11 @@ double DircThreeSegBoxSim::three_seg_reflect(\
 			offang = rand_gen->Gaus(0,foc_mirror_nonuni/57.3);
 			// 			printf("%12.04e\n",offang);
 			// 			rotate_2d(threeSeg3Nz,threeSeg3Ny,cos(offang),sin(offang));
+		}
+		if (storeOpticalAngles == true)
+		{
+			double ndotv = dx*threeSeg3Nx + dy*threeSeg3Ny + dz*threeSeg3Nz;
+			focus_photon_angles.push_back(57.3*acos(ndotv));
 		}
 		plane_reflect(\
 				threeSeg3Nx,\
@@ -658,6 +693,10 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 
 	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
 
+	if (storeOpticalAngles == true)
+	{
+		focus_photon_angles.push_back(57.3*acos(n_dot_v));
+	}
 	dx += 2*n_dot_v*localNx;
 	dy += 2*n_dot_v*localNy;
 	dz += 2*n_dot_v*localNz;
@@ -711,6 +750,15 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 	{
 		z=1337;
 		return 100000;
+	}
+	if (storeOpticalAngles == true)
+	{
+		large_flat_photon_angles.push_back(57.3*acos(fabs(dy)));
+	}
+	if (storeOpticalAngles == true)
+	{
+		//Assumes all Photons bounce - not exatly true, but close
+		side_photon_angles.push_back(57.3*acos(dx));
 	}
 
 	fill_val.x = x;
