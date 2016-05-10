@@ -401,6 +401,8 @@ void DircBaseSim::sim_lut_points(\
 
 	double mm_index = 0;
 
+	double c_mm_ns = 300;
+
 	for (int i = 0; i < n_photons; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
@@ -439,7 +441,7 @@ void DircBaseSim::sim_lut_points(\
 		}
 
 		//Timing is hard...
-		out_val.t += 0;
+		//out_val.t = mm_index/c_mm_ns;
 		out_val.updown = 0;
 		ovals.push_back(out_val);
 		phis.push_back(randPhi);
