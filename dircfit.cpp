@@ -102,6 +102,8 @@ int main(int nargs, char* argv[])
 	int line_output_n = -1;
 	int fill_d_midline_n = -1;
 	int lut_sim_n = -1;
+	int gaus_ll_n = -1;
+	double gaus_ll_spread = 2;
 
 	double mean_n_phot = 40;
 	double spread_n_phot = 0;
@@ -169,6 +171,16 @@ int main(int nargs, char* argv[])
 	double sfunc_sig = 1;
 
 	int n_sim_phots = 40;
+
+//	double pion_x_adj = -.43;
+//	double pion_y_adj = -3.6;
+//	double kaon_x_adj = -.48;
+//	double kaon_y_adj = 2.87;
+
+	double pion_x_adj = 0;
+	double pion_y_adj = 0;
+	double kaon_x_adj = 0;
+	double kaon_y_adj = 0;
 
 	int n_phi_phots = 150000;
 	int n_z_phots = 4;
@@ -303,6 +315,18 @@ int main(int nargs, char* argv[])
 				i++;
 				line_recon_n = atoi(argv[i]);
 			}
+			else if (strcmp(argv[i], "-line_recon_calib") == 0)
+			{
+				//setting line recon calibrations, expects 4 arguements
+				i++;
+				pion_x_adj = atof(argv[i]);
+				i++;
+				pion_y_adj = atof(argv[i]);
+				i++;
+				kaon_x_adj = atof(argv[i]);
+				i++;
+				kaon_y_adj = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-lut_sim_n") == 0)
 			{
 				i++;
@@ -316,6 +340,16 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				fill_d_midline_n = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-gaus_ll_n") == 0)
+			{
+				i++;
+				gaus_ll_n = atoi(argv[i]);
+			}
+			else if (strcmp(argv[i], "-gaus_ll_spread") == 0)
+			{
+				i++;
+				gaus_ll_spread = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-particle_theta") == 0)
 			{
@@ -2638,6 +2672,8 @@ int main(int nargs, char* argv[])
 	else if (line_recon_n > 0)
 	{ 
 		printf("Trying line reconstruction loop mode\n");
+		printf("Caliibrations: pion_x_adj pion_y_adj kaon_x_adj kaon_y_adj\n");
+		printf("%12.04f %12.04f %12.04f %12.04f\n",pion_x_adj, pion_y_adj, kaon_x_adj, kaon_y_adj);
 		
 		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
 		{
@@ -2647,13 +2683,10 @@ int main(int nargs, char* argv[])
 		int num_line_points = 5000;
 		double points_dist_sq = 4000;
 		double time_spread = 4;
+		//double time_spread = 1000;
 		double dist_spread = 40;
 		double max_dev_sq = 5;
 
-		double pion_x_adj = -.43;
-		double pion_y_adj = -3.6;
-		double kaon_x_adj = -.48;
-		double kaon_y_adj = 2.87;
 
 //		pion_x_adj = 0;
 //		pion_y_adj = 0;
@@ -3586,6 +3619,34 @@ int main(int nargs, char* argv[])
 			}
 		}
 	}
+	if (gaus_ll_n > 0)
+	{
+		printf("Running Filling LL hists with points drawn from gaussian, Do not perform any other fills\n");
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+	
+		double quartz_index = 1.473;
+		double pion_cerenkov = acos(1/(quartz_index*pion_beta));
+		double kaon_cerenkov = acos(1/(quartz_index*kaon_beta));
+		double gaus_mean_a = 0;
+		double gaus_mean_b = 1000*(pion_cerenkov-kaon_cerenkov);
+
+		printf("Filling Histos with %d points\n",gaus_ll_n);
+		printf("Mean separation:  %12.04f \"mrad\"\n",gaus_mean_b);
+		printf("Gaussian Sigma:   %12.04f \"mrad\"\n",gaus_ll_spread);
+
+		double filla,fillb;
+		for (int i = 0; i < gaus_ll_n; i++)
+		{
+			filla = spread_ang.Gaus(gaus_mean_a,gaus_ll_spread);
+			fillb = spread_ang.Gaus(gaus_mean_b,gaus_ll_spread);
+
+			//Keeps ordering sane;
+			ll_diff_kaon->Fill(filla);
+			ll_diff_pion->Fill(fillb);
+		}
+		printf("Gaussian fill to loglikelihood histograms completed.\n");
+	}
 	if (lut_sim_n > 0)
 	{
 		int lut_size = 5000000;
@@ -3614,6 +3675,8 @@ int main(int nargs, char* argv[])
 		std::vector<double> pion_dts;
 		std::vector<double> kaon_dts;
 
+		std::vector<double> pion_angle_means;
+		std::vector<double> kaon_angle_means;
 
 		std::vector<dirc_point> lut_points;
 		std::vector<double> lut_phis;
@@ -3636,12 +3699,20 @@ int main(int nargs, char* argv[])
 		double oval_cut_angle_center = (pion_cerenkov+kaon_cerenkov)/2;
 		double oval_cut_angle_spread_sq = .018;//radians
 		oval_cut_angle_spread_sq *= oval_cut_angle_spread_sq;
-		double oval_cut_time_spread_sq = 3;//ns
+		double oval_cut_time_spread_sq = 2;//ns
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
 		double oval_cut_val = -1;
 
 		double ll_mean_adjust = 47.1;
-		double ll_mean_enhance = 30;
+		double ll_mean_enhance = 17.45;
+
+		//all in radians
+		double iter_ang_spread_sq = oval_cut_angle_spread_sq/2;
+		double iter_time_spread_sq = oval_cut_time_spread_sq/2;
+		int max_lut_iter = 20;
+		double iter_mean_change_stop = .00002;
+		double iter_last_mean = -10;
+		double iter_mean = oval_cut_angle_center;
 
 		for (int i = 0; i < lut_sim_n; i++)
 		{
@@ -3693,33 +3764,115 @@ int main(int nargs, char* argv[])
 			double pion_lut_count = 0;
 			double kaon_lut_mean = 0;
 			double kaon_lut_count = 0;
+
+			iter_last_mean = -10;
+			iter_mean = oval_cut_angle_center;
+			for (int j = 0; j < max_lut_iter; j++)
+			{
+				if (fabs(iter_mean - iter_last_mean) < iter_mean_change_stop) break; //converged
+				pion_lut_mean = 0;
+				pion_lut_count = 0;
+				for (unsigned int k = 0; k < pion_ckov.size(); k++)
+				{
+					if ((pion_ckov[k]-iter_mean)*(pion_ckov[k]-iter_mean)/iter_ang_spread_sq + pion_dts[k]*pion_dts[k]/iter_time_spread_sq > 1)
+					{
+						continue;
+					}
+					pion_lut_mean += pion_ckov[k];
+					pion_lut_count += 1.0;
+				}
+				iter_last_mean = iter_mean;
+				iter_mean = pion_lut_mean/pion_lut_count;
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, pion_lut_count);	
+			}
+			//rerun with oval cut averaging per point
+			dirc_lut->get_ckov_theta_single_oval_cut(pion_ckov, \
+			       	pion_dts, \
+        			hit_points_pion, \
+        			particle_phi, \
+        			particle_theta, \
+        			particle_y, \
+        			iter_mean, \
+        			oval_cut_angle_spread_sq,\
+        			oval_cut_time_spread_sq);
+
+			pion_lut_mean = 0;
+			pion_lut_count = 0;
+
 			for (unsigned int j = 0; j < pion_ckov.size(); j++)
 			{
-				if ((pion_ckov[j]-oval_cut_angle_center)*(pion_ckov[j]-oval_cut_angle_center)/oval_cut_angle_spread_sq + pion_dts[j]*pion_dts[j]/oval_cut_time_spread_sq > 1)
+				if ((pion_ckov[j]-iter_mean)*(pion_ckov[j]-iter_mean)/oval_cut_angle_spread_sq + pion_dts[j]*pion_dts[j]/oval_cut_time_spread_sq > 1)
 				{
 					continue;
 				}
 				pion_lut_vals->Fill(57.3*pion_ckov[j]);
-	//			if (57.3*pion_ckov[j] < fmax && 57.3*pion_ckov[j] > fmin)
-	//			{
-					pion_lut_mean += 57.3*pion_ckov[j];
-					pion_lut_count += 1.0;
-					pion_lut_dt_v_dang->Fill(1000*(pion_ckov[j]-pion_cerenkov),pion_dts[j]);
-	//			}
+				pion_lut_mean += 57.3*pion_ckov[j];
+				pion_lut_count += 1.0;
+				pion_lut_dt_v_dang->Fill(1000*(pion_ckov[j]-pion_cerenkov),pion_dts[j]);
 			}
+			iter_last_mean = -10;
+			iter_mean = oval_cut_angle_center;
+			//Found mean, rerun to get one per initial point
+
+			for (int j = 0; j < max_lut_iter; j++)
+			{
+				if (fabs(iter_mean - iter_last_mean) < iter_mean_change_stop) break; //converged
+				kaon_lut_mean = 0;
+				kaon_lut_count = 0;
+				for (unsigned int k = 0; k < kaon_ckov.size(); k++)
+				{
+					if ((kaon_ckov[k]-iter_mean)*(kaon_ckov[k]-iter_mean)/iter_ang_spread_sq + kaon_dts[k]*kaon_dts[k]/iter_time_spread_sq > 1)
+					{
+						continue;
+					}
+					kaon_lut_mean += kaon_ckov[k];
+					kaon_lut_count += 1.0;
+				}
+				iter_last_mean = iter_mean;
+				iter_mean = kaon_lut_mean/kaon_lut_count;
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);	
+			}
+			for (int j = 0; j < max_lut_iter; j++)
+			{
+				if (fabs(iter_mean - iter_last_mean) < iter_mean_change_stop) break; //converged
+				kaon_lut_mean = 0;
+				kaon_lut_count = 0;
+				for (unsigned int k = 0; k < kaon_ckov.size(); k++)
+				{
+					if ((kaon_ckov[k]-iter_mean)*(kaon_ckov[k]-iter_mean)/iter_ang_spread_sq + kaon_dts[k]*kaon_dts[k]/iter_time_spread_sq > 1)
+					{
+						continue;
+					}
+					kaon_lut_mean += kaon_ckov[k];
+					kaon_lut_count += 1.0;
+				}
+				iter_last_mean = iter_mean;
+				iter_mean = kaon_lut_mean/kaon_lut_count;
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);	
+			}
+			//rerun with oval cut averaging per point
+			dirc_lut->get_ckov_theta_single_oval_cut(kaon_ckov, \
+			       	kaon_dts, \
+        			hit_points_kaon, \
+        			particle_phi, \
+        			particle_theta, \
+        			particle_y, \
+        			iter_mean, \
+        			oval_cut_angle_spread_sq,\
+        			oval_cut_time_spread_sq);
+
+			kaon_lut_mean = 0;
+			kaon_lut_count = 0;
 			for (unsigned int j = 0; j < kaon_ckov.size(); j++)
 			{
-				if ((kaon_ckov[j]-oval_cut_angle_center)*(kaon_ckov[j]-oval_cut_angle_center)/oval_cut_angle_spread_sq + kaon_dts[j]*kaon_dts[j]/oval_cut_time_spread_sq > 1)
+				if ((kaon_ckov[j]-iter_mean)*(kaon_ckov[j]-iter_mean)/oval_cut_angle_spread_sq + kaon_dts[j]*kaon_dts[j]/oval_cut_time_spread_sq > 1)
 				{
 					continue;
 				}
 				kaon_lut_vals->Fill(57.3*kaon_ckov[j]);
-//				if (57.3*kaon_ckov[j] < fmax && 57.3*kaon_ckov[j] > fmin)
-//				{
-					kaon_lut_mean += 57.3*kaon_ckov[j];
-					kaon_lut_count += 1.0;
-					kaon_lut_dt_v_dang->Fill(1000*(kaon_ckov[j]-kaon_cerenkov),kaon_dts[j]);
-//				}
+				kaon_lut_mean += 57.3*kaon_ckov[j];
+				kaon_lut_count += 1.0;
+				kaon_lut_dt_v_dang->Fill(1000*(kaon_ckov[j]-kaon_cerenkov),kaon_dts[j]);
 			}
 
 
@@ -3729,6 +3882,9 @@ int main(int nargs, char* argv[])
 			kaon_lut_means->Fill(kaon_lut_mean/kaon_lut_count);
 			pion_lut_angles->Fill(pion_lut_count);
 			kaon_lut_angles->Fill(kaon_lut_count);
+
+			pion_angle_means.push_back(pion_lut_mean/pion_lut_count);
+			kaon_angle_means.push_back(kaon_lut_mean/kaon_lut_count);
 
 			ll_diff_pion->Fill(ll_mean_enhance*(pion_lut_mean/pion_lut_count-ll_mean_adjust));
 			ll_diff_kaon->Fill(ll_mean_enhance*(kaon_lut_mean/kaon_lut_count-ll_mean_adjust));
@@ -3746,31 +3902,62 @@ int main(int nargs, char* argv[])
 		double kaon_mean = 0;//Degrees
 		double kaon_sigma = 0;//mrad
 
-		tmp_pion_lut->Fit("gaus","RQ","",fmin,fmax);
+		double mean_fit_min = 0;
+		double mean_fit_max = 90;
+
+
+		
+		tmp_pion_lut->Fit("gaus","RQL","",fmin,fmax);
 		pion_mean = tmp_pion_lut->GetFunction("gaus")->GetParameter(1);
 		pion_sigma = 3141.59/180*tmp_pion_lut->GetFunction("gaus")->GetParameter(2);
-		tmp_kaon_lut->Fit("gaus","RQ","",fmin,fmax);
+		tmp_kaon_lut->Fit("gaus","RQL","",fmin,fmax);
 		kaon_mean = tmp_kaon_lut->GetFunction("gaus")->GetParameter(1);
 		kaon_sigma = 3141.59/180*tmp_kaon_lut->GetFunction("gaus")->GetParameter(2);
 		printf("Per photon resolutions of LUT\n");
-		printf("Pion - Mean: %12.04f deg         Sigma: %12.04f mrad\n",pion_mean,pion_sigma);
-		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad\n",kaon_mean,kaon_sigma);
 		
-		tmp_pion_means->Fit("gaus","RQ","",fmin,fmax);
+		printf("Pion - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg\n",pion_mean,pion_sigma,.057*pion_sigma);
+		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg\n",kaon_mean,kaon_sigma,.057*kaon_sigma);
+		
+		pion_mean = 0;
+		pion_sigma = 0;//mrad
+		kaon_mean = 0;
+		kaon_sigma = 0;//mrad
+		for (unsigned int i = 0; i < pion_angle_means.size(); i++)
+		{
+			pion_mean += pion_angle_means[i];
+			kaon_mean += kaon_angle_means[i];
+		}
+		pion_mean /= pion_angle_means.size();
+		kaon_mean /= kaon_angle_means.size();
+		for (unsigned int i = 0; i < pion_angle_means.size(); i++)
+		{
+			pion_sigma += (pion_angle_means[i]-pion_mean)*(pion_angle_means[i]-pion_mean);
+			kaon_sigma += (kaon_angle_means[i]-kaon_mean)*(kaon_angle_means[i]-kaon_mean);
+		}
+		pion_sigma = sqrt(pion_sigma/pion_angle_means.size());
+		kaon_sigma = sqrt(kaon_sigma/kaon_angle_means.size());
+
+		//pion_mean *= 17.45;//to mrad
+		//kaon_mean *= 17.45;//to mrad
+		pion_sigma *= 17.45;//to mrad
+		kaon_sigma *= 17.45;//to mrad
+		/*	
+		tmp_pion_means->Fit("gaus","RQL","",mean_fit_min,mean_fit_max);
 		pion_mean = tmp_pion_means->GetFunction("gaus")->GetParameter(1);
 		pion_sigma = 3141.59/180*tmp_pion_means->GetFunction("gaus")->GetParameter(2);
-		tmp_kaon_means->Fit("gaus","RQ","",fmin,fmax);
+		tmp_kaon_means->Fit("gaus","RQL","",mean_fit_min,mean_fit_max);
 		kaon_mean = tmp_kaon_means->GetFunction("gaus")->GetParameter(1);
 		kaon_sigma = 3141.59/180*tmp_kaon_means->GetFunction("gaus")->GetParameter(2);
-	
+		*/
 		printf("Mean photon resolutions of LUT\n");
-		printf("Pion - Mean: %12.04f deg         Sigma: %12.04f mrad        Entries: %12.04f\n",pion_mean,pion_sigma,pion_lut_angles->GetMean());
-		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad        Entries: %12.04f\n",kaon_mean,kaon_sigma,kaon_lut_angles->GetMean());
+		printf("Pion - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg        Entries: %12.04f\n",pion_mean,pion_sigma,.057*pion_sigma,pion_lut_angles->GetMean());
+		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg        Entries: %12.04f\n",kaon_mean,kaon_sigma,.057*kaon_sigma,kaon_lut_angles->GetMean());
 	}
 	if (fill_d_midline_n > 0)
 	{ 
 		printf("Check Delta Midline\n");
-		
+
+	
 		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
 		{
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the line reconstruction.\n");
@@ -3778,6 +3965,7 @@ int main(int nargs, char* argv[])
 
 		int num_line_points = 5000;
 		double points_dist_sq = 4000;
+		//double time_spread = 4;
 		double time_spread = 4;
 		double dist_spread = 40;
 		double max_dev_sq = 5;
@@ -3971,7 +4159,9 @@ int main(int nargs, char* argv[])
 			kaon_midline_dy->Fill(t_dy);
 			kaon_midline_dt->Fill(t_dt);
 		}
-		printf("\nMidline Delta Run Completed\n");
+		printf("\nMidline Delta Run Completed, Calibration String:\n");
+		printf("\npion_x_adj pion_y_adj kaon_x_adj kaon_y_adj\n");
+		printf("%12.04f %12.04f %12.04f %12.04f\n",-pion_midline_dx->GetMean(),-pion_midline_dy->GetMean(),-kaon_midline_dx->GetMean(),-kaon_midline_dy->GetMean());
 	}
 	if (line_output_n > 0)
 	{
@@ -4280,13 +4470,13 @@ int main(int nargs, char* argv[])
 	kaon_midline_dx->Write();
 	kaon_midline_dy->Write();
 	kaon_midline_dt->Write();
-	
+/*	
 	if (fill_d_midline_n > 0)
 	{
 		printf("Pion mean: %12.04f %12.04f\n",pion_midline_dx->GetMean(),pion_midline_dy->GetMean());
 		printf("Kaon mean: %12.04f %12.04f\n",kaon_midline_dx->GetMean(),kaon_midline_dy->GetMean());
 	}
-
+*/
 	pion_lut_vals->Write();
 	kaon_lut_vals->Write();
 	pion_lut_means->Write();

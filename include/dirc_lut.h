@@ -29,6 +29,16 @@ public:
 	void get_ckov_theta_all(std::vector<double> &rval, std::vector<double> &ret_dt, std::vector<dirc_point> pt,double inc_phi, double inc_theta, double inc_y);
 	//Needed?  Private?
 	void get_base_phi_theta_all(std::vector<lut_entry> &rval, std::vector<dirc_point> pts);
+	void get_ckov_theta_single_oval_cut(std::vector<double> &rval, \
+	        std::vector<double> &ret_dt, \
+	        std::vector<dirc_point> pts, \
+        	double inc_phi, \
+        	double inc_theta, \
+        	double inc_y, \
+        	double center_ang, \
+        	double center_ang_spread,\
+        	double center_time_spread);
+
 
 };
 #endif
