@@ -641,7 +641,6 @@ int main(int nargs, char* argv[])
 
 	double main_mirror_angle = 74.11+mirror_angle_change;
 
-
 	double rad_to_deg = 57.2958;
 
 	double res_enhance = 1;
