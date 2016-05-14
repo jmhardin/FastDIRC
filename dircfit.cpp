@@ -645,7 +645,6 @@ int main(int nargs, char* argv[])
 
 	double res_enhance = 1;
 
-
 	double prog_thresh = 500;
 
 	if (flatten_time == true)
