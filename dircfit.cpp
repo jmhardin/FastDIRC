@@ -2677,7 +2677,7 @@ int main(int nargs, char* argv[])
 
 		int num_line_points = 5000;
 		double points_dist_sq = 6000;
-		double time_spread = 1.5;
+		double time_spread = 2;
 		//double time_spread = 1000;
 		//double dist_spread = 40;
 		double dist_spread = 60;
