@@ -2675,12 +2675,12 @@ int main(int nargs, char* argv[])
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the line reconstruction.\n");
 		}
 
-		int num_line_points = 8000;
-		double points_dist_sq = 4000;
-		double time_spread = 4;
+		int num_line_points = 5000;
+		double points_dist_sq = 6000;
+		double time_spread = 1.5;
 		//double time_spread = 1000;
 		//double dist_spread = 40;
-		double dist_spread = 50;
+		double dist_spread = 60;
 		double max_dev_sq = 5;
 
 
@@ -2927,6 +2927,16 @@ int main(int nargs, char* argv[])
        				pion_time,\
        				1);
 
+			for (unsigned int i = 0; i < provisional_points_lwn.size(); i++)
+			{
+				provisional_points_lwn[i].x += pion_x_adj;
+				provisional_points_lwn[i].y += pion_y_adj;
+			}
+			for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
+			{
+				provisional_points_lwp[i].x += pion_x_adj;
+				provisional_points_lwp[i].y += pion_y_adj;
+			}
 			for (unsigned int i = 0; i < sim_points.size(); i++)
 			{
 				double min_dist_sq = 10000;
@@ -2970,6 +2980,16 @@ int main(int nargs, char* argv[])
        				kaon_time,\
        				1);
 			unused_photons = 0;
+			for (unsigned int i = 0; i < provisional_points_lwn.size(); i++)
+			{
+				provisional_points_lwn[i].x += kaon_x_adj;
+				provisional_points_lwn[i].y += kaon_y_adj;
+			}
+			for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
+			{
+				provisional_points_lwp[i].x += kaon_x_adj;
+				provisional_points_lwp[i].y += kaon_y_adj;
+			}
 			for (unsigned int i = 0; i < sim_points.size(); i++)
 			{
 				double min_dist_sq = 10000;
@@ -3965,6 +3985,9 @@ int main(int nargs, char* argv[])
 		double time_spread = 4;
 		double dist_spread = 40;
 		double max_dev_sq = 5;
+
+		double callibration_y_shift = 0;
+
 		max_dev_sq *= max_dev_sq;
 
 		pion_beta = dirc_model->get_beta(energy,pimass);
@@ -4158,7 +4181,7 @@ int main(int nargs, char* argv[])
 		}
 		printf("\nMidline Delta Run Completed, Calibration String:\n");
 		printf("\npion_x_adj pion_y_adj kaon_x_adj kaon_y_adj\n");
-		printf("%12.04f %12.04f %12.04f %12.04f\n",-pion_midline_dx->GetMean(),-pion_midline_dy->GetMean(),-kaon_midline_dx->GetMean(),-kaon_midline_dy->GetMean());
+		printf("%12.04f %12.04f %12.04f %12.04f\n",-pion_midline_dx->GetMean(),-pion_midline_dy->GetMean() - callibration_y_shift,-kaon_midline_dx->GetMean(),-kaon_midline_dy->GetMean() - callibration_y_shift);
 	}
 	if (line_output_n > 0)
 	{
