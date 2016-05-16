@@ -134,7 +134,7 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
                 above_ind = tmp_lam - (min_QE + sep_QE*ind_QE);
 
                 //Simple linear interp between values.  5th order poly fit looked like it worked too
-                tmp_QE_val = vals_QE[ind_QE]*(sep_QE-above_ind)/sep_QE + vals_QE[ind_QE+2]*above_ind/sep_QE;
+                tmp_QE_val = vals_QE[ind_QE]*(sep_QE-above_ind)/sep_QE + vals_QE[ind_QE+1]*above_ind/sep_QE;
 
                 //Max QE val is ~.23, this saves lot of loops
                 if (rand_gen->Uniform(0,.25) > tmp_QE_val) continue;

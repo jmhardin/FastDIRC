@@ -18,6 +18,7 @@
 #include "include/dirc_spread_linear_soft.h"
 #include "include/dirc_spread_gaussian.h"
 #include "include/dirc_digitizer.h"
+#include "include/dirc_rect_digitizer.h"
 #include "include/dirc_progressive_separation.h"
 #include "include/dirc_gluex_lut_enum.h"
 #include "include/dirc_lut_enum.h"
@@ -813,7 +814,7 @@ int main(int nargs, char* argv[])
 	TH1F *zero_kaon_id = new TH1F("zero_kaon_id","Correct kaon ID with cut at 0",2,-0.5,1.5);
 
 
-	DircDigitizer digitizer(\
+	DircRectDigitizer digitizer(\
 			minx,\
 			maxx,\
 			resx,\
@@ -4072,17 +4073,18 @@ int main(int nargs, char* argv[])
 				}
 				//cur_mean_phi /= total_prov_points;
 				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+				pion_midline_dx->Fill(t_dx);
+				pion_midline_dy->Fill(t_dy);
+				pion_midline_dt->Fill(t_dt);
 			}
 
-			pion_midline_dx->Fill(t_dx);
-			pion_midline_dy->Fill(t_dy);
-			pion_midline_dt->Fill(t_dt);
 
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
 			provisional_points_lwn.clear();	
 			provisional_points_lwp.clear();	
 
+			sim_points.clear();
 
 			dirc_model->sim_rand_n_photons(\
 					sim_points,\
@@ -4148,10 +4150,10 @@ int main(int nargs, char* argv[])
 						t_dt = sim_points[i].t - provisional_points_lwp[j].t;
 					}	
 				}
+				kaon_midline_dx->Fill(t_dx);
+				kaon_midline_dy->Fill(t_dy);
+				kaon_midline_dt->Fill(t_dt);
 			}
-			kaon_midline_dx->Fill(t_dx);
-			kaon_midline_dy->Fill(t_dy);
-			kaon_midline_dt->Fill(t_dt);
 		}
 		printf("\nMidline Delta Run Completed, Calibration String:\n");
 		printf("\npion_x_adj pion_y_adj kaon_x_adj kaon_y_adj\n");
