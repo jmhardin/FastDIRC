@@ -2675,11 +2675,12 @@ int main(int nargs, char* argv[])
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the line reconstruction.\n");
 		}
 
-		int num_line_points = 5000;
+		int num_line_points = 8000;
 		double points_dist_sq = 4000;
 		double time_spread = 4;
 		//double time_spread = 1000;
-		double dist_spread = 40;
+		//double dist_spread = 40;
+		double dist_spread = 50;
 		double max_dev_sq = 5;
 
 
