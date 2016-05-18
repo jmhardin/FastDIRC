@@ -3118,7 +3118,7 @@ int main(int nargs, char* argv[])
 		pion_y_adj = mult_params*(y_shift+y_split);
 		kaon_y_adj = mult_params*(y_shift-y_split);
 		printf("minuit_calib_string:\n");
-		printf("%12.04f %12.04f %12.04f %12.04f\n",pion_x_adj,kaon_x_adj,pion_y_adj,kaon_y_adj);
+		printf("%12.04f %12.04f %12.04f %12.04f\n",pion_x_adj,pion_y_adj,kaon_x_adj,kaon_y_adj);
 
 	}
 	else if (line_recon_n > 0)

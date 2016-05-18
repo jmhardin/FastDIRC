@@ -12,7 +12,7 @@ fi
 echo Time Energy Theta Phi pionxadj pionyadj kaonxadj kaonyadj KDERes MidlineUncalibrated MidlineCalibrated LUT >> tmp_kine_${phi}.csv
 tail -n 1 tmp_kine_${phi}.csv
 
-for theta in `seq 4 $ThetaStep $MaxTheta`
+for theta in `seq 0 $ThetaStep $MaxTheta`
 do
 #	../dircfit -n $NRuns -particle_phi $phi -particle_theta $theta -E $Energy &> /dev/null 
 #	TmpResKDE=`root -l -q -b "../graphicHistos.C(\"fitdirc.root\",false,${Energy})" | tail -n 1` > /dev/null
@@ -20,7 +20,7 @@ do
 	../dircfit -n 0 -line_recon_n $NRuns -particle_phi $phi -particle_theta $theta -E $Energy
 	TmpResMidUncalib=`root -l -q -b "../graphicHistos.C(\"fitdirc.root\",false,${Energy})" | tail -n 1` > /dev/null
 
-	CalibString=`../dircfit -n 0 -fill_d_midline_n $NRuns -particle_phi $phi -particle_theta $theta -E $Energy | tail -n 1`		
+	CalibString=`../dircfit -n 0 -run_minuit_calibration -particle_phi $phi -particle_theta $theta -E $Energy | tail -n 1`		
 
 	../dircfit -n 0 -line_recon_n $NRuns -particle_phi $phi -particle_theta $theta -line_recon_calib $CalibString -E $Energy
 	TmpResMidCalib=`root -l -q -b "../graphicHistos.C(\"fitdirc.root\",false,${Energy})" | tail -n 1` &> /dev/null
