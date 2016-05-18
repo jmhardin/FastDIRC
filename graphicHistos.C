@@ -230,8 +230,10 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 	for (int i = 0; i < pion_veto_eff->GetNbinsX()-1; i++)
 	{
 		ival += (yr[i]+last_y)*(xr[i] - last_x)/2;
+                //printf("%6d %12.09f %12.04f %12.04f %12.04f %12.04f\n",i,ival,xr[i],yr[i],last_x,last_y);
 		last_x = xr[i];
 		last_y = yr[i];
+		
 	}
 
 	if (verbose_out == true)

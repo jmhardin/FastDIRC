@@ -30,6 +30,356 @@
 #include <TH1.h>
 #include <TF1.h>
 #include <TRandom3.h>
+#include <TMinuit.h>
+
+DircBaseSim* global_calib_model;
+DircDigitizer* global_digitizer;
+double global_particle_theta;
+double global_particle_phi;
+double global_particle_x;
+double global_particle_y;
+double global_particle_t;
+double global_particle_energy;
+double global_particle_flight_distance;
+double global_refrac_index;
+double global_ckov_unc;
+double global_tracking_unc;
+int global_n_sim_phots;
+
+std::vector<dirc_point> global_pion_line;
+std::vector<dirc_point> global_kaon_line;
+std::vector<std::vector<dirc_point> > global_pion_hits;
+std::vector<std::vector<dirc_point> > global_kaon_hits;
+
+void init_global_data()
+{	
+	int num_line_points = 5000;
+	int num_particle_hits = 20000;
+
+	double kmass = .4937;
+	double pimass = .1396;
+
+	global_pion_line.clear();
+	global_kaon_line.clear();
+	global_pion_hits.clear();
+	global_kaon_hits.clear();
+
+	DircBaseSim* dirc_model = global_calib_model;
+	DircDigitizer* digitizer = global_digitizer;
+
+	double particle_theta = global_particle_theta;
+	double particle_phi = global_particle_phi;
+	double particle_x = global_particle_x;
+	double particle_y = global_particle_y;
+	double energy = global_particle_energy;
+	double particle_flight_distance = global_particle_flight_distance;
+	double particle_t = global_particle_t;
+	int n_sim_phots = global_n_sim_phots;
+
+	double tracking_unc = global_tracking_unc;
+	double ckov_unc = global_ckov_unc;
+
+	double pion_old_angle = -1;
+	double kaon_old_angle = -1;
+
+//`	printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",particle_theta,particle_phi,particle_x,particle_y,energy,particle_flight_distance,ckov_unc);
+
+	double refrac_index = global_refrac_index;
+//	printf("%12.04f\n",refrac_index);
+	
+	double refrac_split = -.000;
+	double pion_refrac_mod = 1.000;
+	double kaon_refrac_mod = 1.000;
+
+	pion_refrac_mod += refrac_split;
+	kaon_refrac_mod -= refrac_split;
+
+	double pion_beta = dirc_model->get_beta(energy,pimass);
+	double kaon_beta = dirc_model->get_beta(energy,kmass);
+	//ns
+	double pion_time = particle_flight_distance/(pion_beta*.3);
+	double kaon_time = particle_flight_distance/(kaon_beta*.3);
+
+	double pion_emit_angle = 57.3*acos(1/(pion_beta*pion_refrac_mod*refrac_index));
+	double kaon_emit_angle = 57.3*acos(1/(kaon_beta*kaon_refrac_mod*refrac_index));
+
+//	printf("angles: %12.04f %12.04f   Beta: %12.04f %12.04f\n",pion_emit_angle,kaon_emit_angle,pion_beta,kaon_beta);
+
+	std::vector<dirc_point> provisional_points_lwn;
+	std::vector<dirc_point> provisional_points_lwp;
+	dirc_model->track_all_line_photons(\
+			provisional_points_lwn,\
+			provisional_points_lwp,\
+			num_line_points,\
+			pion_emit_angle,\
+			particle_theta,\
+			particle_phi,\
+			particle_x,\
+			particle_y,\
+			-17.25/2,\
+			pion_time,\
+			1);
+	for (unsigned int i = 0; i < provisional_points_lwn.size(); i++)
+	{
+		global_pion_line.push_back(provisional_points_lwn[i]);
+	}
+	for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
+	{
+		global_pion_line.push_back(provisional_points_lwp[i]);
+	}
+	provisional_points_lwn.clear();
+	provisional_points_lwp.clear();
+	dirc_model->track_all_line_photons(\
+			provisional_points_lwn,\
+			provisional_points_lwp,\
+			num_line_points,\
+			kaon_emit_angle,\
+			particle_theta,\
+			particle_phi,\
+			particle_x,\
+			particle_y,\
+			-17.25/2,\
+			kaon_time,\
+			1);
+	for (unsigned int i = 0; i < provisional_points_lwn.size(); i++)
+	{
+		global_kaon_line.push_back(provisional_points_lwn[i]);
+	}
+	for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
+	{
+		global_kaon_line.push_back(provisional_points_lwp[i]);
+	}
+
+	//Lines are drawn, now simulate data
+	for (int i = 0; i < num_particle_hits; i++)
+	{
+		std::vector<dirc_point> pion_push;
+		std::vector<dirc_point> kaon_push;
+		dirc_model->sim_rand_n_photons(\
+				pion_push,\
+				n_sim_phots,\
+				pion_old_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				pion_time,\
+				particle_theta,\
+				particle_phi,\
+				tracking_unc,\
+				ckov_unc,\
+				pion_beta);
+		digitizer->digitize_points(pion_push);
+	
+		dirc_model->sim_rand_n_photons(\
+				kaon_push,\
+				n_sim_phots,\
+				kaon_old_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				kaon_time,\
+				particle_theta,\
+				particle_phi,\
+				tracking_unc,\
+				ckov_unc,\
+				kaon_beta);
+		digitizer->digitize_points(kaon_push);
+
+		//printf("%5u %5u\n",pion_push.size(),kaon_push.size());
+
+		//printf("model run: %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",kaon_emit_angle,particle_x,particle_y,kaon_time,particle_theta,particle_phi,tracking_unc,ckov_unc,kaon_beta);
+		global_pion_hits.push_back(pion_push);
+		global_kaon_hits.push_back(kaon_push);
+	}
+}
+
+
+void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
+{
+	//do not compute gradient, so flag is irrelevant
+	//pars: pion_x_adj, pion_y_adj, kaon_x_adj, kaon_y_adj
+
+	TH1F *ll_diff_pion = new TH1F("ll_diff_pion_tmp","Difference of log likelihood real = pion",60000,-600,600);
+	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon_tmp","Difference of log likelihood real = kaon",60000,-600,600);
+
+	int num_line_points = 5000;
+	double points_dist_sq = 6000;
+	double time_spread = 2;
+	//double time_spread = 1000;
+	//double dist_spread = 40;
+	double dist_spread = 50;
+	double max_dev_sq = 5;
+	int line_recon_n = 5000;
+
+	max_dev_sq *= max_dev_sq;
+	
+	double llc = 0;
+	double llf = 0;
+
+	double mult_params = 1;
+
+	double x_shift = par[0];
+	x_shift = -.6;
+	double y_shift = par[0];
+	double y_split = par[1];
+
+	double pion_x_adj = x_shift;
+	double kaon_x_adj = x_shift;
+	double pion_y_adj = mult_params*(y_shift+y_split);
+	double kaon_y_adj = mult_params*(y_shift-y_split);
+
+
+	std::vector<dirc_point> pion_line;
+	std::vector<dirc_point> kaon_line;
+
+	for (unsigned int i = 0; i < global_pion_line.size(); i++)
+	{
+		dirc_point add_point = global_pion_line[i];
+		add_point.x += pion_x_adj;
+		add_point.y += pion_y_adj;
+		pion_line.push_back(add_point);
+
+	//	printf("%12.04f %12.04f %12.04f\n",global_pion_line[i].y,global_kaon_line[i].y,global_pion_line[i].y-global_kaon_line[i].y);
+	}
+	for (unsigned int i = 0; i < global_kaon_line.size(); i++)
+	{
+		dirc_point add_point = global_kaon_line[i];
+		add_point.x += kaon_x_adj;
+		add_point.y += kaon_y_adj;
+		kaon_line.push_back(add_point);
+	}
+
+
+	std::vector<dirc_point> sim_points;
+	for (unsigned int k = 0; k < global_pion_hits.size(); k++)
+	{//global pion hits and global kaon hits should have the same size
+		//do pion hit first
+		sim_points = global_pion_hits[k];
+		
+		llc = 0;
+		llf = 0;
+
+		
+		for (unsigned int i = 0; i < sim_points.size(); i++)
+		{
+			double min_dist_sq = 10000;
+			double cur_dist_sq = -1;
+			for (unsigned int j = 0; j < pion_line.size(); j++)
+			{
+				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);		
+				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);		
+				cur_dist_sq /= dist_spread;
+				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;	
+				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+				//printf("%12.04f\n",cur_dist_sq);
+			}
+
+			llc += std::min(min_dist_sq,max_dev_sq);
+			//printf("%4d %12.04f %12.04f\n",i,min_dist_sq,llc);
+		}
+		for (unsigned int i = 0; i < sim_points.size(); i++)
+		{
+			double min_dist_sq = 10000;
+			double cur_dist_sq = -1;
+			for (unsigned int j = 0; j < kaon_line.size(); j++)
+			{
+				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);		
+				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);		
+				cur_dist_sq /= dist_spread;
+				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;	
+				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+			}
+			//cur_mean_phi /= total_prov_points;
+			//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
+			llf += std::min(min_dist_sq,max_dev_sq);
+		}
+		ll_diff_pion->Fill(1*(llc-llf));
+
+		llc=0;
+		llf=0;
+
+		sim_points = global_kaon_hits[k];
+		for (unsigned int i = 0; i < sim_points.size(); i++)
+		{
+			double min_dist_sq = 10000;
+			double cur_dist_sq = -1;
+			for (unsigned int j = 0; j < pion_line.size(); j++)
+			{
+				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);		
+				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);		
+				cur_dist_sq /= dist_spread;
+				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;	
+				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+			}
+			llc += std::min(min_dist_sq,max_dev_sq);
+		}
+
+		for (unsigned int i = 0; i < sim_points.size(); i++)
+		{
+			double min_dist_sq = 10000;
+			double cur_dist_sq = -1;
+			for (unsigned int j = 0; j < kaon_line.size(); j++)
+			{
+				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);		
+				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);		
+				cur_dist_sq /= dist_spread;
+				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;	
+				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
+			}
+			llf += std::min(min_dist_sq,max_dev_sq);
+
+		}
+		ll_diff_kaon->Fill(1*(llc-llf));
+	}
+	//I feel unclean
+	//ll_diff_pion->Write();
+	//ll_diff_kaon->Write();
+
+	//ll_diff_pion->Rebin(20);
+	//ll_diff_kaon->Rebin(20);
+
+        std::vector<double> xr;
+        std::vector<double> yr;
+        double ival = 0;
+	double pion_integral = 0;
+	double kaon_reverse_integral = 1;
+	double integral_scale = global_pion_hits.size();
+
+        for (int i = 0; i < ll_diff_pion->GetNbinsX(); i++)
+        {
+		pion_integral += ll_diff_pion->GetBinContent(i)/integral_scale;
+		kaon_reverse_integral -= ll_diff_kaon->GetBinContent(i)/integral_scale;
+                xr.push_back(pion_integral);
+                yr.push_back(kaon_reverse_integral);
+		if (xr[i] < .001 && xr[i] > .00)
+		{
+			//printf("%8d %12.04f %12.04f\n",i,xr[i],yr[i]);
+       		}
+		if (ll_diff_pion->GetBinContent(i)/integral_scale > 0)
+		{
+			//printf("%8d %12.04f\n",i,ll_diff_pion->GetBinContent(i)/integral_scale);
+		}
+	 }
+
+        double y1,y2,x1,x2;
+        x1 = xr[0];
+        double last_x = xr[0];
+        double last_y = yr[0];
+
+        for (int i = 0; i < ll_diff_pion->GetNbinsX()-1; i++)
+        {
+                ival += (yr[i]+last_y)*(xr[i] - last_x)/2;
+		//printf("%6d %12.09f %12.04f %12.04f %12.04f %12.04f\n",i,ival,xr[i],yr[i],last_x,last_y);
+                last_x = xr[i];
+                last_y = yr[i];
+        }
+	
+	printf("params: %12.04f %12.04f %12.04f %12.04f %12.04f  val: %12.04f\n",pion_x_adj,pion_y_adj,kaon_x_adj,kaon_y_adj,dist_spread,-ival);
+	f = -ival; //return negative ROC integral
+	delete ll_diff_pion;
+	delete ll_diff_kaon;
+}
+
 
 std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 	std::vector<dirc_point> outvec;
@@ -92,6 +442,7 @@ int main(int nargs, char* argv[])
 	bool sep_updown = false;
 	bool output_peak_lambda = false;
 	bool lut_slac = false;
+	bool run_minuit_calibration = false;
 
 	int num_runs = 1000;
 	int max_particles = 6000000;
@@ -377,6 +728,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-monochrome_light") == 0)
 			{
 				monochrome_plot = true;
+			}
+			else if (strcmp(argv[i], "-run_minuit_calibration") == 0)
+			{
+				run_minuit_calibration = true;
 			}
 			else if (strcmp(argv[i], "-output_box_angles_n") == 0)
 			{
@@ -2263,8 +2618,8 @@ int main(int nargs, char* argv[])
 			std::vector<double> start_phi;
 			std::vector<dirc_point> provisional_points;
 
-			double pion_emit_angle = 57.3*acos(pion_beta/1.47);
-			double kaon_emit_angle = 57.3*acos(kaon_beta/1.47);
+			double pion_emit_angle = 57.3*acos(1/(pion_beta*refrac_index*1.47));
+			double kaon_emit_angle = 57.3*acos(1/(kaon_beta*refrac_index*1.47));
 
 
 			for (int i = 0; i < num_provisional_points; i++)
@@ -2478,7 +2833,6 @@ int main(int nargs, char* argv[])
 					ckov_unc,\
 					kaon_beta);
 
-
 			digitizer.digitize_points(sim_points);
 
 			start_phi.clear();
@@ -2664,6 +3018,109 @@ int main(int nargs, char* argv[])
 
 		printf("\nSparse Run Completed\n");
 	}
+	else if (run_minuit_calibration == true)
+	{
+		dirc_model->set_liquid_absorbtion(liquid_absorbtion);
+		dirc_model->set_liquid_index(liquid_index);
+		dirc_model->set_three_seg_mirror(three_seg_mirror);
+		dirc_model->set_sidemirror(sm_xr,sm_xl);
+	
+	
+		dirc_model->set_pmt_offset(pmt_offset);
+		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
+		dirc_model->set_bar_box_angle(bar_box_box_angle);
+		
+		global_calib_model = dynamic_cast<DircBaseSim*>(dirc_model);
+		global_digitizer = &digitizer; //check this address math
+		global_particle_theta = particle_theta;
+		global_particle_phi = particle_phi;
+		global_particle_x = particle_x;
+		global_particle_y = particle_y;
+		global_particle_t = 0; //implement flight distance later
+		global_particle_energy = energy;
+		global_particle_flight_distance = particle_flight_distance;
+		global_refrac_index = refrac_index;
+		global_n_sim_phots = n_sim_phots;
+		global_ckov_unc = ckov_unc;
+		global_tracking_unc = tracking_unc;
+
+
+		init_global_data();
+
+		int n_minuit_pars = 2;	
+		double *minuit_pars = new double[n_minuit_pars];
+		double *minuit_grad;//not_computed
+		double minuit_val;
+		double minuit_flag = 0;
+
+		minuit_pars[0] = pion_x_adj;
+		minuit_pars[1] = pion_y_adj;
+		minuit_pars[2] = kaon_x_adj;
+//		minuit_pars[3] = kaon_y_adj;
+
+		//dirc_calib_line(n_minuit_pars, minuit_grad, minuit_val, minuit_pars, minuit_flag);
+		//printf("Minuit result: %12.04f\n",minuit_val);
+
+		TMinuit minuit(n_minuit_pars);
+		minuit.SetFCN(dirc_calib_line);
+		// Vector of step, initial min and max value
+		double arglist[10];
+		double vstrt[n_minuit_pars];
+		double stp[n_minuit_pars];
+ 		double bmin[n_minuit_pars];
+ 		double bmax[n_minuit_pars];
+
+		vstrt[0] = 0; 
+		vstrt[1] = 0;
+//		vstrt[2] = 0;
+//		vstrt[3] = 0;
+//		vstrt[4] = 50;
+ 		stp[0] = .5; 
+		stp[1] = .5;
+//		stp[2] = 1;
+//		stp[3] = 1;
+//		stp[4] = 10;
+		bmin[0] = -20; 
+		bmin[1] = bmin[0];
+//		bmin[2] = bmin[0];
+//		bmin[3] = bmin[0];
+//		bmin[4] = 5;
+ 		bmax[0] = 20; 
+		bmax[1] = bmax[0];
+//		bmax[2] = bmax[0];
+//		bmax[3] = bmax[0];
+//		bmax[4] = 200;
+
+		char param_title[64];
+		int ierflg = 0;
+		for (int i = 0; i < n_minuit_pars; i++)
+		{
+			sprintf(param_title,"minuit_param_%03d",i);
+			minuit.mnparm(i, param_title, vstrt[i],stp[i],bmin[i],bmax[i],ierflg);
+		}
+
+		arglist[0] = 100;
+		arglist[1] = .01;
+		minuit.SetPrintLevel(-1);	
+		minuit.mnexcm("SIM", arglist ,1,ierflg);
+//		minuit.mnexcm("IMP", arglist ,1,ierflg);
+		
+		double x_shift = -.6;
+		double y_shift, y_split;
+		double cur_err;
+		double mult_params = 1;
+
+		minuit.GetParameter(0,y_shift,cur_err);
+		minuit.GetParameter(1,y_split,cur_err);
+
+		pion_x_adj = x_shift;
+		kaon_x_adj = x_shift;
+		pion_y_adj = mult_params*(y_shift+y_split);
+		kaon_y_adj = mult_params*(y_shift-y_split);
+		printf("minuit_calib_string:\n");
+		printf("%12.04f %12.04f %12.04f %12.04f\n",pion_x_adj,kaon_x_adj,pion_y_adj,kaon_y_adj);
+
+	}
 	else if (line_recon_n > 0)
 	{ 
 		printf("Trying line reconstruction loop mode\n");
@@ -2680,18 +3137,11 @@ int main(int nargs, char* argv[])
 		double time_spread = 2;
 		//double time_spread = 1000;
 		//double dist_spread = 40;
-		double dist_spread = 60;
+		double dist_spread = 50;
 		double max_dev_sq = 5;
 
 
-//		pion_x_adj = 0;
-//		pion_y_adj = 0;
-//		kaon_x_adj = 0;
-//		kaon_y_adj = 0;
-
 		max_dev_sq *= max_dev_sq;
-
-
 
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
@@ -2713,6 +3163,9 @@ int main(int nargs, char* argv[])
 		double pion_time = particle_flight_distance/(pion_beta*.3);
 		double kaon_time = particle_flight_distance/(kaon_beta*.3);
 		double unused_photons = 0;
+
+		double pion_t_adj = .34;
+		pion_t_adj = 0;
 
 		for (int i = 0; i < line_recon_n; i++)
 		{
@@ -2741,18 +3194,18 @@ int main(int nargs, char* argv[])
 
 			//assume its a middle bar
 			dirc_model->sim_rand_n_photons(\
-					sim_points,\
-					n_sim_phots,\
-					pion_angle,\
-					1,\
-					particle_x,\
-					particle_y,\
-					pion_time,\
-					particle_theta+const_track_off,\
-					particle_phi,\
-					tracking_unc,\
-					ckov_unc,\
-					pion_beta);
+				sim_points,\
+				n_sim_phots,\
+				pion_angle,\
+				1,\
+				particle_x,\
+				particle_y,\
+				pion_time,\
+				particle_theta+const_track_off,\
+				particle_phi,\
+				tracking_unc,\
+				ckov_unc,\
+				pion_beta);
 			digitizer.digitize_points(sim_points);
 
 			llc = 0;
@@ -2762,15 +3215,20 @@ int main(int nargs, char* argv[])
 			std::vector<double> phi_last_wall_pos;
 			std::vector<dirc_point> provisional_points_lwn;
 			std::vector<dirc_point> provisional_points_lwp;
-			double pion_refrac_mod = .996;
-			double kaon_refrac_mod = .996;
+
+			double refrac_split = -.000;
+			double pion_refrac_mod = 1.000;
+			double kaon_refrac_mod = 1.000;
+
+			pion_refrac_mod += refrac_split;
+			kaon_refrac_mod -= refrac_split;
 
 		//	pion_refrac_mod = 1;
 		//	kaon_refrac_mod = 1;
 
 
-			double pion_emit_angle = 57.3*acos(pion_beta/(pion_refrac_mod*refrac_index));
-			double kaon_emit_angle = 57.3*acos(kaon_beta/(kaon_refrac_mod*refrac_index));
+			double pion_emit_angle = 57.3*acos(1/(pion_beta*pion_refrac_mod*refrac_index));
+			double kaon_emit_angle = 57.3*acos(1/(kaon_beta*kaon_refrac_mod*refrac_index));
 
 			dirc_model->track_all_line_photons(\
 			        provisional_points_lwn,\
@@ -2791,11 +3249,13 @@ int main(int nargs, char* argv[])
 			{
 				provisional_points_lwn[i].x += pion_x_adj;
 				provisional_points_lwn[i].y += pion_y_adj;
+				provisional_points_lwn[i].t += pion_t_adj;
 			}
 			for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
 			{
 				provisional_points_lwp[i].x += pion_x_adj;
 				provisional_points_lwp[i].y += pion_y_adj;
+				provisional_points_lwp[i].t += pion_t_adj;
 			}
 
 
@@ -2827,6 +3287,7 @@ int main(int nargs, char* argv[])
 					unused_photons++;
 				}
 				llc += std::min(min_dist_sq,max_dev_sq);
+			//	printf("%4d %12.04f %12.04f\n",i,min_dist_sq,llc);
 
 			}
 			pion_unused_photons->Fill(unused_photons);
@@ -2884,8 +3345,8 @@ int main(int nargs, char* argv[])
 
 			}
 
-
-			ll_diff_pion->Fill(1*(llc-llf));
+			//Flip to make sign agree with ll
+			ll_diff_pion->Fill(-1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
 			//printf("\nll_diff pion: %12.04f\n",llc-llf);
 
@@ -2903,6 +3364,7 @@ int main(int nargs, char* argv[])
 					tracking_unc,\
 					ckov_unc,\
 					kaon_beta);
+			//printf("model run: %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",kaon_angle,particle_x,particle_y,kaon_time,particle_theta+const_track_off,particle_phi,tracking_unc,ckov_unc,kaon_beta);
 
 
 			digitizer.digitize_points(sim_points);
@@ -2931,11 +3393,13 @@ int main(int nargs, char* argv[])
 			{
 				provisional_points_lwn[i].x += pion_x_adj;
 				provisional_points_lwn[i].y += pion_y_adj;
+				provisional_points_lwn[i].t += pion_t_adj;
 			}
 			for (unsigned int i = 0; i < provisional_points_lwp.size(); i++)
 			{
 				provisional_points_lwp[i].x += pion_x_adj;
 				provisional_points_lwp[i].y += pion_y_adj;
+				provisional_points_lwp[i].t += pion_t_adj;
 			}
 			for (unsigned int i = 0; i < sim_points.size(); i++)
 			{
@@ -3021,13 +3485,51 @@ int main(int nargs, char* argv[])
 			}
 			kaon_unused_photons->Fill(unused_photons);
 
-			ll_diff_kaon->Fill(1*(llc-llf));
+			//Flip to make sign agree with ll
+			ll_diff_kaon->Fill(-1*(llc-llf));
 			phot_found_kaon->Fill(sim_points.size());
 			//printf("ll_diff kaon: %12.04f\n",llc-llf);
 
 		}
+		/*
+	        std::vector<double> xr;
+        	std::vector<double> yr;
+        	double ival = 0;
+		double pion_integral = 0;
+		double kaon_reverse_integral = 0;
+		double integral_scale = line_recon_n;
+	
+        	for (int i = 0; i < ll_diff_pion->GetNbinsX(); i++)
+        	{
+			pion_integral += ll_diff_pion->GetBinContent(i)/integral_scale;
+			kaon_reverse_integral += ll_diff_kaon->GetBinContent(i)/integral_scale;
+               		xr.push_back(pion_integral);
+                	yr.push_back(kaon_reverse_integral);
+			if (xr[i] < .001 && xr[i] > .00)
+			{
+				printf("%8d %12.04f %12.04f\n",i,xr[i],yr[i]);
+       			}
+			if (ll_diff_pion->GetBinContent(i)/integral_scale > 0)
+			{
+				//printf("%8d %12.04f\n",i,ll_diff_pion->GetBinContent(i)/integral_scale);
+			}
+	 	}
 
+        	double y1,y2,x1,x2;
+        	x1 = xr[0];
+        	double last_x = xr[0];
+        	double last_y = yr[0];
+	
+        	for (int i = 0; i < ll_diff_pion->GetNbinsX()-1; i++)
+        	{
+        	        ival += (yr[i]+last_y)*(xr[i] - last_x)/2;
+			//printf("%6d %12.09f %12.04f %12.04f %12.04f %12.04f\n",i,ival,xr[i],yr[i],last_x,last_y);
+        	        last_x = xr[i];
+        	        last_y = yr[i];
+        	}
+		*/
 		printf("\nLine Recon Run Completed\n");
+		//printf("%12.04f\n",ival);
 	}
 	else
 	{ 
@@ -3187,7 +3689,7 @@ int main(int nargs, char* argv[])
 			}
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
-
+			
 			ll_diff_pion->Fill(1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
 
@@ -3213,6 +3715,7 @@ int main(int nargs, char* argv[])
 				//just with the up
 				llc = pdf_pion->get_log_likelihood(sim_points_up);
 				llf = pdf_kaon->get_log_likelihood(sim_points_up);
+
 
 				ll_diff_pion_up->Fill(1*(llc-llf));
 
@@ -4040,11 +4543,11 @@ int main(int nargs, char* argv[])
 			std::vector<double> phi_last_wall_pos;
 			std::vector<dirc_point> provisional_points_lwn;
 			std::vector<dirc_point> provisional_points_lwp;
-			double pion_refrac_mod = .996;
-			double kaon_refrac_mod = .996;
+			double pion_refrac_mod = 1.000;
+			double kaon_refrac_mod = 1.000;
 
-			double pion_emit_angle = 57.3*acos(pion_beta/(pion_refrac_mod*refrac_index));
-			double kaon_emit_angle = 57.3*acos(kaon_beta/(kaon_refrac_mod*refrac_index));
+			double pion_emit_angle = 57.3*acos(1/(pion_beta*pion_refrac_mod*refrac_index));
+			double kaon_emit_angle = 57.3*acos(1/(kaon_beta*kaon_refrac_mod*refrac_index));
 
 			dirc_model->track_all_line_photons(\
 					provisional_points_lwn,\
