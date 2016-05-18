@@ -374,7 +374,7 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
                 last_y = yr[i];
         }
 	
-	printf("params: %12.04f %12.04f %12.04f %12.04f %12.04f  val: %12.04f\n",pion_x_adj,pion_y_adj,kaon_x_adj,kaon_y_adj,dist_spread,-ival);
+//	printf("params: %12.04f %12.04f %12.04f %12.04f %12.04f  val: %12.04f\n",pion_x_adj,pion_y_adj,kaon_x_adj,kaon_y_adj,dist_spread,-ival);
 	f = -ival; //return negative ROC integral
 	delete ll_diff_pion;
 	delete ll_diff_kaon;
