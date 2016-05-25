@@ -517,9 +517,11 @@ int main(int nargs, char* argv[])
 	double sm_xl = -10000000;
 	double sm_xr = -sm_xl;
 
+	//double s_func_x = 6;
 	double s_func_x = 6;
 	double s_func_y = s_func_x;
-	double s_func_t = 2;
+	//double s_func_t = 2;
+	double s_func_t = 1.0;
 	double sfunc_sig = 1;
 
 	int n_sim_phots = 40;
@@ -4217,8 +4219,10 @@ int main(int nargs, char* argv[])
 
 		double oval_cut_angle_center = (pion_cerenkov+kaon_cerenkov)/2;
 		double oval_cut_angle_spread_sq = .018;//radians
+		//double oval_cut_angle_spread_sq = .2;//radians
 		oval_cut_angle_spread_sq *= oval_cut_angle_spread_sq;
 		double oval_cut_time_spread_sq = 2;//ns
+		//double oval_cut_time_spread_sq = 5;//ns
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
 		double oval_cut_val = -1;
 

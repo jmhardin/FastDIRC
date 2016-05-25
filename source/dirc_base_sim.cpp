@@ -76,6 +76,9 @@ DircBaseSim::DircBaseSim(
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
 	quartzLiquidY = upperWedgeBottom + 15;
+	
+	use_liquid_n = false;
+
 
 	//Negative to make reflections easier
 	wedgeFarPlaneNx = 0; //Shouldn't be needed
@@ -198,6 +201,21 @@ double DircBaseSim::get_quartz_n(double lambda) {
 	n_lam = sqrt(1 + B1*lam2/(lam2-C1) + B2*lam2/(lam2-C2) + B3*lam2/(lam2-C3));
 
 	return n_lam;
+}
+double DircBaseSim::get_liquid_n(double lambda) 
+{
+	if (use_liquid_n == true)
+	{
+		return liquidIndex;
+	}
+	else
+	{
+		//2 line approximation
+		double ln1 = 1.3786 - 0.1*lambda/1000;
+		double ln2 = 1.3529 - 0.0353*lambda/1000;
+		double rval = std::max(ln1,ln2);
+		return rval;
+	}
 }
 bool DircBaseSim::quartz_transmission_mc(double R, double lambda) {
 	int ind_transmittance;
@@ -484,6 +502,9 @@ void DircBaseSim::fill_rand_phi(\
 
 	int tmp_updown = 0;
 
+	double saveGeneralQuartzIndex = quartzIndex;
+	double saveGeneralLiquidIndex = liquidIndex;
+
 	for (int i = 0; i < numPhots; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		sourceOff = -rand_gen->Uniform(0,barDepth);
@@ -497,8 +518,10 @@ void DircBaseSim::fill_rand_phi(\
 			temit = emitAngle + rand_add;
 		} else {
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
+			quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+			liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 		}
-		mm_index = (sourceOff - barDepth)*1.47/cos(particleTheta/57.3);
+		mm_index = (sourceOff - barDepth)*quartzIndex/cos(particleTheta/57.3);
 
 		x = 0;
 		y = 0;
@@ -573,6 +596,8 @@ void DircBaseSim::fill_rand_phi(\
 		out_val.updown = tmp_updown;
 		ovals.push_back(out_val);
 	}
+	quartzIndex = saveGeneralQuartzIndex;
+	liquidIndex = saveGeneralLiquidIndex;
 }
 std::vector<std::pair<double,double> > DircBaseSim::get_refraction_rand_phi(\
 		std::vector<double> &before_interface,\
@@ -638,7 +663,7 @@ std::vector<std::pair<double,double> > DircBaseSim::get_refraction_rand_phi(\
 		} else {
 			temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
 		}
-		mm_index = (sourceOff - barDepth)*1.47;
+		mm_index = (sourceOff - barDepth)*quartzIndex;
 
 		x = 0;
 		y = 0;
@@ -768,6 +793,8 @@ void DircBaseSim::fill_reg_phi(\
 	double cos_regphi;
 
 	int adj_n_photons_phi = n_photons_phi/cos(particle_theta/57.3);
+	double saveGeneralQuartzIndex = quartzIndex;
+	double saveGeneralLiquidIndex = liquidIndex;
 
 	for (int i = 0; i < n_photons_z; i++) {
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
@@ -785,9 +812,11 @@ void DircBaseSim::fill_reg_phi(\
 				temit = emitAngle + rand_add;
 			} else {
 				temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
+				quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+				liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 			}
 
-			mm_index = (sourceOff - barDepth)*1.47;
+			mm_index = (sourceOff - barDepth)*quartzIndex/cos_ptheta;
 
 			x = 0;
 			y = 0;
@@ -869,6 +898,8 @@ void DircBaseSim::fill_reg_phi(\
 			ovals.push_back(out_val);
 		}
 	}
+	quartzIndex = saveGeneralQuartzIndex;
+	liquidIndex = saveGeneralLiquidIndex;
 
 }
 bool DircBaseSim::track_single_photon(\
@@ -1957,6 +1988,8 @@ bool DircBaseSim::optical_interface_z(\
 	//n1 is starting index of refraction, n2 is ending
 	//Assume that it's going through the z plane
 	//(this will change the ordering when called in our current geometry)
+
+	;
 
 	//dz and dy are flipped, so this is really acos
 	double before_ang = acos(dz);

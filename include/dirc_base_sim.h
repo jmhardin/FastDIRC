@@ -66,6 +66,7 @@ protected:
 
 	double liquidIndex;
 	double liquidAbsorbtion;
+	bool use_liquid_n;
 	std::vector<double> dist_traveled;
 	bool kaleidoscope_plot;
 	
@@ -121,6 +122,7 @@ protected:
 		double beta /* = -1*/);
 	
 	double get_quartz_n(double lambda);
+	double get_liquid_n(double lambda);
 	bool optical_interface_z(\
 		double n1,\
 		double n2,\
