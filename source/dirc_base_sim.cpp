@@ -64,7 +64,7 @@ DircBaseSim::DircBaseSim(
 
 	//	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
 
-	//upperWedgeClosePlaneD = wedgeClosePlaneD; //should be in the same plane;
+	//upperWedgeClosePlaneD = wedgeClosePlaneD; //should be in the same plane/;
 
 	upperWedgeFarPlaneNx = 0; //Shouldn't be needed
 	upperWedgeFarPlaneNy = 0;
@@ -78,6 +78,7 @@ DircBaseSim::DircBaseSim(
 	quartzLiquidY = upperWedgeBottom + 15;
 	
 	use_liquid_n = false;
+	use_quartz_n_for_liquid = false;
 
 
 	//Negative to make reflections easier
@@ -202,11 +203,19 @@ double DircBaseSim::get_quartz_n(double lambda) {
 
 	return n_lam;
 }
+void DircBaseSim::set_use_quartz_n_for_liquid(bool iu)
+{
+	use_quartz_n_for_liquid = iu;
+}
 double DircBaseSim::get_liquid_n(double lambda) 
 {
 	if (use_liquid_n == true)
 	{
 		return liquidIndex;
+	}
+	if (use_quartz_n_for_liquid == true)
+	{
+		return get_quartz_n(lambda);
 	}
 	else
 	{
@@ -421,6 +430,11 @@ void DircBaseSim::sim_lut_points(\
 
 	double c_mm_ns = 300;
 
+	double saveGeneralQuartzIndex = quartzIndex;
+	double saveGeneralLiquidIndex = liquidIndex;
+	//Using approximate peak wavelength
+	quartzIndex = get_quartz_n(380);//Painful way of doing this - saving and correcting is inelegant
+	liquidIndex = get_liquid_n(380);//Painful way of doing this - saving and correcting is inelegant
 	for (int i = 0; i < n_photons; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
@@ -465,6 +479,8 @@ void DircBaseSim::sim_lut_points(\
 		phis.push_back(randPhi);
 		thetas.push_back(randTheta);
 	}
+	quartzIndex = saveGeneralQuartzIndex;
+	liquidIndex = saveGeneralLiquidIndex;
 }
 void DircBaseSim::fill_rand_phi(\
 		std::vector<dirc_point> &ovals,\

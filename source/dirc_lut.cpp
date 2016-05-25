@@ -63,91 +63,6 @@ void DircLUT::get_base_phi_theta_all(std::vector<lut_entry> &rval, std::vector<d
 	}
 //	return rval;
 }
-/*
-void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<dirc_point> pts,double inc_phi, double inc_theta,double inc_y)
-{
-	//report inc y as distance from top of bar
-	double bar_length = 4900; //hardcoded for now, but improving
-	double quartz_index = 1.47; //hardcoded for now, but improving
-	double c_mm_ns = 300; //hardcoded for now, but improving
-	std::vector<lut_entry> table_res;
-	get_base_phi_theta_all(table_res, pts);
-	
-	rval.clear();
-	
-	double px,py,pz;
-
-	px = sin(inc_phi/57.3)*sin(inc_theta/57.3);
-	py = cos(inc_phi/57.3)*sin(inc_theta/57.3);
-	pz = cos(inc_theta/57.3);
-
-	//possible orientations;
-	double pxs[8];
-	double pys[8];
-	double pzs[8];
-	int ind = 0;
-	//I'm pretty sure there are only 8 geometries to test here.
-	for (int i = -1; i <=1; i+=2)
-	{
-		for (int j = -1; j <=1; j+=2)
-		{
-			for (int k = -1; k <=1; k+=2)
-			{
-				pxs[ind] = i*px;
-				pys[ind] = j*py;
-				pzs[ind] = k*pz;
-				//printf("p: %d %12.04f %12.04f %12.04f v: %12.04f %12.04f, %12.04f\n",ind,pxs[j],pys[j],pzs[j]);
-				ind++;
-			}
-		}
-	}
-
-
-	double fill_val = 0;
-	double vx,vy,vz;
-	double vphi,vtheta;
-	double vt,vt_direct,vt_indirect;
-	double y_direct = .5*bar_length - inc_y;
-	double y_indirect = 1.5*bar_length + inc_y;
-
-	double internal_refl_limit = sqrt(quartz_index*quartz_index-1)/quartz_index;
-
-	double time_cut = 3;//very loose 3ns cut;
-	double fabs_off = 0;//fudge factor;
-	for (unsigned int i = 0; i < table_res.size(); i++)
-	{
-		vphi = table_res[i].phi;
-		vtheta = table_res[i].theta;
-		vt = table_res[i].time;
-		
-		vx = sin(vphi)*sin(vtheta);
-		vy = cos(vtheta);
-		vz = cos(vphi)*sin(vtheta);
-
-		vt_direct = vt + quartz_index*y_direct/(c_mm_ns*vy);		
-		vt_indirect = vt + quartz_index*y_indirect/(c_mm_ns*vy);	
-		
-		//not totally internal reflected - do this cut before hand
-		if (vz > internal_refl_limit || vx > internal_refl_limit) continue;
-
-		if (fabs(fabs(vt_direct)-fabs_off) > time_cut && fabs(fabs(vt_indirect)-fabs_off) > time_cut)
-		{
-			//printf("%12.04f %12.04f %12.04f\n",vt,fabs(vt_direct),fabs(vt_indirect));	
-			continue;//Does not pass time cut
-		}
-		//printf("%12.04f %12.04f %12.04f\n",vt,vt_direct,vt_indirect);	
-
-		for (int j = 0; j < 8; j++)
-		{
-			//printf("p: %12.04f %12.04f %12.04f v: %12.04f %12.04f, %12.04f\n",pxs[j],pys[j],pzs[j],vx,vy,vz);
-			fill_val = acos(vx*pxs[j] + vy*pys[j] + vz*pzs[j]);
-			
-			rval.push_back(fill_val);
-		}	
-	}
-//	return rval;
-}
-*/
 void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> &ret_dt, std::vector<dirc_point> pts,double inc_phi, double inc_theta,double inc_y)
 {
 	ret_dt.clear();//syncronized return of time deviations
@@ -169,7 +84,6 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 	double pys[4];
 	double pzs[4];
 	int ind = 0;
-	//I'm pretty sure there are only 8 geometries to test here.
 	for (int i = -1; i <=1; i+=2)
 	{
 		for (int j = -1; j <=1; j+=2)
@@ -192,7 +106,7 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 
 	double internal_refl_limit = sqrt(quartz_index*quartz_index-1)/quartz_index;
 
-	double time_cut = 10;//very loose 3ns cut;
+	double time_cut = 10;//very loose 10ns cut;
 	double fabs_off = 0;//fudge factor;
 	double angle_mid = 47.1/57.3;
 	double angle_loose = 3/57.3;

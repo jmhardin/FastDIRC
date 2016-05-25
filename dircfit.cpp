@@ -550,6 +550,7 @@ int main(int nargs, char* argv[])
 
 //	double overlap_x = -1;
 
+	bool use_quartz_for_liquid = false;
 	bool three_seg_mirror = true;
 	bool fill_distributions	= false;
 	bool fill_kinematics_yields = false;
@@ -710,6 +711,10 @@ int main(int nargs, char* argv[])
 				i++;
 				particle_theta = atof(argv[i]);
 				particle_theta_mean = particle_theta;
+			}
+			else if (strcmp(argv[i], "-use_quartz_for_liquid") == 0)
+			{
+				use_quartz_for_liquid = true;
 			}
 			else if (strcmp(argv[i], "-force_kinematics") == 0)
 			{
@@ -1049,7 +1054,7 @@ int main(int nargs, char* argv[])
 	dirc_model->set_kaleidoscope_plot(kaleidoscope_plot);	
 	dirc_model->set_pmt_plane_zs(pmt_min_z,pmt_max_z);
 	dirc_model->set_large_mirror_zs(large_mirror_min_z,large_mirror_max_z);
-
+	dirc_model->set_use_quartz_n_for_liquid(use_quartz_for_liquid);
 
 	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
 	muon_beta=pion_beta=kaon_beta=-1;
@@ -4308,6 +4313,7 @@ int main(int nargs, char* argv[])
 				iter_mean = pion_lut_mean/pion_lut_count;
 				//printf("%3d %12.04f %12.04f\n",j,iter_mean, pion_lut_count);	
 			}
+			//printf("Pion Peak: %12.04f\n",57.3*iter_mean);
 			//rerun with oval cut averaging per point
 			dirc_lut->get_ckov_theta_single_oval_cut(pion_ckov, \
 			       	pion_dts, \

@@ -67,6 +67,8 @@ protected:
 	double liquidIndex;
 	double liquidAbsorbtion;
 	bool use_liquid_n;
+	bool use_quartz_n_for_liquid;
+      
 	std::vector<double> dist_traveled;
 	bool kaleidoscope_plot;
 	
@@ -223,6 +225,7 @@ public:
 	double get_bar_offset(int bar);
 	int get_bar_from_x(double x);
 	
+	void set_use_quartz_n_for_liquid(bool iu);
 	//Random seed chosen arbitrarily
 	//default parameters correspond to babar dirc bars
 	//default upper wedge top is for gluex implementation.  Set to 0 to remove upper wedge
