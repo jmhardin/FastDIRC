@@ -63,9 +63,9 @@ void DircLUT::get_base_phi_theta_all(std::vector<lut_entry> &rval, std::vector<d
 	}
 //	return rval;
 }
-void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> &ret_dt, std::vector<dirc_point> pts,double inc_phi, double inc_theta,double inc_y)
+void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> &ret_dt_dl, std::vector<dirc_point> pts,double inc_phi, double inc_theta,double inc_y)
 {
-	ret_dt.clear();//syncronized return of time deviations
+	ret_dt_dl.clear();//syncronized return of time deviations divided by propagation distance in ps/mm
 	rval.clear();//DO NOT FORGET!
 	
 	//report inc y as distance from top of bar
@@ -141,6 +141,8 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 
 			vt_direct = vt + quartz_index*y_direct/(c_mm_ns*vy);		
 			vt_indirect = vt + quartz_index*y_indirect/(c_mm_ns*vy);	
+			//vt_direct = vt + quartz_index*y_direct/(c_mm_ns*vy);		
+			//t_indirect = vt + quartz_index*y_indirect/(c_mm_ns*vy);	
 
 			//not totally internal reflected - do this cut before hand
 			if (vz > internal_refl_limit || vx > internal_refl_limit) 
@@ -194,11 +196,13 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 				
 					if (time_direction == 1)
 					{
-						ret_dt.push_back(vt_direct);
+						//ret_dt_dl.push_back(vt_direct);
+						ret_dt_dl.push_back(vt_direct*vy/y_direct*1000);
 					}
 					else if (time_direction == -1)
 					{
-						ret_dt.push_back(vt_indirect);
+						//ret_dt_dl.push_back(vt_indirect);
+						ret_dt_dl.push_back(vt_indirect*vy/y_indirect*1000);
 					}
 					added_angle = true; 
 					//break;
@@ -208,8 +212,9 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 	}
 	//printf("%d / %d\n",rval.size(),pts.size());
 }
-void DircLUT::get_ckov_theta_single_oval_cut(std::vector<double> &rval, \
-	std::vector<double> &ret_dt, \
+void DircLUT::get_ckov_theta_single_oval_cut(
+	std::vector<double> &rval, \
+	std::vector<double> &ret_dt_dl, \
 	std::vector<dirc_point> pts, \
 	double inc_phi, \
 	double inc_theta, \
@@ -218,7 +223,7 @@ void DircLUT::get_ckov_theta_single_oval_cut(std::vector<double> &rval, \
 	double center_ang_spread_sq,\
 	double time_spread_sq)
 {
-	ret_dt.clear();//syncronized return of time deviations
+	ret_dt_dl.clear();//syncronized return of time deviations
 	rval.clear();//DO NOT FORGET!
 	
 	//report inc y as distance from top of bar
@@ -349,11 +354,13 @@ void DircLUT::get_ckov_theta_single_oval_cut(std::vector<double> &rval, \
 			
 				if (time_direction == 1)
 				{
-					ret_dt.push_back(vt_direct);
+					//ret_dt.push_back(vt_direct);
+					ret_dt_dl.push_back(vt_direct*vy/y_direct*1000);
 				}
 				else if (time_direction == -1)
 				{
-					ret_dt.push_back(vt_indirect);
+					//ret_dt.push_back(vt_indirect);
+					ret_dt_dl.push_back(vt_indirect*vy/y_indirect*1000);
 				}
 				added_angle = true; 
 				//break;

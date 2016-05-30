@@ -1111,8 +1111,8 @@ int main(int nargs, char* argv[])
 	TH1F *pion_lut_angles = new TH1F("pion_lut_angles","Number of angles from the LUT for pion event",5001,-.05,5000.5);
 	TH1F *kaon_lut_angles = new TH1F("kaon_lut_angles","Number of angles from the LUT for kaon event",5001,-.05,5000.5);
 
-	TH2F *pion_lut_dt_v_dang = new TH2F("pion_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Pion LUT",1000,-50,50,800,-20,20);
-	TH2F *kaon_lut_dt_v_dang = new TH2F("kaon_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Kaon LUT",1000,-50,50,800,-20,20);
+	TH2F *pion_lut_dt_v_dang = new TH2F("pion_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Pion LUT",1000,-50,50,800,-2,2);
+	TH2F *kaon_lut_dt_v_dang = new TH2F("kaon_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Kaon LUT",1000,-50,50,800,-2,2);
 
 	TH1F *box_check_x = new TH1F("box_check_x","Check Box X",(maxx-minx)/(.1*res_enhance*resx),minx,maxx);
 	TH1F *box_check_y = new TH1F("box_check_y","Check Box Y",(maxy-miny)/(.1*res_enhance*resy),miny,maxy);
@@ -4226,7 +4226,7 @@ int main(int nargs, char* argv[])
 		double oval_cut_angle_spread_sq = .018;//radians
 		//double oval_cut_angle_spread_sq = .2;//radians
 		oval_cut_angle_spread_sq *= oval_cut_angle_spread_sq;
-		double oval_cut_time_spread_sq = 2;//ns
+		double oval_cut_time_spread_sq = 1.5;//ns
 		//double oval_cut_time_spread_sq = 5;//ns
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
 		double oval_cut_val = -1;
