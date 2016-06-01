@@ -4568,7 +4568,7 @@ int main(int nargs, char* argv[])
 	}
 	if (sim_time_test_n > 0)
 	{
-		printf("Timing %d single particle simulations\n");
+		printf("Timing %d single particle simulations\n",sim_time_test_n);
 		clock_t tmp_clock = clock();
 		std::vector<dirc_point> sim_points;
 		for (int i = 0; i < sim_time_test_n; i++)
