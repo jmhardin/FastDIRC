@@ -443,6 +443,7 @@ int main(int nargs, char* argv[])
 	bool output_peak_lambda = false;
 	bool lut_slac = false;
 	bool run_minuit_calibration = false;
+	bool perform_chromatic_correction = true;
 
 	int num_runs = 1000;
 	int max_particles = 6000000;
@@ -731,6 +732,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-kaleidoscope_plot") == 0)
 			{
 				kaleidoscope_plot = true;
+			}
+			else if (strcmp(argv[i], "-no_chromatic_correction") == 0)
+			{
+				perform_chromatic_correction = false;
 			}
 			else if (strcmp(argv[i], "-monochrome_light") == 0)
 			{
@@ -1111,8 +1116,8 @@ int main(int nargs, char* argv[])
 	TH1F *pion_lut_angles = new TH1F("pion_lut_angles","Number of angles from the LUT for pion event",5001,-.05,5000.5);
 	TH1F *kaon_lut_angles = new TH1F("kaon_lut_angles","Number of angles from the LUT for kaon event",5001,-.05,5000.5);
 
-	TH2F *pion_lut_dt_v_dang = new TH2F("pion_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Pion LUT",1000,-50,50,800,-2,2);
-	TH2F *kaon_lut_dt_v_dang = new TH2F("kaon_lut_dt_v_dang","Time difference (ns) versus angle error (mrad) for Kaon LUT",1000,-50,50,800,-2,2);
+	TH2F *pion_lut_dt_v_dang = new TH2F("pion_lut_dt_v_dang","Normed Time difference (ns/m) versus angle error (mrad) for Pion LUT",1000,-50,50,800,-2,2);
+	TH2F *kaon_lut_dt_v_dang = new TH2F("kaon_lut_dt_v_dang","Normed Time difference (ns/m) versus angle error (mrad) for Kaon LUT",1000,-50,50,800,-2,2);
 
 	TH1F *box_check_x = new TH1F("box_check_x","Check Box X",(maxx-minx)/(.1*res_enhance*resx),minx,maxx);
 	TH1F *box_check_y = new TH1F("box_check_y","Check Box Y",(maxy-miny)/(.1*res_enhance*resy),miny,maxy);
@@ -1500,99 +1505,6 @@ int main(int nargs, char* argv[])
 					sim_points[i].t += t[n];
 					// 					printf("%12.04f\n",sim_points[i].t);
 				}
-				//simulate pmt hits from background events that occur within t ns of the primary event
-
-				/*Ignore confounding for now
-				  confounded_tally=0;
-				  for (unsigned int j =0; j < r;j++){
-
-				  if (abs(event_index[n] - event_index[j]) > broaden_events)
-				  {
-				  continue;
-				  }
-
-				  if(fabs(t[n]-t[j])<time_window && j!=n){
-				  confounded_tally++; 
-				  if(abs(PID[j])==2 ||PID[j]==3){
-
-				  dirc_model->sim_rand_n_photons(\
-				  confound_points,\
-				  n_sim_phots,\
-				  47.135,\
-				  BAR[j],\
-				  x[j],\
-				  y[j],\
-				  theta[j],\
-				  phi[j],\
-				  tracking_unc,\
-				  ckov_unc,\
-				  1);
-				  }
-				  else if(abs(PID[j])==8||PID[j]==9){
-				  pion_beta = dirc_model->get_beta(E[j],pimass);
-				  pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
-
-				  dirc_model->sim_rand_n_photons(\
-				  confound_points,\
-				  n_sim_phots,\
-				  pion_angle,\
-				  BAR[j],\
-				  x[j],\
-				  y[j],\
-				  theta[j],\
-				  phi[j],\
-				  tracking_unc,\
-				  ckov_unc,\
-				  pion_beta);
-
-				  }
-				  else if(abs(PID[j])==11 || PID[j]==12){
-				  kaon_beta = dirc_model->get_beta(E[j],kmass);
-				  kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
-
-				  dirc_model->sim_rand_n_photons(\
-				  confound_points,\
-				  n_sim_phots,\
-				  kaon_angle,\
-				  BAR[j],\
-				  x[j],\
-				  y[j],\
-				  theta[j],\
-				  phi[j],\
-				  tracking_unc,\
-				  ckov_unc,\
-				  kaon_beta);
-
-				  }
-				  else if(abs(PID[j])==5 || PID[j]==6){
-				  muon_beta = dirc_model->get_beta(E[j],mumass);
-				  muon_angle = rad_to_deg*acos(1/(refrac_index*muon_beta));
-
-				  dirc_model->sim_rand_n_photons(\
-				  confound_points,\
-				  n_sim_phots,\
-				  muon_angle,\
-				  BAR[j],\
-				x[j],\
-					y[j],\
-					theta[j],\
-					phi[j],\
-					tracking_unc,\
-					ckov_unc,\
-					muon_beta);
-			}
-			}
-			for (unsigned int i = 0; i < confound_points.size(); i++)
-			{
-				confound_points[i].t += t[j];
-				// 						confound_points[i].x += 150;
-				sim_points.push_back(confound_points[i]);
-			}
-			confound_points.clear();
-			}//end confounded point generation
-			*/
-				// 				printf("Found %i confounding events for track %i. sim_points.size()=%lu\n",confounded_tally,n,sim_points.size());
-
 
 				//Begin analysis
 
@@ -1613,19 +1525,6 @@ int main(int nargs, char* argv[])
 				dirc_model->set_upper_wedge_angle_diff(\
 						spread_ang.Gaus(0,0),\
 						spread_ang.Gaus(0,0));
-				//Make Prog Sep with proper points
-				/*
-				   ll_diff = progressive_separation->get_ll_progressive(\
-				   sim_points,\
-				   BAR[n],\
-				   E[n],\
-				   x[n],\
-				   y[n],\
-				   theta[n],\
-				   phi[n],\
-				   tracking_unc,\
-				   ckov_unc);
-				 */
 			}
 			else
 			{
@@ -1751,50 +1650,15 @@ int main(int nargs, char* argv[])
 						low_min = std::min(low_min,tmp_t);
 					}
 				}
-				//printf("Pion Avg x y t: %12.04f %12.04f %12.04f\n",avg_x/hits_trk_is_kaon.size(),avg_y/hits_trk_is_kaon.size(),avg_t/hits_trk_is_kaon.size());
-				//printf("kaon min_t: %12.04f\n",min_t);
 				pdf_as_pion->set_support(hits_trk_is_pion);
 				pdf_as_kaon->set_support(hits_trk_is_kaon);
 
 
-				// 					printf("betas: %12.04f %12.04f\n",pion_mc_beta,kaon_mc_beta);
-
 				llc = pdf_as_pion->get_log_likelihood(sim_points);
 				llf = pdf_as_kaon->get_log_likelihood(sim_points);
 
-				// 					printf("%06d\n",sim_points.size());
-
 				ll_diff = llc - llf;
 
-				// 					printf("\n%12.04f %12.04f %12.04f\n",llc,llf,ll_diff);
-				int correct_id = 1;
-				if (ll_diff*pion_kaon_diff < 0)
-				{
-					correct_id = 0;
-					for (unsigned int k = 0; k < sim_points.size(); k++)
-					{
-						//  							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
-						log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
-							log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
-							log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
-					}
-				}
-				for (unsigned int k = 0; k < sim_points.size(); k++)
-				{
-					//  						printf("%12.04f %12.04f %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t);
-				}
-				if (ll_diff == ll_diff)
-				{
-					// 						printf("\n%12.04f %12.04f %12.04f %d\n",llc,llf,ll_diff,correct_id);
-					for (unsigned int k = 0; k < sim_points.size(); k++)
-					{
-						// 							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
-						log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
-							log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
-							log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
-
-					}
-				}
 			}
 
 			timing_clock = clock() - timing_clock;
@@ -1802,7 +1666,6 @@ int main(int nargs, char* argv[])
 			simulation_time->Fill(((float)timing_clock)/(CLOCKS_PER_SEC)*1000);
 
 
-			// 				printf("\nPID[n]=%i loglikehood difference(pion-kaon)=%f\n",PID[n],ll_diff);
 			if(abs(PID[n])==8||PID[n]==9){
 				ll_diff_pion->Fill(ll_diff);
 
@@ -1880,21 +1743,6 @@ int main(int nargs, char* argv[])
 				min_pval);//could make this an array that is filled...
 		//Might be worth making a new copy each time
 		DircProbabilitySeparation * sep_pdfs_mc;
-/*
-		DircProgressiveSeparation *progressive_separation = \
-								    new DircProgressiveSeparation(\
-										    dirc_model,\
-										    n_phi_phots*n_z_phots,\
-										    n_step_phots,\
-										    sfunc_sig,\
-										    s_func_x,\
-										    s_func_y,\
-										    s_func_t,\
-										    kmass,\
-										    pimass,\
-										    prog_thresh);
-
-*/
 		unsigned int r=0;
 		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
@@ -2023,36 +1871,11 @@ int main(int nargs, char* argv[])
 							pion_beta = dirc_model->get_beta(E[j],pimass);
 							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 
-							// 							dirc_model->sim_rand_n_photons(\
-							confound_points,\
-								n_sim_phots,\
-								pion_angle,\
-								BAR[j],\
-								x[j],\
-								y[j],\
-								theta[j],\
-								phi[j],\
-								tracking_unc,\
-								ckov_unc,\
-								pion_beta);
 
 						}
 						else if(abs(PID[j])==11 || PID[j]==12){
 							kaon_beta = dirc_model->get_beta(E[j],kmass);
 							kaon_angle = rad_to_deg*acos(1/(refrac_index*kaon_beta));
-
-							// 							dirc_model->sim_rand_n_photons(\
-							confound_points,\
-								n_sim_phots,\
-								kaon_angle,\
-								BAR[j],\
-								x[j],\
-								y[j],\
-								theta[j],\
-								phi[j],\
-								tracking_unc,\
-								ckov_unc,\
-								kaon_beta);
 
 						}
 						else if(abs(PID[j])==5 || PID[j]==6){
@@ -2101,18 +1924,6 @@ int main(int nargs, char* argv[])
 							spread_ang.Gaus(0,0),\
 							spread_ang.Gaus(0,0));
 					printf("Progressive separation removed pending optical sim upgrade\n");
-/*
-					ll_diff = progressive_separation->get_ll_progressive(\
-							sim_points,\
-							BAR[n],\
-							E[n],\
-							x[n],\
-							y[n],\
-							theta[n],\
-							phi[n],\
-							tracking_unc,\
-							ckov_unc);
-*/
 				}
 				else
 				{
@@ -2189,22 +2000,6 @@ int main(int nargs, char* argv[])
 									log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
 									log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
 									log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
-						}
-					}
-					for (unsigned int k = 0; k < sim_points.size(); k++)
-					{
-						//  						printf("%12.04f %12.04f %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t);
-					}
-					if (ll_diff == ll_diff)
-					{
-						// 						printf("\n%12.04f %12.04f %12.04f %d\n",llc,llf,ll_diff,correct_id);
-						for (unsigned int k = 0; k < sim_points.size(); k++)
-						{
-							// 							printf("%12.04f %12.04f %12.04f ll: %12.04f %12.04f, %12.04f\n",sim_points[k].x,sim_points[k].y,sim_points[k].t,\
-							log(pdf_as_pion->get_single_likelihood(sim_points[k])),\
-								log(pdf_as_kaon->get_single_likelihood(sim_points[k])),\
-								log(pdf_as_pion->get_single_likelihood(sim_points[k]))-log(pdf_as_kaon->get_single_likelihood(sim_points[k])));
-
 						}
 					}
 				}
@@ -3498,43 +3293,6 @@ int main(int nargs, char* argv[])
 			//printf("ll_diff kaon: %12.04f\n",llc-llf);
 
 		}
-		/*
-	        std::vector<double> xr;
-        	std::vector<double> yr;
-        	double ival = 0;
-		double pion_integral = 0;
-		double kaon_reverse_integral = 0;
-		double integral_scale = line_recon_n;
-	
-        	for (int i = 0; i < ll_diff_pion->GetNbinsX(); i++)
-        	{
-			pion_integral += ll_diff_pion->GetBinContent(i)/integral_scale;
-			kaon_reverse_integral += ll_diff_kaon->GetBinContent(i)/integral_scale;
-               		xr.push_back(pion_integral);
-                	yr.push_back(kaon_reverse_integral);
-			if (xr[i] < .001 && xr[i] > .00)
-			{
-				printf("%8d %12.04f %12.04f\n",i,xr[i],yr[i]);
-       			}
-			if (ll_diff_pion->GetBinContent(i)/integral_scale > 0)
-			{
-				//printf("%8d %12.04f\n",i,ll_diff_pion->GetBinContent(i)/integral_scale);
-			}
-	 	}
-
-        	double y1,y2,x1,x2;
-        	x1 = xr[0];
-        	double last_x = xr[0];
-        	double last_y = yr[0];
-	
-        	for (int i = 0; i < ll_diff_pion->GetNbinsX()-1; i++)
-        	{
-        	        ival += (yr[i]+last_y)*(xr[i] - last_x)/2;
-			//printf("%6d %12.09f %12.04f %12.04f %12.04f %12.04f\n",i,ival,xr[i],yr[i],last_x,last_y);
-        	        last_x = xr[i];
-        	        last_y = yr[i];
-        	}
-		*/
 		printf("\nLine Recon Run Completed\n");
 		//printf("%12.04f\n",ival);
 	}
@@ -3921,33 +3679,6 @@ int main(int nargs, char* argv[])
 			kaon_beta = -1;
 			ckov_unc = 0;
 		}
-		/*
-		   dirc_model->sim_rand_n_photons(\
-		   hit_points_pion,\
-		   n_phi_phots*n_z_phots,\
-		   pion_angle,\
-		   1,\
-		   particle_x,\
-		   particle_y,\
-		   particle_theta,\
-		   particle_phi,\
-		   0,\
-		   ckov_unc/pdf_unc_red_fac,\
-		   pion_beta);
-
-		   dirc_model->sim_reg_n_photons(\
-		   hit_points_kaon,\
-		   n_phi_phots*n_z_phots,\
-		   kaon_angle,\
-		   1,\
-		   particle_x,\
-		   particle_y,\
-		   particle_theta,\
-		   particle_phi,\
-		   0,\
-		   ckov_unc/pdf_unc_red_fac,\
-		   kaon_beta);
-		 */
 		//	printf("Found %d pion points on the target\n", (int) hit_points_pion.size());
 		double x,y,t_ns;
 		for (unsigned int i = 0; i < hit_points_pion.size(); i++)
@@ -3981,43 +3712,6 @@ int main(int nargs, char* argv[])
 			kaon_dist_t->Fill(t_ns);
 		}
 	}
-	/*
-	   if (out_csv == true)
-	   {
-	   ofstream pion_csv;
-	   ofstream kaon_csv;
-
-	   pion_csv.open("pion_dist.csv");
-	   kaon_csv.open("kaon_dist.csv");
-	   char format_buffer[256];
-
-	   for (unsigned int i = 0; i < hit_points_pion.size(); i++)
-	   {
-	   x = hit_points_pion[i].x;
-	   y = hit_points_pion[i].y;
-	   t_ns = hit_points_pion[i].t;
-	   sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x+outcsv_x,y,t_ns+outcsv_t);
-
-	   pion_csv << format_buffer;
-	   }
-	   for (unsigned int i = 0; i < hit_points_kaon.size(); i++)
-	   {
-	   x = hit_points_kaon[i].x;
-	   y = hit_points_kaon[i].y;
-	   t_ns = hit_points_kaon[i].t;
-	   sprintf(format_buffer,"%12.06e %12.06e %12.06e\n",x+outcsv_x,y,t_ns+outcsv_t);
-
-	   kaon_csv << format_buffer;
-	   }	
-	   pion_csv.close();
-	   kaon_csv.close();
-	   }//
-	   std::vector<double> dist_traveled = dirc_model->get_dist_traveled();
-	   for (unsigned int i = 0; i < dist_traveled.size(); i++)
-	   {
-	   liquid_dist->Fill(dist_traveled[i]);
-	   }
-	 */
 	double dist_mean = 0;
 	if (box_check_n > 0)
 	{	
@@ -4226,8 +3920,7 @@ int main(int nargs, char* argv[])
 		double oval_cut_angle_spread_sq = .018;//radians
 		//double oval_cut_angle_spread_sq = .2;//radians
 		oval_cut_angle_spread_sq *= oval_cut_angle_spread_sq;
-		double oval_cut_time_spread_sq = 1.5;//ns
-		//double oval_cut_time_spread_sq = 5;//ns
+		double oval_cut_time_spread_sq = .5;//ns/m - scaled by pathlength
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
 		double oval_cut_val = -1;
 
@@ -4241,6 +3934,52 @@ int main(int nargs, char* argv[])
 		double iter_mean_change_stop = .00002;
 		double iter_last_mean = -10;
 		double iter_mean = oval_cut_angle_center;
+
+
+		//estimate chromatic correction, use a pion at our kinematics and repost vals
+		double m_cc_direct = 0;
+		double b_cc_direct = 0;
+		double m_cc_indirect = 0;
+		double b_cc_indirect = 0;
+		int n_cc_particles = 10000;
+
+		if (perform_chromatic_correction == true)
+		{
+			printf("Simulating for chromatic corrections\n");
+
+			dirc_model->sim_rand_n_photons(\
+	                       	hit_points_pion,\
+        	                n_sim_phots*n_cc_particles,\
+                	        0, //ckov theta - doesn't matter
+                        	1, //bar
+                        	particle_x,\
+                        	particle_y,\
+                        	0, //t
+                        	particle_theta,\
+                        	particle_phi,\
+                        	tracking_unc,\
+                        	0, //ckov_unc
+                        	pion_beta);
+
+			//Do an interative mean finding for ceter of oval?
+			dirc_lut->get_chromcorr_m_b_single_oval_cut(\
+       				hit_points_pion, \
+       				particle_phi, \
+       				particle_theta, \
+       				particle_y, \
+       				pion_cerenkov, \ 
+       				oval_cut_angle_spread_sq,\
+       				oval_cut_time_spread_sq,\
+				pion_cerenkov,\
+				m_cc_direct,\
+				b_cc_direct,\
+				m_cc_indirect,\
+				b_cc_indirect);
+		
+			printf("Direct m and b: %12.04f %12.04f\n",m_cc_direct,b_cc_direct);
+			printf("Indirect m and b: %12.04f %12.04f\n",m_cc_indirect,b_cc_indirect);
+		}
+
 
 		for (int i = 0; i < lut_sim_n; i++)
 		{
@@ -4315,6 +4054,7 @@ int main(int nargs, char* argv[])
 			}
 			//printf("Pion Peak: %12.04f\n",57.3*iter_mean);
 			//rerun with oval cut averaging per point
+			/*
 			dirc_lut->get_ckov_theta_single_oval_cut(pion_ckov, \
 			       	pion_dts, \
         			hit_points_pion, \
@@ -4324,6 +4064,21 @@ int main(int nargs, char* argv[])
         			iter_mean, \
         			oval_cut_angle_spread_sq,\
         			oval_cut_time_spread_sq);
+			*/
+				
+			dirc_lut->get_ckov_theta_single_oval_cut(pion_ckov, \
+			       	pion_dts, \
+        			hit_points_pion, \
+        			particle_phi, \
+        			particle_theta, \
+        			particle_y, \
+        			iter_mean, \
+        			oval_cut_angle_spread_sq,\
+        			oval_cut_time_spread_sq,\
+				m_cc_direct,\
+				b_cc_direct,\
+				m_cc_indirect,\
+				b_cc_indirect);
 
 			pion_lut_mean = 0;
 			pion_lut_count = 0;
@@ -4380,6 +4135,7 @@ int main(int nargs, char* argv[])
 				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);	
 			}
 			//rerun with oval cut averaging per point
+			/*
 			dirc_lut->get_ckov_theta_single_oval_cut(kaon_ckov, \
 			       	kaon_dts, \
         			hit_points_kaon, \
@@ -4389,7 +4145,20 @@ int main(int nargs, char* argv[])
         			iter_mean, \
         			oval_cut_angle_spread_sq,\
         			oval_cut_time_spread_sq);
-
+			*/
+			dirc_lut->get_ckov_theta_single_oval_cut(kaon_ckov, \
+			       	kaon_dts, \
+        			hit_points_kaon, \
+        			particle_phi, \
+        			particle_theta, \
+        			particle_y, \
+        			iter_mean, \
+        			oval_cut_angle_spread_sq,\
+        			oval_cut_time_spread_sq,\
+				m_cc_direct,\
+				b_cc_direct,\
+				m_cc_indirect,\
+				b_cc_indirect);
 			kaon_lut_mean = 0;
 			kaon_lut_count = 0;
 			for (unsigned int j = 0; j < kaon_ckov.size(); j++)
@@ -5003,13 +4772,7 @@ int main(int nargs, char* argv[])
 	kaon_midline_dx->Write();
 	kaon_midline_dy->Write();
 	kaon_midline_dt->Write();
-/*	
-	if (fill_d_midline_n > 0)
-	{
-		printf("Pion mean: %12.04f %12.04f\n",pion_midline_dx->GetMean(),pion_midline_dy->GetMean());
-		printf("Kaon mean: %12.04f %12.04f\n",kaon_midline_dx->GetMean(),kaon_midline_dy->GetMean());
-	}
-*/
+
 	pion_lut_vals->Write();
 	kaon_lut_vals->Write();
 	pion_lut_means->Write();
