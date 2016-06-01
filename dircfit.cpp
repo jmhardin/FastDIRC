@@ -456,6 +456,7 @@ int main(int nargs, char* argv[])
 	int fill_d_midline_n = -1;
 	int lut_sim_n = -1;
 	int gaus_ll_n = -1;
+	int sim_time_test_n = -1;
 	double gaus_ll_spread = 2;
 
 	double mean_n_phot = 40;
@@ -713,6 +714,11 @@ int main(int nargs, char* argv[])
 				particle_theta = atof(argv[i]);
 				particle_theta_mean = particle_theta;
 			}
+			else if (strcmp(argv[i], "-sim_time_test_n") == 0)
+			{
+				i++;
+				sim_time_test_n = atoi(argv[i]);
+			}
 			else if (strcmp(argv[i], "-use_quartz_for_liquid") == 0)
 			{
 				use_quartz_for_liquid = true;
@@ -841,6 +847,16 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				particle_y_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-particle_y") == 0)
+			{
+				i++;
+				particle_y = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-particle_x") == 0)
+			{
+				i++;
+				particle_x = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-particle_theta_spread") == 0)
 			{
@@ -4550,7 +4566,39 @@ int main(int nargs, char* argv[])
 			last_phi = phi; 
 		}
 	}
-	
+	if (sim_time_test_n > 0)
+	{
+		printf("Timing %d single particle simulations\n");
+		clock_t tmp_clock = clock();
+		std::vector<dirc_point> sim_points;
+		for (int i = 0; i < sim_time_test_n; i++)
+		{
+			pion_beta = dirc_model->get_beta(energy,pimass);
+			kaon_beta = dirc_model->get_beta(energy,kmass);
+
+			dirc_model->sim_rand_n_photons(\
+					sim_points,\
+					n_sim_phots,\
+					0,\
+					1,\
+					particle_x,\
+					particle_y,\
+					0,\
+					particle_theta+const_track_off,\
+					particle_phi,\
+					tracking_unc,\
+					ckov_unc,\
+					pion_beta);
+		}
+		tmp_clock = clock() - tmp_clock ;
+		double time_taken = ((float)tmp_clock)/(CLOCKS_PER_SEC);
+		double per_particle_time = time_taken/sim_time_test_n;
+		double sim_rate = 1/per_particle_time;
+
+		printf("Total Time Taken: %12.02es\n",time_taken);
+		printf("Time per event:   %12.02ems\n",per_particle_time * 1000);
+		printf("Rate:             %12.02eHz\n",sim_rate);
+	}	
 	if (output_box_angles_n > 0)
 	{
 		std::vector<dirc_point> store_points;
