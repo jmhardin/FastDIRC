@@ -3,11 +3,16 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-filename="res_fullscan_fdircproto.csv"
-theta, phi, pion_y, kaon_y, kde, lin, lin_cal, lut = np.loadtxt(filename, delimiter=' ', usecols=(2, 3, 5, 7, 8, 9, 10, 11), unpack=True)
-
 theta_spacing=0.5-.000001
 phi_spacing=1.0-.000001
+
+theta_min=0
+theta_max=12
+phi_min=0
+phi_max=90
+
+filename="res_fullscan_chromcorr.csv"
+theta, phi, pion_y, kaon_y, kde, lin, lin_cal, lut = np.loadtxt(filename, delimiter=' ', usecols=(2, 3, 5, 7, 8, 9, 10, 11), unpack=True)
 
 nphi = np.unique(phi).size
 ntheta = np.unique(theta).size
@@ -43,23 +48,27 @@ clim_high = 3
 
 plt.pcolor(phi_ticks,theta_ticks,KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('kde_map.png')
+plt.savefig('kde_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LIN,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lin_map.png')
+plt.savefig('lin_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lin_cal_map.png')
+plt.savefig('lin_cal_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LUT,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lut_map.png')
+plt.savefig('lut_map.pdf')
 plt.clf()
 
 clim_low = -1
@@ -67,8 +76,9 @@ clim_high = 0
 
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_IMP,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lin_cal_imp_map.png')
+plt.savefig('lin_cal_imp_map.pdf')
 plt.clf()
 
 clim_low = 0
@@ -76,14 +86,16 @@ clim_high = 1
 
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_V_KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lin_cal_v_kde_map.png')
+plt.savefig('lin_cal_v_kde_map.pdf')
 plt.clf()
 
 plt.pcolor(phi_ticks,theta_ticks,LUT_V_KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lut_v_kde_map.png')
+plt.savefig('lut_v_kde_map.pdf')
 plt.clf()
 
 clim_low = -1
@@ -91,8 +103,9 @@ clim_high = 1
 
 plt.pcolor(phi_ticks,theta_ticks,LUT_V_LIN_CAL,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('lut_v_lin_cal_map.png')
+plt.savefig('lut_v_lin_cal_map.pdf')
 plt.clf()
 
 clim_low = -15
@@ -100,8 +113,9 @@ clim_high = 15
 
 plt.pcolor(phi_ticks,theta_ticks,FUDGE_PION,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('pion_fudge_map.png')
+plt.savefig('pion_fudge_map.pdf')
 plt.clf()
 
 clim_low = -15
@@ -109,7 +123,8 @@ clim_high = 15
 
 plt.pcolor(phi_ticks,theta_ticks,FUDGE_KAON,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
+plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.colorbar()
-plt.savefig('kaon_fudge_map.png')
+plt.savefig('kaon_fudge_map.pdf')
 plt.clf()
 

@@ -57,7 +57,7 @@ void outputDistro(TString ifile_pref)
   	Double_t Green[Number]  = { 0.854, 0.625, 0.157};
    	Double_t Blue[Number]   = { 0.930, 0.824, 0.218};
    	Double_t Length[Number] = { 0.00, 0.30, 1.00 };
-   	Int_t nb=50;
+   	Int_t nb=500;
    	TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
    	
 	pi_dist->GetXaxis()->SetTitle("PMT X (mm)");
@@ -67,6 +67,7 @@ void outputDistro(TString ifile_pref)
 	c1->SetWindowSize(1500,1000);
 
 	c1->Print(ifile_pref + "_pion_dist.gif");	
+	c1->Print(ifile_pref + "_pion_dist.pdf");	
 
 
    	pi_geant_dist->Draw("colz");

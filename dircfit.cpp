@@ -4023,7 +4023,7 @@ int main(int nargs, char* argv[])
                                 particle_theta,\
                                 particle_phi,\
                                 tracking_unc,\
-                                0, //ckov_unc
+                                ckov_unc, //ckov_unc
                                 pion_beta);
 			
 			dirc_model->sim_rand_n_photons(\
@@ -4037,7 +4037,7 @@ int main(int nargs, char* argv[])
                                 particle_theta,\
                                 particle_phi,\
                                 tracking_unc,\
-                                0, //ckov_unc
+                                ckov_unc, //ckov_unc
                                 kaon_beta);
 
 			//pass by reference?  Probably pretty small and doesn't matter
