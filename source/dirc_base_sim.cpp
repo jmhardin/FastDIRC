@@ -435,6 +435,9 @@ void DircBaseSim::sim_lut_points(\
 	//Using approximate peak wavelength
 	quartzIndex = get_quartz_n(380);//Painful way of doing this - saving and correcting is inelegant
 	liquidIndex = get_liquid_n(380);//Painful way of doing this - saving and correcting is inelegant
+
+	//printf("LUT q and L: %12.04f %12.04f\n",quartzIndex,liquidIndex);
+
 	for (int i = 0; i < n_photons; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
@@ -1432,6 +1435,11 @@ bool DircBaseSim::track_all_line_photons(\
 
 	double phi_inc = (2*3.14159265359)/points_per_side;
 	regPhi = 0;
+	double saveGeneralQuartzIndex = quartzIndex;
+	double saveGeneralLiquidIndex = liquidIndex;
+	//Using approximate peak wavelength
+	quartzIndex = get_quartz_n(380);//Painful way of doing this - saving and correcting is inelegant
+	liquidIndex = get_liquid_n(380);//Painful way of doing this - saving and correcting is inelegant
 	for (int i = 0; i < points_per_side; i++)
 	{
 		x = 0;
@@ -1683,6 +1691,9 @@ bool DircBaseSim::track_all_line_photons(\
 	}
 	barWidth = saveBarWidth;
 	wedgeWidthOff = saveWedgeWidthOff;
+	quartzIndex = saveGeneralQuartzIndex;
+	liquidIndex = saveGeneralLiquidIndex;
+
 	build_system();
 	midLineMode = false;
 	return true;

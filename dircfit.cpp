@@ -3934,9 +3934,10 @@ int main(int nargs, char* argv[])
 
 		double oval_cut_angle_center = (pion_cerenkov+kaon_cerenkov)/2;
 		double oval_cut_angle_spread_sq = .018;//radians
-		//double oval_cut_angle_spread_sq = .2;//radians
+		//double oval_cut_angle_spread_sq = .1;//radians
 		oval_cut_angle_spread_sq *= oval_cut_angle_spread_sq;
 		double oval_cut_time_spread_sq = .5;//ns/m - scaled by pathlength
+		//double oval_cut_time_spread_sq = 4;//ns/m - scaled by pathlength
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
 		double oval_cut_val = -1;
 
@@ -3974,7 +3975,7 @@ int main(int nargs, char* argv[])
                         	particle_theta,\
                         	particle_phi,\
                         	tracking_unc,\
-                        	0, //ckov_unc
+                        	ckov_unc, //ckov_unc
                         	pion_beta);
 
 			//Do an interative mean finding for ceter of oval?

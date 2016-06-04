@@ -11,7 +11,7 @@ theta_max=12
 phi_min=0
 phi_max=90
 
-filename="res_fullscan_chromcorr.csv"
+filename="res_fullscan_fine_noceff.csv"
 theta, phi, pion_y, kaon_y, kde, lin, lin_cal, lut = np.loadtxt(filename, delimiter=' ', usecols=(2, 3, 5, 7, 8, 9, 10, 11), unpack=True)
 
 nphi = np.unique(phi).size
@@ -46,28 +46,48 @@ theta_ticks = np.unique(theta)
 clim_low = 1
 clim_high = 3
 
+phi_label="Phi (deg)"
+theta_label="Theta (deg)"
+res_label="Resolution (mrad)"
+improvement_label="Percent Improvement"
+worse_label="Percent Worse"
+fudge_label="Y correction (mm)"
+
+
 plt.pcolor(phi_ticks,theta_ticks,KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(res_label)
 plt.savefig('kde_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LIN,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(res_label)
 plt.savefig('lin_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(res_label)
 plt.savefig('lin_cal_map.pdf')
 plt.clf()
 plt.pcolor(phi_ticks,theta_ticks,LUT,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(res_label)
 plt.savefig('lut_map.pdf')
 plt.clf()
 
@@ -77,7 +97,10 @@ clim_high = 0
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_IMP,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(improvement_label)
 plt.savefig('lin_cal_imp_map.pdf')
 plt.clf()
 
@@ -87,14 +110,20 @@ clim_high = 1
 plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_V_KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(worse_label)
 plt.savefig('lin_cal_v_kde_map.pdf')
 plt.clf()
 
 plt.pcolor(phi_ticks,theta_ticks,LUT_V_KDE,cmap=plt.cm.afmhot)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(worse_label)
 plt.savefig('lut_v_kde_map.pdf')
 plt.clf()
 
@@ -104,7 +133,10 @@ clim_high = 1
 plt.pcolor(phi_ticks,theta_ticks,LUT_V_LIN_CAL,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(worse_label)
 plt.savefig('lut_v_lin_cal_map.pdf')
 plt.clf()
 
@@ -114,7 +146,10 @@ clim_high = 15
 plt.pcolor(phi_ticks,theta_ticks,FUDGE_PION,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(fudge_label)
 plt.savefig('pion_fudge_map.pdf')
 plt.clf()
 
@@ -124,7 +159,10 @@ clim_high = 15
 plt.pcolor(phi_ticks,theta_ticks,FUDGE_KAON,cmap=plt.cm.seismic)
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.colorbar()
+plt.xlabel(phi_label)
+plt.ylabel(theta_label)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(fudge_label)
 plt.savefig('kaon_fudge_map.pdf')
 plt.clf()
 

@@ -484,7 +484,7 @@ void DircLUT::get_ckov_theta_single_oval_cut(
 
 	double internal_refl_limit = sqrt(quartz_index*quartz_index-1)/quartz_index;
 
-	double time_cut = 10;//very loose 3ns cut;
+	double time_cut = 3;//very loose 3ns/m cut;
 	int passed_ind = 0;
 	int passed_refl = 0;
 	int passed_time = 0;

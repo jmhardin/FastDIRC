@@ -70,7 +70,6 @@ protected:
 	double sidemirror_xl;
 	double sidemirror_reflectivity;
 	
-	double liquidIndex;
 	double quartzLiquidY;
 	
 	double box_angle_off_cval;

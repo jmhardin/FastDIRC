@@ -350,6 +350,7 @@ void DircThreeSegBoxSim::warp_readout_box(
 	double &dy,\
 	double &dz)
 {
+	//printf("inside warp_box: %12.04f %12.04f\n",quartzIndex,liquidIndex);
 	double c_mm_ns = 300;
 	mm_index += warp_box(\
 			x,\
@@ -499,6 +500,7 @@ double DircThreeSegBoxSim::three_seg_reflect(\
 	//I hope there's a fast way to do these reflections
 
 	double tz = 0;
+	//printf("inside three seg: %12.04f %12.04f\n",quartzIndex,liquidIndex);
 
 	//check first seg (again, loop this if we go more than 3)
 	tz = get_z_intercept(\
@@ -703,6 +705,8 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 
 	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
 
+	//printf("inside cyl: %12.04f %12.04f\n",quartzIndex,liquidIndex);
+
 	return rval*liquidIndex;
 }
 
@@ -716,7 +720,7 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		double &dz) {
 	//don't strictly need to modify the z, could be sped up
 	//First check to see if it goes through the large planar mirror - it probably doesn't
-
+	
 	double tmpz = get_z_intercept(\
 			largePlanarMirrorNx,\
 			largePlanarMirrorNy,\
