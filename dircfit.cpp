@@ -498,10 +498,10 @@ int main(int nargs, char* argv[])
 	//	double maxx = -minx;
 	//	double miny = -800;
 	//	double maxy = -miny;
-	double minx = -1500;
+	double minx = -1000;
 	double maxx = 1500;
-	double miny = -1500;
-	double maxy = 1500;
+	double miny = -500;
+	double maxy = 500;
 	double mint = 0;
 	double maxt = 1000;
 	double t_unc = .27;
@@ -1027,6 +1027,7 @@ int main(int nargs, char* argv[])
 
 	double rad_to_deg = 57.2958;
 
+	//double res_enhance = 1/6.;
 	double res_enhance = 1;
 
 	double prog_thresh = 500;
@@ -3353,7 +3354,7 @@ int main(int nargs, char* argv[])
 				hit_points_pion,\
 				n_phi_phots,\
 				n_z_phots,\
-				pion_angle,\
+				-1,\
 				1,\
 				particle_x,\
 				particle_y,\
@@ -3368,7 +3369,7 @@ int main(int nargs, char* argv[])
 				hit_points_kaon,\
 				n_phi_phots,\
 				n_z_phots,\
-				kaon_angle,\
+				-1,\
 				1,\
 				particle_x,\
 				particle_y,\
@@ -3379,6 +3380,35 @@ int main(int nargs, char* argv[])
 				ckov_unc/pdf_unc_red_fac,\
 				kaon_beta);
 
+/*
+		dirc_model->sim_rand_n_photons(\
+				hit_points_pion,\
+				n_phi_phots*n_z_phots,\
+				-1,\
+				1,\
+				particle_x,\
+				particle_y,\
+				pion_time,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				pion_beta);
+
+		dirc_model->sim_reg_n_photons(\
+				hit_points_kaon,\
+				n_phi_phots*n_z_phots,\
+				-1,\
+				1,\
+				particle_x,\
+				particle_y,\
+				kaon_time,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				kaon_beta);
+*/
 		if (flatten_time == true)
 		{
 			for (unsigned int i = 0; i < hit_points_pion.size(); i++)

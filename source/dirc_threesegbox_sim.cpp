@@ -738,8 +738,7 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		z=1337;
 		return 100000;
 	}
-	double rval =\
-		     get_intercept_plane(\
+	double rval = get_intercept_plane(\
 				     sensPlaneNx,\
 				     sensPlaneNy,\
 				     sensPlaneNz,\

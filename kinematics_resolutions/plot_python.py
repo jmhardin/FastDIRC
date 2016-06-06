@@ -11,7 +11,7 @@ theta_max=12
 phi_min=0
 phi_max=90
 
-filename="res_fullscan_fine_noceff.csv"
+filename="res_fullscan_fullfdirc.csv"
 theta, phi, pion_y, kaon_y, kde, lin, lin_cal, lut = np.loadtxt(filename, delimiter=' ', usecols=(2, 3, 5, 7, 8, 9, 10, 11), unpack=True)
 
 nphi = np.unique(phi).size
