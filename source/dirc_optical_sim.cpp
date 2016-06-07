@@ -211,6 +211,7 @@ void DircOpticalSim::fill_sens_plane_vecs() {
 
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
 
+
 	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
 	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
 }

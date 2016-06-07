@@ -66,7 +66,8 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	quartzLiquidY = upperWedgeBottom;
 
 
-	boxCloseZ = -614;
+	//boxCloseZ = -614;
+	boxCloseZ = -559;
 
 	reflOff = 9;
 
@@ -180,10 +181,26 @@ void DircThreeSegBoxSim::fill_sens_plane_vecs() {
 	sensPlaneNy = sin(sens_rot/57.3);
 	sensPlaneNz = cos(sens_rot/57.3);
 
-	sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
-	sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
+	//boxCloseZ  = -559;
+
+	//sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
+	//sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
+	//sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
+	sensPlaneY = -reflOff+barLength/2;
+	sensPlaneZ = boxCloseZ;
 
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
+
+        //unReflSensPlaneY = adjusted_sens_size*sin(sens_rot/57.3)/2 + reflOff + barLength/2;
+        //unReflSensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
+        unReflSensPlaneY = reflOff + barLength/2;
+        unReflSensPlaneZ = boxCloseZ;
+        unReflSensPlaneNx = 0;
+        unReflSensPlaneNy = -sensPlaneNy;
+        unReflSensPlaneNz = sensPlaneNz;
+
+        unReflSensPlaneD = unReflSensPlaneNy*unReflSensPlaneY + unReflSensPlaneNz*unReflSensPlaneZ;
+
 
 	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
 	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
@@ -299,7 +316,8 @@ void DircThreeSegBoxSim::set_three_seg_mirror(bool itsm) {
 }
 void DircThreeSegBoxSim::set_pmt_offset(double r) {
 	//positive r increases path length
-	boxCloseZ = -614 - r*cos(sens_rot/57.3);
+	//boxCloseZ = -614 - r*cos(sens_rot/57.3);
+	boxCloseZ = -559 - r*cos(sens_rot/57.3);
 	reflOff = 9 + r*sin(sens_rot/57.3);
 	build_readout_box();
 }
@@ -733,22 +751,97 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 			dy,\
 			dz);
 
+//	printf("%12.04f\n",tmpz);
+/*
 	if (tmpz < largePlanarMirrorMinZ || tmpz > largePlanarMirrorMaxZ)
 	{
 		z=1337;
 		return 100000;
 	}
-	double rval = get_intercept_plane(\
-				     sensPlaneNx,\
-				     sensPlaneNy,\
-				     sensPlaneNz,\
-				     sensPlaneD,\
-				     x,\
-				     y,\
-				     z,\
-				     dx,\
-				     dy,\
-				     dz);
+*/
+	double rval = 0;
+	//printf("%12.04f %12.04f %12.04f\n",tmpz,largePlanarMirrorMinZ,largePlanarMirrorMaxZ);
+	if (tmpz > largePlanarMirrorMaxZ)
+	{
+		//goes back into the wedge
+		plane_reflect(\
+			upperWedgeClosePlaneNx,\
+			upperWedgeClosePlaneNy,\
+			upperWedgeClosePlaneNz,\
+			upperWedgeClosePlaneD,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz,\
+			rval);
+	
+
+		if (dz < 0)
+		{
+			//Should not happen
+			printf("strange things happening in roundabout reflection\n");
+			z = 1337;
+			return 100000;
+		}
+		//propagate back to plane directly in front 
+
+		//printf("%12.04f %12.04f\n",z,dz);
+		double tmpt = -z/dz;
+		rval += tmpt;
+		
+		x += tmpt*dx;
+		y += tmpt*dy;
+		z += tmpt*dz;
+
+		dz = -dz;
+		//printf("%12.04f %12.04f\n",z,dz);
+		//printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
+		//fill vectors for  unreflected sensitive plane
+	
+	
+		rval += get_intercept_plane(\
+			unReflSensPlaneNx,\
+			unReflSensPlaneNy,\
+			unReflSensPlaneNz,\
+			unReflSensPlaneD,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+		//printf("  %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
+
+		//printf("%12.04f %12.04f\n",z,dz);
+		//put y in the same plac eon the lower plane
+		y = 2*(upperWedgeTop + barLength/2) - y;
+		//printf("Through unrefl\n");
+//		printf("%12.04f %12.04f\n",z,dz);
+	}
+	else if (tmpz < largePlanarMirrorMinZ)
+	{
+		//hits in a weird, weird way
+		//printf("greater than min\n");
+
+		z = 1337;
+		return 100000;
+	}
+	else
+	{
+		rval = get_intercept_plane(\
+			     sensPlaneNx,\
+			     sensPlaneNy,\
+			     sensPlaneNz,\
+			     sensPlaneD,\
+			     x,\
+			     y,\
+			     z,\
+			     dx,\
+			     dy,\
+			     dz);
+	}
 	if (z < pmtPlaneMinZ || z > pmtPlaneMaxZ)
 	{
 		z=1337;
@@ -763,11 +856,15 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		//Assumes all Photons bounce - not exatly true, but close
 		side_photon_angles.push_back(57.3*acos(dx));
 	}
-
+	
 	fill_val.x = x;
 	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
-	fill_val.y = (-z-559)*sensPlaneYdistConversion + 220;
 
+	fill_val.y = (-z-559)*sensPlaneYdistConversion + 220;
+	//if (tmpz > largePlanarMirrorMaxZ)
+	{
+//		printf("%12.04f %12.04f\n",z,dz);
+	}
 	return rval*liquidIndex;
 }
 

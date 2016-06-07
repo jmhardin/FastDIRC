@@ -482,6 +482,11 @@ int main(int nargs, char* argv[])
 	double large_mirror_min_z = -1000;
 	double large_mirror_max_z = 1000;
 
+	//pmt_min_z = -559;
+	//pmt_max_z = -329;
+	large_mirror_min_z = -559;
+	large_mirror_max_z = -130;
+
 	double upper_wedge_yang_spread = 0;
 	int rseed = 1337;
 
@@ -793,10 +798,10 @@ int main(int nargs, char* argv[])
 			}
 			else if (strcmp(argv[i], "-open_image_plane") == 0)
 			{
-				pmt_min_z = -559;
-				pmt_max_z = -329;
-				large_mirror_min_z = -559;
-				large_mirror_max_z = -130;
+				pmt_min_z = -1000;
+				pmt_max_z = 1000;
+				large_mirror_min_z = -1000;
+				large_mirror_max_z = 1000;
 			}
 			else if (strcmp(argv[i], "-mean_n_phot") == 0)
 			{

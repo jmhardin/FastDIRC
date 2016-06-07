@@ -55,6 +55,14 @@ protected:
 	double sensPlaneY;
 	double sensPlaneZ;
 	
+	double unReflSensPlaneNx;
+	double unReflSensPlaneNy;
+	double unReflSensPlaneNz;
+	double unReflSensPlaneD;
+	double unReflSensPlaneY;
+	double unReflSensPlaneZ;
+
+
 	double sensPlaneYdistConversion;
 	double sensPlaneZdistConversion;
 
