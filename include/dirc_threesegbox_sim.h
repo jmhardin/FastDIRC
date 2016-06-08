@@ -62,6 +62,13 @@ protected:
 	double unReflSensPlaneY;
 	double unReflSensPlaneZ;
 
+        double focPlaneNx;
+        double focPlaneNy;
+        double focPlaneNz;
+        double focPlaneD;
+        double focPlaneMinZ;
+
+
 
 	double sensPlaneYdistConversion;
 	double sensPlaneZdistConversion;

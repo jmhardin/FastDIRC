@@ -44,7 +44,7 @@ phi_ticks = np.unique(phi)
 theta_ticks = np.unique(theta)
 
 clim_low = 1
-clim_high = 3
+clim_high = 4
 
 phi_label="Phi (deg)"
 theta_label="Theta (deg)"

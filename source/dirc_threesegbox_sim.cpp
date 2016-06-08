@@ -54,6 +54,12 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 
 	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
 
+	focPlaneNx = 0;
+	focPlaneNy = sin(foc_rot/57.3);
+	focPlaneNz = cos(foc_rot/57.3);
+
+	focPlaneD = focPlaneNz*focMirrorBottom;
+	focPlaneMinZ = -foc_mirror_size*sin(foc_rot/57.3);
 
 	sidemirror_xl = -1000000;
 	sidemirror_xr = 1000000;
@@ -186,14 +192,14 @@ void DircThreeSegBoxSim::fill_sens_plane_vecs() {
 	//sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
 	//sensPlaneY = -adjusted_sens_size*sin(sens_rot/57.3)/2-reflOff+barLength/2;
 	//sensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
-	sensPlaneY = -reflOff+barLength/2;
+	sensPlaneY = -reflOff+barLength/2 + upperWedgeTop;
 	sensPlaneZ = boxCloseZ;
 
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
 
         //unReflSensPlaneY = adjusted_sens_size*sin(sens_rot/57.3)/2 + reflOff + barLength/2;
         //unReflSensPlaneZ = boxCloseZ + sens_size*cos(sens_rot/57.3)/2;
-        unReflSensPlaneY = reflOff + barLength/2;
+        unReflSensPlaneY = reflOff + barLength/2 + upperWedgeTop;
         unReflSensPlaneZ = boxCloseZ;
         unReflSensPlaneNx = 0;
         unReflSensPlaneNy = -sensPlaneNy;
@@ -658,6 +664,27 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 	//Should be a valid approximation, and saves a ton of speed
 	//could be implemented on the threeseg mirror (at least the branching part
 
+	double tz = 0;
+	//printf("inside three seg: %12.04f %12.04f\n",quartzIndex,liquidIndex);
+
+	//check first seg (again, loop this if we go more than 3)
+	tz = get_z_intercept(\
+			focPlaneNx,\
+			focPlaneNy,\
+			focPlaneNz,\
+			focPlaneD,\
+			x,\
+			y,\
+			z,\
+			dx,\
+			dy,\
+			dz);
+	if (tz < focPlaneMinZ)
+	{
+		z = 1337;
+		return -1;
+	}
+
 	double rval = 0;
 
 	double dydz_norm = sqrt(dz*dz+dy*dy);
@@ -799,6 +826,20 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		//printf("%12.04f %12.04f\n",z,dz);
 		//printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
 		//fill vectors for  unreflected sensitive plane
+		double tz = 0;
+		tz = get_z_intercept(\
+                        focPlaneNx,\
+                        focPlaneNy,\
+                        focPlaneNz,\
+                        focPlaneD,\
+                        x,\
+                        y,\
+                        z,\
+                        dx,\
+                        dy,\
+                        dz);
+
+		//printf("%12.04f %12.04f %12.04f %12.04f %12.04f\n",tz, focPlaneNx,focPlaneNy,focPlaneNz,focPlaneD);
 	
 	
 		rval += get_intercept_plane(\
@@ -813,6 +854,7 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 			dy,\
 			dz);
 		//printf("  %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
+		//printf("    %12.04f %12.04f\n",unReflSensPlaneNx*x+unReflSensPlaneNy*y+unReflSensPlaneNz*z,unReflSensPlaneD);
 
 		//printf("%12.04f %12.04f\n",z,dz);
 		//put y in the same plac eon the lower plane
@@ -860,7 +902,8 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 	fill_val.x = x;
 	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
 
-	fill_val.y = (-z-559)*sensPlaneYdistConversion + 220;
+	//printf("                   %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
+	fill_val.y = (-z-559)*sensPlaneYdistConversion + 260;
 	//if (tmpz > largePlanarMirrorMaxZ)
 	{
 //		printf("%12.04f %12.04f\n",z,dz);
