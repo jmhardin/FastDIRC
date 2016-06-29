@@ -75,6 +75,7 @@ protected:
 
 	double boxCloseZ;
 	double reflOff;
+	double baseReflOff;
 	
 	double focMirrorY;
 	double focMirrorZ;
@@ -190,7 +191,7 @@ public:
 	DircThreeSegBoxSim(\
 		int rand_seed = 4357,\
 		double ifoc_r = -1200, \
-		double ifoc_mirror_size = 300.38, \
+		double ifoc_mirror_size = 288, \
 		double ifoc_rot = 74.11, \
 		double isens_size = 600, \
 		double isens_rot = 47.87,\

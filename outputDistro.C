@@ -39,6 +39,10 @@ void outputDistro(TString ifile_pref)
 	pi_dist_t->SetStats(false);
 	pion_lambda->SetStats(false);
 
+	pi_dist->SetContour(255);
+	pi_dist_xt->SetContour(255);
+	pi_dist_yt->SetContour(255);
+
 	
 	pi_dist->SetTitle("");
 	pi_dist_yt->SetTitle("");
@@ -53,9 +57,14 @@ void outputDistro(TString ifile_pref)
    	//Double_t Red[Number]    = { 0.016, 0.016, 0.336};
   	//Double_t Green[Number]  = { 0.157, 0.157, 0.625};
    	//Double_t Blue[Number]   = { 0.218, 0.218, 0.824};
+/*
    	Double_t Red[Number]    = { 0.743, 0.336, 0.016};
   	Double_t Green[Number]  = { 0.854, 0.625, 0.157};
    	Double_t Blue[Number]   = { 0.930, 0.824, 0.218};
+*/
+   	Double_t Red[Number]    = { 0.93, 0.336, 0.016};
+  	Double_t Green[Number]  = { 0.93, 0.625, 0.157};
+   	Double_t Blue[Number]   = { 0.93, 0.824, 0.218};
    	Double_t Length[Number] = { 0.00, 0.30, 1.00 };
    	Int_t nb=500;
    	TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
@@ -66,21 +75,21 @@ void outputDistro(TString ifile_pref)
 
 	c1->SetWindowSize(1500,1000);
 
-	c1->Print(ifile_pref + "_pion_dist.gif");	
+	c1->Print(ifile_pref + "_pion_dist.png");	
 	c1->Print(ifile_pref + "_pion_dist.pdf");	
 
 
    	pi_geant_dist->Draw("colz");
-	c1->Print(ifile_pref + "_pion_geant_dist.gif");	
+	c1->Print(ifile_pref + "_pion_geant_dist.png");	
    	
 	pi_dist_yt->Draw("colz");
-	c1->Print(ifile_pref + "_pion_dist_yt.gif");	
+	c1->Print(ifile_pref + "_pion_dist_yt.png");	
 	
 	pi_dist_xt->Draw("colz");
-	c1->Print(ifile_pref + "_pion_dist_xt.gif");	
+	c1->Print(ifile_pref + "_pion_dist_xt.png");	
 
 	pi_dist_t->Draw();
-	c1->Print(ifile_pref + "_pion_dist_t.gif");	
+	c1->Print(ifile_pref + "_pion_dist_t.png");	
 
 
 	pi_dist_y->GetXaxis()->SetRangeUser(ymin,ymax);
@@ -89,7 +98,7 @@ void outputDistro(TString ifile_pref)
 	TLine *el = new TLine(-100,0,-100,30000);
 	sl->Draw("SAME");
 	el->Draw("SAME");
-	c1->Print(ifile_pref + "_pion_dist_y.gif");	
+	c1->Print(ifile_pref + "_pion_dist_y.png");	
 
 	pion_lambda->SetTitle("");
 	pion_lambda->GetXaxis()->SetTitle("Wavelength (nm)");

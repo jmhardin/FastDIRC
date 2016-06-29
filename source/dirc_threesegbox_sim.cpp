@@ -17,7 +17,7 @@
 DircThreeSegBoxSim::DircThreeSegBoxSim(
 		int rand_seed /*=4357*/,\
 		double ifoc_r/*=540.66*/, \
-		double ifoc_mirror_size/*=300.38*/, \
+		double ifoc_mirror_size/*=288*/, \
 		double ifoc_rot/*=-74.11*/, \
 		double isens_size/*=600*/, \
 		double isens_rot/*=90*/,\
@@ -32,12 +32,15 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 				ibar_depth) {
 
 	printf("BarLWD: %12.04f %12.04f %12.04f\n",barLength,barWidth,barDepth);
+
 	foc_r = ifoc_r;
 	foc_mirror_size = ifoc_mirror_size;
 	foc_rot = ifoc_rot;
 	foc_yrot = 0;
 	sens_size = isens_size;
 	sens_rot = isens_rot;
+
+//	printf("%12.04f\n",sens_rot);
 
 	storeOpticalAngles = false;
 
@@ -51,6 +54,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 
 	pmtPlaneMinZ = -559;
 	pmtPlaneMaxZ = -329;
+	//pmtPlaneMaxZ = -346;
 
 	focMirrorBottom = 139 + upperWedgeTop + barLength/2;
 
@@ -75,7 +79,9 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	//boxCloseZ = -614;
 	boxCloseZ = -559;
 
-	reflOff = 9;
+	//reflOff = 9;
+	baseReflOff = 9;
+	reflOff = baseReflOff;
 
 	three_seg_mirror = false;
 
@@ -83,7 +89,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	min_QE = 300;
 	max_QE = 600;
 	sep_QE = (max_QE - min_QE)/(num_QE - 1);
-
+/*
 	double t_QE[31] = {\
 		0.016415, 0.074064, 0.141658, 0.184219, 0.20634,  0.217191, 0.223244,
 	       0.222296, 0.215232, 0.206302, 0.195574, 0.183007, 0.169403, 0.155447,
@@ -91,13 +97,43 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	       0.067311, 0.060243, 0.053588, 0.047765, 0.04344,  0.037999, 0.034177,
 	       0.030869, 0.027848, 0.024141
 	};
+*/
+
+/*
+	//h12700 from geant
+	num_QE = 36;
+	min_QE = 300;
+	max_QE = 650;
+	sep_QE = (max_QE - min_QE)/(num_QE - 1);
+	double QuantumEfficiencyPMT12700[36]=\
+		{0.001,0.001,0.00118865,0.00511371,0.0104755,0.0174337,0.0259711,
+		0.0358296,0.046982,0.0593714,0.0729143,0.0875043,0.103016,0.119306,
+		0.13622,0.153591,0.171246,0.188889,0.206372,0.223528,0.239941,0.255526,
+		0.269913,0.283034,0.294369,0.303953,0.31158,0.317117,0.320523,0.321858,
+		0.321271,0.31895,0.315347,0.310875,0.306056,0.301365};
+*/
+
+	num_QE = 30;
+	min_QE = 300;
+	max_QE = 590;
+	sep_QE = (max_QE - min_QE)/(num_QE - 1);
+
+	double marias_QE[30] = {\
+		13.214500, 13.650000, 13.845000, 14.527500, 14.794000,\
+		14.755000, 14.950000, 15.327000, 15.333500, 15.301000,\
+		14.956500, 14.456000, 13.968500, 13.494000, 12.935000,\
+		12.265500, 11.147500, 10.185500, 9.392500, 8.846500,\
+		8.489000, 7.663500, 5.941000, 4.777500, 4.225000,\
+		3.828500, 3.471000, 3.204500, 2.918500, 2.684500};
 
 
 	// Transmittance of quartz per 1m
 
 
 	for (int i = 0; i < num_QE; i++) {
-		vals_QE.push_back(t_QE[i]);
+		//vals_QE.push_back(t_QE[i]);
+		//vals_QE.push_back(QuantumEfficiencyPMT12700[i]);
+		vals_QE.push_back(marias_QE[i]/100.0);
 	}
 
 	num_transmittance = 36;
@@ -157,6 +193,8 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
                 break;
         }
 
+	//out_ang *= 1.02;
+
         out_ang += rand_gen->Gaus(0,additional_spread);
 
         return out_ang;
@@ -195,6 +233,13 @@ void DircThreeSegBoxSim::fill_sens_plane_vecs() {
 	sensPlaneY = -reflOff+barLength/2 + upperWedgeTop;
 	sensPlaneZ = boxCloseZ;
 
+/*
+	double move_diff = 0/2;
+	double move_same = 4.5;
+	sensPlaneY = -reflOff+barLength/2 + upperWedgeTop + move_same - move_diff;
+	sensPlaneZ = boxCloseZ + move_same + move_diff;
+*/	
+
 	sensPlaneD = sensPlaneNy*sensPlaneY + sensPlaneNz*sensPlaneZ;
 
         //unReflSensPlaneY = adjusted_sens_size*sin(sens_rot/57.3)/2 + reflOff + barLength/2;
@@ -223,6 +268,12 @@ void DircThreeSegBoxSim::fill_foc_mirror_vecs() {
 	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
 	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
 	focMirrorZ = foc_r*sin(foc_center_ang);
+	//double foc_center_ang = foc_rot/57.3 + asin(foc_mirror_size/(2*foc_r));
+	//focMirrorY = focMirrorBottom + foc_r*sin(foc_center_ang);
+	//focMirrorZ = foc_r*cos(foc_center_ang);
+	//focMirrorY = barLength/2 - 795.2;
+	//focMirrorZ = -457.42 - 8.65;
+	//printf("%12.04f %12.04f %12.04f %12.04f\n",foc_rot,foc_mirror_size,foc_r,foc_center_ang);
 }
 void DircThreeSegBoxSim::fill_threeseg_plane_vecs() {
 	focMirrorTop = focMirrorBottom + foc_mirror_size*cos(foc_rot/57.3);
@@ -324,7 +375,7 @@ void DircThreeSegBoxSim::set_pmt_offset(double r) {
 	//positive r increases path length
 	//boxCloseZ = -614 - r*cos(sens_rot/57.3);
 	boxCloseZ = -559 - r*cos(sens_rot/57.3);
-	reflOff = 9 + r*sin(sens_rot/57.3);
+	reflOff = baseReflOff + r*sin(sens_rot/57.3);
 	build_readout_box();
 }
 void DircThreeSegBoxSim::set_liquid_absorbtion(double iabs) {
@@ -394,7 +445,6 @@ void DircThreeSegBoxSim::warp_readout_box(
 		out_val.t = -1337;
 		return;
 	}
-
 	mm_index += warp_sens_plane(\
 			out_val,\
 			x,\
@@ -403,8 +453,10 @@ void DircThreeSegBoxSim::warp_readout_box(
 			dx,\
 			dy,\
 			dz);
+	double dist_lim = 50000;
+	//dist_lim = 500000000;
 
-	if (z > 0) {
+	if (z > 0 || mm_index/quartzIndex > dist_lim) {
 		out_val.t = -1337;
 		return;
 	}
@@ -459,6 +511,9 @@ double DircThreeSegBoxSim::warp_box(\
 		dt = -z/dz;
 
 		if (y + dy*dt < focMirrorBottom) {
+			//removes inner "ears"
+			//z = 1337;
+			//return -1;
 			//reflects off of back
 			x += dx*dt;
 			y += dy*dt;
@@ -698,6 +753,8 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 	//there's gotta be a faster way to do all of this
 	//different than plane intercept D.  Took this algorithm from internet (wolfram Mathworld)
 	//Parametric intercept sucks
+
+
 	double D = (z - focMirrorZ)*dy_norm - (y - focMirrorY)*dz_norm;
 	double detD = sqrt(foc_r*foc_r - D*D);
 
@@ -705,6 +762,21 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 	double zrel = D*dy_norm + sgn(dy_norm)*dz_norm*detD;
 	double yrel = -D*dz_norm + fabs(dy_norm)*detD;
 
+
+//My own vector crunching is here
+/*
+	double yrel = y - focMirrorY;
+	double zrel = z - focMirrorZ;
+
+	double t_a = 1;
+	double t_b = 2*(dy_norm*yrel + dz_norm*zrel);
+	double t_c = zrel*zrel + yrel*yrel - foc_r*foc_r;
+
+	double intercept_t = (-t_b + sqrt(t_b*t_b - 4*t_a*t_c))/(2*t_a);
+
+	yrel += intercept_t*dy_norm;
+	zrel += intercept_t*dz_norm;
+*/
 	double newy = yrel + focMirrorY;
 	double newz = zrel + focMirrorZ;
 
@@ -740,6 +812,8 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 
 	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
 
+	//printf("AA %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f  ||  %12.04f %12.04f %12.04f\n",y-barLength/2,z,57.3*acos(-n_dot_v),0.0,localNy,localNz,focMirrorY, focMirrorZ, barLength);
+	//printf("BB %12.04f %12.04f\n",dy_norm,dz_norm);
 	if (storeOpticalAngles == true)
 	{
 		focus_photon_angles.push_back(57.3*acos(n_dot_v));
@@ -778,7 +852,8 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 			dy,\
 			dz);
 
-//	printf("%12.04f\n",tmpz);
+	//printf("LM %12.04f %12.04f\n",tmpz + barDepth/2, (tmpz-z)/dz*dy+y);
+	//printf("%12.04f %12.04f %12.04f\n",dy,dz, atan(dz/dy)*57.3);
 /*
 	if (tmpz < largePlanarMirrorMinZ || tmpz > largePlanarMirrorMaxZ)
 	{
@@ -859,8 +934,10 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		//printf("%12.04f %12.04f\n",z,dz);
 		//put y in the same plac eon the lower plane
 		y = 2*(upperWedgeTop + barLength/2) - y;
-		//printf("Through unrefl\n");
+//		printf("Through unrefl\n");
 //		printf("%12.04f %12.04f\n",z,dz);
+//		z = 1337;
+//		return 100000;
 	}
 	else if (tmpz < largePlanarMirrorMinZ)
 	{
@@ -899,11 +976,13 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		side_photon_angles.push_back(57.3*acos(dx));
 	}
 	
+	//printf("sens_norm: %12.04f\n",180 - acos(dx*sensPlaneNx+dy*sensPlaneNy+dz*sensPlaneNz)*57.3);
+	//printf("%12.04f %12.04f %12.04f\n",sensPlaneNx,sensPlaneNy,sensPlaneNz);
+
 	fill_val.x = x;
 	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
 
-	//printf("                   %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
-	fill_val.y = (-z-559)*sensPlaneYdistConversion + 260;
+	fill_val.y = (-z-559)*sensPlaneYdistConversion + 260 + 12;
 	//if (tmpz > largePlanarMirrorMaxZ)
 	{
 //		printf("%12.04f %12.04f\n",z,dz);

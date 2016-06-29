@@ -24,12 +24,15 @@ DircBaseSim::DircBaseSim(
 	barLength=ibarLength;
 	barWidth=ibarWidth;
 	barDepth=ibarDepth;
+
 	wedgeWidthOff = 1.75;
 	wedgeDepthOff = 10;
+	wedgeDepthOff = 9.75;
 	wedgeFarAngle = .006*57.3;
 	wedgeCloseAngle = 30;
 	wedgeWidth=barWidth - wedgeWidthOff;
 	wedgeDepthHigh = 79;
+	//wedgeDepthHigh = 79.53;
 	wedgeHeight = 91;
 
 	upperWedgeAngleStore = false;
@@ -38,15 +41,18 @@ DircBaseSim::DircBaseSim(
 
 	windowThickness = 9.6;
 
+	upperWedgeGap = 20;
 
 	upperWedgeTop = iupperWedgeTop;
-	upperWedgeBottom = wedgeHeight + windowThickness;
-	upperWedgeHeight = upperWedgeTop - upperWedgeBottom;
+	upperWedgeBottom = wedgeHeight + windowThickness + upperWedgeGap;
+	upperWedgeHeight = upperWedgeTop - upperWedgeBottom + upperWedgeGap;
 	upperWedgeDepthHigh = wedgeDepthHigh + (upperWedgeTop-wedgeHeight)*sin(wedgeCloseAngle/57.296);
 
-	lowerWedgeExtensionZ = -wedgeDepthHigh\
-			       - tan(wedgeCloseAngle/57.296)*(upperWedgeBottom - wedgeHeight);
 
+	lowerWedgeExtensionZ = -wedgeDepthHigh - tan(wedgeCloseAngle/57.296)*(upperWedgeBottom - wedgeHeight);
+
+
+	//wedgeCloseAngle -= .5;
 
 	//Variables used for plane intersection
 	wedgeClosePlaneNx = 0; //Shouldn't be needed
@@ -62,9 +68,11 @@ DircBaseSim::DircBaseSim(
 
 	wedgeClosePlaneD = barLength/2*wedgeClosePlaneNy - wedgeClosePlaneNz * (barDepth+wedgeDepthOff);
 
-	//	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
+	//printf("Wedge Nxyz: %12.04f %12.04f %12.04f\n",wedgeClosePlaneNx,wedgeClosePlaneNy,wedgeClosePlaneNz);
 
-	//upperWedgeClosePlaneD = wedgeClosePlaneD; //should be in the same plane/;
+	//upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
+	//printf("uwb: %12.04f lwez: %12.04f\n",upperWedgeBottom,lowerWedgeExtensionZ);
+	upperWedgeClosePlaneD = wedgeClosePlaneD; //should be in the same plane/;
 
 	upperWedgeFarPlaneNx = 0; //Shouldn't be needed
 	upperWedgeFarPlaneNy = 0;
@@ -75,7 +83,7 @@ DircBaseSim::DircBaseSim(
 	//Take average
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
-	quartzLiquidY = upperWedgeBottom + 15;
+	quartzLiquidY = upperWedgeBottom - upperWedgeGap;
 	
 	use_liquid_n = false;
 	use_quartz_n_for_liquid = false;
@@ -102,6 +110,7 @@ DircBaseSim::DircBaseSim(
 	max_transmittance = 660;
 	sep_transmittance = (max_transmittance - min_transmittance)/(num_transmittance - 1);
 
+//Numbers from Baptise
 	double tmp_quartz_transmittance[36] = {\
 		0.999572036,0.999544661,0.999515062,0.999483019,0.999448285,\
 			0.999410586,0.999369611,0.999325013,0.999276402,0.999223336,\
@@ -119,7 +128,20 @@ DircBaseSim::DircBaseSim(
 	midLineMode = false;
 	midLineWedgeWallFlip = 1;
 
+	store_bounces = false;
+        x_bounces.clear();
+	z_bounces.clear();
+        x_direct_bounces.clear();
+        z_direct_bounces.clear();
+        x_indirect_bounces.clear();
+        z_indirect_bounces.clear();
+	
+
 	build_system();
+}
+void DircBaseSim::set_store_bounces(bool isb)
+{
+	store_bounces = isb;
 }
 void DircBaseSim::set_kaleidoscope_plot(bool ikp) {
 	kaleidoscope_plot = ikp;
@@ -156,6 +178,7 @@ void DircBaseSim::set_upper_wedge_angle_diff(double rads, double rads_y) {
 	rotate_2d(upperWedgeClosePlaneNx,upperWedgeClosePlaneNz,cos(rads_y),sin(rads_y));
 
 	upperWedgeClosePlaneD = (barLength/2 + upperWedgeBottom)*upperWedgeClosePlaneNy + upperWedgeClosePlaneNz*lowerWedgeExtensionZ;
+
 
 	upperWedgeFarPlaneNx = 0; //Shouldn't be needed
 	upperWedgeFarPlaneNy = -sin(rads);
@@ -441,6 +464,9 @@ void DircBaseSim::sim_lut_points(\
 	for (int i = 0; i < n_photons; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
+		//Useful for directly testing box, not fo lut
+		//randTheta = 45/57.3;
+		//randPhi = -3.1415926535;
 		//This timing won't be correct
 		mm_index = 0;
 
@@ -448,9 +474,12 @@ void DircBaseSim::sim_lut_points(\
 		y = barLength/2;
 		z = -barDepth/2;
 
+
 		dx = sin(randTheta)*sin(randPhi);
 		dy = cos(randTheta);
 		dz = sin(randTheta)*cos(randPhi); 
+
+		//printf("lutstart: %12.04f %12.04f %12.04f\n",dx,dy,dz);
 
 		mm_index += warp_wedge(\
 				x,\
@@ -466,6 +495,7 @@ void DircBaseSim::sim_lut_points(\
 			continue;
 		}
 		dirc_point out_val;
+
 
 
 		warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
@@ -901,6 +931,7 @@ void DircBaseSim::fill_reg_phi(\
 
 			if (z > 0)
 			{
+				//printf("%12.04f %12.04f %12.04f\n",x,y,z);
 				continue;
 			}
 
@@ -1713,6 +1744,7 @@ double DircBaseSim::warp_ray(\
 	//Be careful about x,y,and z - can't straight rotate that
 	//returns distance traveled (mm) times index
 
+
 	double rval = 0; //stores total distance;
 
 	double delx, dely,delz;
@@ -1720,13 +1752,17 @@ double DircBaseSim::warp_ray(\
 	//Start the rays in the quartz for simulation reasons
 	double grace_room = 0;
 
+	bool direct_ray = true;
+
 	if (dy > 0) {
 		//Going up
 		dely = barLength*(0.5-grace_room) - y;
+		direct_ray = true;
 	} else {
 		//going down, flip dy
 		dely = barLength*(1.5-grace_room) + y;
 		dy = -dy;
+		direct_ray = false;
 	}
 
 	rval += dely*dely;
@@ -1735,11 +1771,11 @@ double DircBaseSim::warp_ray(\
 
 	if (fabs(dz) > cos_critical_angle ||\
 			fabs(dx) > cos_critical_angle ||\
-			(dy < 0 && fabs(dy) > cos_critical_angle) ||
 			dy*dy < 1e-4) {
 		//If it's not totally internally reflected, assume it escapes
 		//also assume failure if it isn't going up fast enough (absorbed)
 		//Positive z origin signals fail
+		//Do not check y - is not totally internally reflected on the bottom - there is an actuall mirror there.
 		z = 1337;
 		return -1;
 	}
@@ -1796,6 +1832,26 @@ double DircBaseSim::warp_ray(\
 	}
 	nbouncesz = delz/barDepth + 1;
 	remainderz = delz - barDepth*(nbouncesz-1);
+
+
+	if (store_bounces == true)
+	{
+		x_bounces.push_back(nbouncesx);
+		z_bounces.push_back(nbouncesz);
+		if (direct_ray == true)
+		{
+			x_direct_bounces.push_back(nbouncesx);	
+			z_direct_bounces.push_back(nbouncesz);	
+		}
+		else
+		{
+			x_indirect_bounces.push_back(nbouncesx);	
+			z_indirect_bounces.push_back(nbouncesz);	
+		}
+	}
+
+
+
 	//	double bar_front = -barDepth/2;
 	//	double bar_front = -17.25/2;
 	double bar_front = 0;
@@ -1822,6 +1878,9 @@ double DircBaseSim::warp_wedge(\
 
 	wedge_bounces = 0;
 
+	//must change after close wedge bounce
+	double startz = z;
+	double starty = y;
 	double mm_index = 0;
 	bool passed_interface = false;
 	// 	double x0 = x;
@@ -1830,6 +1889,12 @@ double DircBaseSim::warp_wedge(\
 	double n_dot_v0 = 0;
 
 	//deal with yz first
+	
+	//Can't ever not totally internal reflect	
+	//force dz to be negative	
+	//double wedgeCloseIncidentAngle = acos(-dx*wedgeClosePlaneNx - dy*wedgeClosePlaneNy + fabs(dz)*wedgeClosePlaneNz);
+	//printf("%12.04f\n",57.3*wedgeCloseIncidentAngle);
+	
 
 	//Check for reflection from far wedge plane - max 1 bounce
 	if (dz > 0) {
@@ -1883,7 +1948,9 @@ double DircBaseSim::warp_wedge(\
 	//Assume close enough to determine which wedge it hit
 	double ty = dt*dy + y - barLength/2;
 
-	if ((ty < wedgeHeight)) {
+
+	//have to make sure ty intersects IN the wedge - will correctly return a negative if it's below
+	if (ty < wedgeHeight && ty > 0) {
 		//reflect it off bottom wedge
 
 		//Again, always true
@@ -1894,17 +1961,25 @@ double DircBaseSim::warp_wedge(\
 			z = 1337;
 			return -1;
 		}
+		//printf("ty: %12.04f z-bd/2: %12.04f\n",ty,z+barDepth/2);
 		dy += 2*n_dot_v*wedgeClosePlaneNy;
 		dz += 2*n_dot_v*wedgeClosePlaneNz;
 
+		//start the bouncing here
+		starty = y;
+		startz = z;
+	
 		wedgeBeforeInterface = 1;
 
-	} else if (ty > upperWedgeBottom && ty < upperWedgeTop) {
+	} 
+	else if (ty > upperWedgeBottom && ty < upperWedgeTop) 
+	{
 		//passed interface before reflection
 		//get dt to propagate to interface
 		dt = (quartzLiquidY + barLength/2 - y)/dy;
 		mm_index += dt*quartzIndex;
-		if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
+		if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) 
+		{
 			//Goes out the window, fail and return
 			z = 1337;
 			return -1;
@@ -1922,9 +1997,11 @@ double DircBaseSim::warp_wedge(\
 		n_dot_v0 = -(y*upperWedgeClosePlaneNy + z*upperWedgeClosePlaneNz + x*upperWedgeClosePlaneNx);
 
 
-		dt = -(upperWedgeClosePlaneD+n_dot_v0)/n_dot_v;
+		dt = -(wedgeClosePlaneD+n_dot_v0)/n_dot_v;
+		//printf("uwcpd: %12.04f nv: %12.04f nv0: %12.04f dt: %12.04f\n",upperWedgeClosePlaneD,n_dot_v,n_dot_v0,dt);
 
-		if (dt*dy + y < upperWedgeTop + barLength/2) {
+		if (dt*dy + y < upperWedgeTop + barLength/2) 
+		{
 			mm_index += dt*liquidIndex;
 			if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
 				//Goes out the window, fail and return
@@ -1932,7 +2009,7 @@ double DircBaseSim::warp_wedge(\
 				return -1;
 			}
 
-			if (y > wedgeHeight + barLength/2 && y < upperWedgeBottom + upperWedgeGap + barLength/2)
+			if (y > wedgeHeight + barLength/2 && y < upperWedgeBottom + barLength/2)
 			{
 				//We let it go out the gap on the slanted side, but not on the left and right.
 				z = 1337;
@@ -1947,25 +2024,38 @@ double DircBaseSim::warp_wedge(\
 			dx += 2*n_dot_v*upperWedgeClosePlaneNx;
 			dy += 2*n_dot_v*upperWedgeClosePlaneNy;
 			dz += 2*n_dot_v*upperWedgeClosePlaneNz;
+			
+			//printf("upper wedge ty: %12.04f z-bd/2: %12.04f uwb: %12.04f uwt: %12.04f\n",ty,z+barDepth/2,upperWedgeBottom,upperWedgeTop);
+			//yet again, start after bouncing
+			starty = y;
+			startz = z;
 
-		} else {
+		} 
+		else 
+		{
 			//refracted such that it no longer bounces
+			//Still have to check from here later
+			starty = y;
+			startz = z;
 			dt = (upperWedgeTop + barLength/2 - y)/dy;
 			mm_index += dt*liquidIndex;
-			if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
+			if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) 
+			{
 				//Goes out the window, fail and return
 				z = 1337;
 				return -1;
 			}
 		}
 
-	} else if (ty < upperWedgeTop) {
+	} else if (ty < upperWedgeTop && ty > 0) {
 		//out the window
+		//printf("%12.04f\n",ty);
 		z = 1337;
 		return -1;
 	}
 
 	//Have now performed the maximum number of reflections (besides x direction)
+		//Sort of - still have to account for z direction as well
 	//Finish by taking it to the top
 	if (!passed_interface == true) {
 		//Will go through the interface now before it hits the top
@@ -1991,9 +2081,12 @@ double DircBaseSim::warp_wedge(\
 	}
 	dt = (upperWedgeTop + barLength/2 - y)/dy;
 	mm_index += dt*liquidIndex;
-	if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt))) {
+	if (!(x_wedge_coerce_check(x,y,z,dx,dy,dz,dt)) || dt > 1000) {
+		//Cut out large dts - more than a m (~30 reflections) in the wedge - only seems to show up in very low dy situations from the LUT table.
 		//I'm not sure if it can go out the window at this point, but just in case
 		//Goes out the window, fail and return
+		//y position when hitting the back wall
+		
 		z = 1337;
 		return -1;
 	}
@@ -2001,6 +2094,48 @@ double DircBaseSim::warp_wedge(\
 
 	//and we're done.  Everything should be correct now with the ray at the top of the wedge
 	//return the distance traveled times the index it traveled in
+
+	//printf("DTDTDT: %12.04f\n",dt);
+
+	if (z > 0)
+	{
+		if (dz < 0)
+		{
+			printf("WTH Over: Somethings wrong with Zs in the wedge %d\n",wedgeBeforeInterface);
+			printf("wthxyz: %12.04f %12.04f %12.04f %12.04f %12.04f %12.04f dt: %12.04f\n",x,y,z,dx,dy,dz,dt);
+		}
+		//implement reflection off the vack of the walls
+		double wally = starty + (y - starty)*(-startz/(z-startz));
+		//account for window and gap
+		if (wally > wedgeHeight + barLength/2)
+		{
+		//bounced off upper part of mirror
+			if (wally < upperWedgeBottom + barLength/2)
+			{
+				//printf("%12.04f\n",wally);
+				z = 1337;
+				return -1;
+			}
+			z = -z;
+			dz = -dz;
+		}
+		else
+		{
+			double sz = z;
+			double sdz = dz;
+			double sdy = dy;
+			//bounced off lower part - just an appoximation
+			dz = -dz;
+			//printf("%12.04f %12.04f\n",dz,dy);
+			rotate_2d(dz,dy,cos(2*wedgeFarAngle/57.3),sin(2*wedgeFarAngle/57.3));
+			//printf("  %12.04f %12.04f\n",dz,dy);
+			//z = -z;
+			//account for change in angle
+			z = z*dz/sdz;
+			y = y - (y-wally)*(sdy-dy)/sdy;
+		}
+
+	}
 
 	return mm_index;
 
@@ -2015,8 +2150,6 @@ bool DircBaseSim::optical_interface_z(\
 	//n1 is starting index of refraction, n2 is ending
 	//Assume that it's going through the z plane
 	//(this will change the ordering when called in our current geometry)
-
-	;
 
 	//dz and dy are flipped, so this is really acos
 	double before_ang = acos(dz);
@@ -2116,6 +2249,7 @@ bool DircBaseSim::x_wedge_coerce_check(\
 			//add to total time taken
 			cdt += tdt;
 			ty += dy*tdt;
+			
 			if (ty > wedgeHeight && ty < upperWedgeBottom) {
 				//out the window on an edge
 				//this is ok, finish propagation without bouncing
@@ -2124,6 +2258,7 @@ bool DircBaseSim::x_wedge_coerce_check(\
 				tdt = dt - cdt;
 				break;
 			}
+			
 
 			//not out the window, propagate x for the next iteration
 			x += tdt*dx;
@@ -2147,6 +2282,7 @@ bool DircBaseSim::x_wedge_coerce_check(\
 	x += dx*tdt;
 	y = barLength/2 + ty + dy*tdt;//Note that y starts at zero (bar middle), but ty starts at bar top
 	z += dt*dz;//Implemented for convenience - z direction irrelevant to window calculation
+	//printf("%12.04f\n",z);
 
 	return true;//not out the window for the whole trip
 }
@@ -2234,5 +2370,47 @@ double DircBaseSim::get_intercept_plane(\
 double DircBaseSim::sgn(double val) {
 	//stolen from http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 	return (0 < val) - (val < 0);
+}
+void DircBaseSim::fill_bounces_vecs(\
+                std::vector<int> &fxbounces,\
+                std::vector<int> &fzbounces,\
+                std::vector<int> &fxdirbounces,\
+                std::vector<int> &fzdirbounces,\
+                std::vector<int> &fxindirbounces,\
+                std::vector<int> &fzindirbounces)
+{
+	fxbounces.clear();
+	fzbounces.clear();
+	fxdirbounces.clear();
+	fzdirbounces.clear();
+	fxindirbounces.clear();
+	fzindirbounces.clear();
+
+
+	for (unsigned int i = 0; i < x_bounces.size(); i++)
+	{
+		fxbounces.push_back(x_bounces[i]);
+	}
+	for (unsigned int i = 0; i < z_bounces.size(); i++)
+	{
+		fzbounces.push_back(z_bounces[i]);
+	}
+	for (unsigned int i = 0; i < x_direct_bounces.size(); i++)
+	{
+		fxdirbounces.push_back(x_direct_bounces[i]);
+	}
+	for (unsigned int i = 0; i < z_direct_bounces.size(); i++)
+	{
+		fzdirbounces.push_back(z_direct_bounces[i]);
+	}
+	for (unsigned int i = 0; i < x_indirect_bounces.size(); i++)
+	{
+		fxindirbounces.push_back(x_indirect_bounces[i]);
+	}
+	for (unsigned int i = 0; i < z_indirect_bounces.size(); i++)
+	{
+		fzindirbounces.push_back(z_indirect_bounces[i]);
+	}
+
 }
 

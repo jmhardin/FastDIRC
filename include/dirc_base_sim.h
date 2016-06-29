@@ -75,6 +75,15 @@ protected:
 	bool store_refraction;
 	std::vector<double> refraction_before;
 	std::vector<double> refraction_after;
+
+	bool store_bounces;
+	std::vector<int> x_bounces;
+	std::vector<int> z_bounces;
+	std::vector<int> x_direct_bounces;
+	std::vector<int> z_direct_bounces;
+	std::vector<int> x_indirect_bounces;
+	std::vector<int> z_indirect_bounces;
+
 	
 	double min_transmittance,max_transmittance,sep_transmittance;
 	int num_transmittance;
@@ -213,6 +222,14 @@ public:
 	virtual double get_cerenkov_angle_rand(double beta, double additional_spread, double &wavelength) {return -1;}
 	
 
+	void set_store_bounces(bool isb);
+	void fill_bounces_vecs(\
+		std::vector<int> &fxbounces,\
+		std::vector<int> &fzbounces,\
+		std::vector<int> &fxdirbounces,\
+		std::vector<int> &fzdirbounces,\
+		std::vector<int> &fxindirbounces,\
+		std::vector<int> &fzindirbounces);
 	void set_kaleidoscope_plot(bool ikp);
 	std::vector<double> get_dist_traveled();
 	void set_upper_wedge_angle_store(bool istore);

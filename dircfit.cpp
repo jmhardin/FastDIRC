@@ -392,6 +392,7 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 }
 int main(int nargs, char* argv[])
 {  
+
 	clock_t timing_clock;
 
 	const char* in_str;
@@ -446,7 +447,7 @@ int main(int nargs, char* argv[])
 	bool perform_chromatic_correction = true;
 
 	int num_runs = 1000;
-	int max_particles = 6000000;
+	int max_particles = 60000000;
 	int phi_phots_reduce = 1;
 	int refraction_sim_n = -1;
 	int sparse_sim_n = -1;
@@ -457,6 +458,8 @@ int main(int nargs, char* argv[])
 	int lut_sim_n = -1;
 	int gaus_ll_n = -1;
 	int sim_time_test_n = -1;
+	int bounces_phot_n = -1;
+
 	double gaus_ll_spread = 2;
 
 	double mean_n_phot = 40;
@@ -475,6 +478,8 @@ int main(int nargs, char* argv[])
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
 	double main_mirror_nonuniformity = 0;
+	double foc_mirror_size = 288;
+
 
 
 	double pmt_min_z = -1000;
@@ -482,8 +487,9 @@ int main(int nargs, char* argv[])
 	double large_mirror_min_z = -1000;
 	double large_mirror_max_z = 1000;
 
-	//pmt_min_z = -559;
-	//pmt_max_z = -329;
+	pmt_min_z = -559;
+	pmt_max_z = -329;
+	//pmt_max_z = -338;
 	large_mirror_min_z = -559;
 	large_mirror_max_z = -130;
 
@@ -543,6 +549,7 @@ int main(int nargs, char* argv[])
 	double kaon_x_adj = 0;
 	double kaon_y_adj = 0;
 
+	//int n_phi_phots = 900000;
 	int n_phi_phots = 150000;
 	int n_z_phots = 4;
 	int n_step_phots = 1000;
@@ -677,6 +684,13 @@ int main(int nargs, char* argv[])
 				i++;
 				line_recon_n = atoi(argv[i]);
 			}
+			else if (strcmp(argv[i], "-side_mirror") == 0)
+			{
+				i++;
+				sm_xl = atof(argv[i]);
+				i++;
+				sm_xr = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-line_recon_calib") == 0)
 			{
 				//setting line recon calibrations, expects 4 arguements
@@ -724,6 +738,11 @@ int main(int nargs, char* argv[])
 				i++;
 				sim_time_test_n = atoi(argv[i]);
 			}
+			else if (strcmp(argv[i], "-bounces_phot_n") == 0)
+			{
+				i++;
+				bounces_phot_n = atoi(argv[i]);
+			}
 			else if (strcmp(argv[i], "-use_quartz_for_liquid") == 0)
 			{
 				use_quartz_for_liquid = true;
@@ -735,6 +754,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-fill_kinematics_yields") == 0)
 			{
 				fill_kinematics_yields = true;
+			}
+			else if (strcmp(argv[i], "-out_csv") == 0)
+			{
+				out_csv = true;
 			}
 			else if (strcmp(argv[i], "-coverage_plot") == 0)
 			{
@@ -1030,6 +1053,8 @@ int main(int nargs, char* argv[])
 
 	double main_mirror_angle = 74.11+mirror_angle_change;
 
+	//main_mirror_angle += .23;
+
 	double rad_to_deg = 57.2958;
 
 	//double res_enhance = 1/6.;
@@ -1060,7 +1085,7 @@ int main(int nargs, char* argv[])
 	DircOpticalSim *dirc_model_2 = new DircOpticalSim(\
 			rseed,\
 			-1200 + mirror_r_difference,\
-			300.38,\
+			foc_mirror_size,\
 			main_mirror_angle,\
 			600,\
 			47.87 + box_rot + mirror_angle_change);
@@ -1068,7 +1093,7 @@ int main(int nargs, char* argv[])
 	DircThreeSegBoxSim *dirc_model = new DircThreeSegBoxSim(\
 			rseed,\
 			-1200 + mirror_r_difference,\
-			300.38,\
+			foc_mirror_size,\
 			main_mirror_angle,\
 			600,\
 			47.87 + box_rot + mirror_angle_change);
@@ -1082,6 +1107,7 @@ int main(int nargs, char* argv[])
 	dirc_model->set_pmt_plane_zs(pmt_min_z,pmt_max_z);
 	dirc_model->set_large_mirror_zs(large_mirror_min_z,large_mirror_max_z);
 	dirc_model->set_use_quartz_n_for_liquid(use_quartz_for_liquid);
+
 
 	double muon_beta, pion_beta, kaon_beta/*, electron_beta:=1*/;
 	muon_beta=pion_beta=kaon_beta=-1;
@@ -1110,6 +1136,13 @@ int main(int nargs, char* argv[])
 	TH1F *ref_kaon_after = new TH1F("ref_kaon_after","Angle of Kaon Photons going out of interface", 9000,0,90);
 	TH1F *ref_pion_sens_plane = new TH1F("ref_pion_sens_plane","Angle of Pion Photons going into window to PMTs", 9000,0,90);
 	TH1F *ref_kaon_sens_plane = new TH1F("ref_kaon_sens_plane","Angle of Kaon Photons going into window to PMTs", 9000,0,90);
+
+	TH1F *n_bounces_x = new TH1F("n_bounces_x","Number of bounces in x direction",1000,-.5,999.5);
+	TH1F *n_bounces_z = new TH1F("n_bounces_z","Number of bounces in z direction",1000,-.5,999.5);
+	TH1F *n_bounces_x_direct = new TH1F("n_bounces_x_direct","Number of bounces in x direction (direct photons)",1000,-.5,999.5);
+	TH1F *n_bounces_z_direct = new TH1F("n_bounces_z_direct","Number of bounces in z direction (direct photons)",1000,-.5,999.5);
+	TH1F *n_bounces_x_indirect = new TH1F("n_bounces_x_indirect","Number of bounces in x direction (indirect photons)",1000,-.5,999.5);
+	TH1F *n_bounces_z_indirect = new TH1F("n_bounces_z_indirect","Number of bounces in z direction (indirect photons)",1000,-.5,999.5);
 
 
 
@@ -1153,6 +1186,7 @@ int main(int nargs, char* argv[])
 	TH2F *ref_theta_cphi_kaon = new TH2F("ref_theta_cphi_kaon","Emitted angle of Kaon Photons versus angle into interface", 7200,0,360,1800,0,90);
 
 	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
+	//TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",500,-1500,1500,67,-150,252);
 	TH2F *kaon_dist_xy = new TH2F("kaon_dist_xy","xy val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 
 	TH2F *box_check_xy = new TH2F("box_check_xy","xy val of points from top of wedge",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
@@ -3318,9 +3352,11 @@ int main(int nargs, char* argv[])
 		printf("\nLine Recon Run Completed\n");
 		//printf("%12.04f\n",ival);
 	}
-	else
-	{ 
+	else if (num_runs > 0)
+	{
+		 
 		printf("no input file specified.  Running in loop mode\n");
+
 
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
@@ -4602,6 +4638,68 @@ int main(int nargs, char* argv[])
 			last_phi = phi; 
 		}
 	}
+	if (bounces_phot_n > 0)
+	{
+		printf("Outputing N bounces histograms (With %d initial photons)\n",bounces_phot_n);
+		dirc_model->set_store_bounces(true);
+		std::vector<dirc_point> sim_points;
+		
+		dirc_model->sim_rand_n_photons(\
+				sim_points,\
+				bounces_phot_n,\
+				0,\
+				1,\
+				particle_x,\
+				particle_y,\
+				0,\
+				particle_theta,\
+				particle_phi,\
+				tracking_unc,\
+				0,\
+				pion_beta);
+		
+		std::vector<int> nbouncesx;
+		std::vector<int> nbouncesz;
+		std::vector<int> nbouncesx_dir;
+		std::vector<int> nbouncesz_dir;
+		std::vector<int> nbouncesx_indir;
+		std::vector<int> nbouncesz_indir;
+
+		dirc_model->fill_bounces_vecs(\
+			nbouncesx,\
+			nbouncesz,\
+			nbouncesx_dir,\
+			nbouncesz_dir,\
+			nbouncesx_indir,\
+			nbouncesz_indir);
+
+		for (unsigned int i = 0; i < nbouncesx.size(); i++)
+		{
+			n_bounces_x->Fill(nbouncesx[i]);
+		}
+		for (unsigned int i = 0; i < nbouncesz.size(); i++)
+		{
+			n_bounces_z->Fill(nbouncesz[i]);
+		}
+		for (unsigned int i = 0; i < nbouncesx_dir.size(); i++)
+		{
+			n_bounces_x_direct->Fill(nbouncesx_dir[i]);
+		}
+		for (unsigned int i = 0; i < nbouncesz_dir.size(); i++)
+		{
+			n_bounces_z_direct->Fill(nbouncesz_dir[i]);
+		}
+		for (unsigned int i = 0; i < nbouncesx_indir.size(); i++)
+		{
+			n_bounces_x_indirect->Fill(nbouncesx_indir[i]);
+		}
+		for (unsigned int i = 0; i < nbouncesz_indir.size(); i++)
+		{
+			n_bounces_z_indirect->Fill(nbouncesz_indir[i]);
+		}
+	
+		dirc_model->set_store_bounces(false);
+	}
 	if (sim_time_test_n > 0)
 	{
 		printf("Timing %d single particle simulations\n",sim_time_test_n);
@@ -4634,7 +4732,45 @@ int main(int nargs, char* argv[])
 		printf("Total Time Taken: %12.02es\n",time_taken);
 		printf("Time per event:   %12.02ems\n",per_particle_time * 1000);
 		printf("Rate:             %12.02eHz\n",sim_rate);
-	}	
+	}
+	if (out_csv == true)
+	{
+		int out_csv_n = 40000;
+
+		
+		std::vector<dirc_point> store_points;
+		pion_beta = dirc_model->get_beta(energy,pimass);
+		kaon_beta = dirc_model->get_beta(energy,kmass);
+		dirc_model->sim_rand_n_photons(\
+                        store_points,\
+                        out_csv_n,\
+                        pion_angle,\
+                        1,\
+                        particle_x,\
+                        particle_y,\
+                        0,\
+                        particle_theta,\
+                        particle_phi,\
+                        tracking_unc,\
+                        ckov_unc,\
+                        pion_beta);
+
+
+		std::ofstream csv_out;
+		csv_out.open("pion_loc.csv");
+
+		char outline[256];
+		
+		for (unsigned int i = 0; i < store_points.size(); i++)
+		{
+			sprintf(outline,"%12.04f	%12.04f	%12.04f\n",store_points[i].x,store_points[i].y,store_points[i].t);
+			csv_out << outline;
+		}
+		
+
+		csv_out.close();
+	}
+
 	if (output_box_angles_n > 0)
 	{
 		std::vector<dirc_point> store_points;
@@ -4782,6 +4918,9 @@ int main(int nargs, char* argv[])
 	{
 		double pion_beta = dirc_model->get_beta(energy,pimass);
 		double kaon_beta = dirc_model->get_beta(energy,kmass);
+		
+		//printf("%12.04f\n",dirc_model->get_cerenkov_angle_rand(pion_beta,0,t_lambda));
+
 		pion_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(pion_beta,0,t_lambda));
 		pion_lambda->Fill(t_lambda);
 		kaon_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(kaon_beta,0,t_lambda));
@@ -4849,6 +4988,13 @@ int main(int nargs, char* argv[])
 	ref_kaon_after->Write();
 	ref_pion_sens_plane->Write();
 	ref_kaon_sens_plane->Write();
+
+	n_bounces_x->Write();
+	n_bounces_z->Write();
+	n_bounces_x_direct->Write();
+	n_bounces_z_direct->Write();
+	n_bounces_x_indirect->Write();
+	n_bounces_z_indirect->Write();
 
 	pion_midline_dx->Write();
 	pion_midline_dy->Write();
