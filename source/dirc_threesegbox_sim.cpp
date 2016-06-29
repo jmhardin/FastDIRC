@@ -89,7 +89,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	min_QE = 300;
 	max_QE = 600;
 	sep_QE = (max_QE - min_QE)/(num_QE - 1);
-/*
+
 	double t_QE[31] = {\
 		0.016415, 0.074064, 0.141658, 0.184219, 0.20634,  0.217191, 0.223244,
 	       0.222296, 0.215232, 0.206302, 0.195574, 0.183007, 0.169403, 0.155447,
@@ -97,7 +97,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	       0.067311, 0.060243, 0.053588, 0.047765, 0.04344,  0.037999, 0.034177,
 	       0.030869, 0.027848, 0.024141
 	};
-*/
+
 
 /*
 	//h12700 from geant
@@ -112,7 +112,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 		0.269913,0.283034,0.294369,0.303953,0.31158,0.317117,0.320523,0.321858,
 		0.321271,0.31895,0.315347,0.310875,0.306056,0.301365};
 */
-
+/*
 	num_QE = 30;
 	min_QE = 300;
 	max_QE = 590;
@@ -125,15 +125,15 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 		12.265500, 11.147500, 10.185500, 9.392500, 8.846500,\
 		8.489000, 7.663500, 5.941000, 4.777500, 4.225000,\
 		3.828500, 3.471000, 3.204500, 2.918500, 2.684500};
-
+*/
 
 	// Transmittance of quartz per 1m
 
 
 	for (int i = 0; i < num_QE; i++) {
-		//vals_QE.push_back(t_QE[i]);
+		vals_QE.push_back(t_QE[i]);
 		//vals_QE.push_back(QuantumEfficiencyPMT12700[i]);
-		vals_QE.push_back(marias_QE[i]/100.0);
+		//vals_QE.push_back(marias_QE[i]/100.0);
 	}
 
 	num_transmittance = 36;
