@@ -19,6 +19,8 @@
 #include "include/dirc_spread_gaussian.h"
 #include "include/dirc_digitizer.h"
 #include "include/dirc_rect_digitizer.h"
+#include "include/dirc_babar_digitizer.h"
+#include "include/dirc_babar_sim.h"
 #include "include/dirc_progressive_separation.h"
 #include "include/dirc_gluex_lut_enum.h"
 #include "include/dirc_lut_enum.h"
@@ -31,6 +33,9 @@
 #include <TF1.h>
 #include <TRandom3.h>
 #include <TMinuit.h>
+
+
+//#define USE_BABAR_BOX
 
 DircBaseSim* global_calib_model;
 DircDigitizer* global_digitizer;
@@ -509,7 +514,7 @@ int main(int nargs, char* argv[])
 	//	double maxx = -minx;
 	//	double miny = -800;
 	//	double maxy = -miny;
-	double minx = -1000;
+	double minx = -1500;
 	double maxx = 1500;
 	double miny = -500;
 	double maxy = 500;
@@ -536,6 +541,11 @@ int main(int nargs, char* argv[])
 	//double s_func_t = 2;
 	double s_func_t = 1.0;
 	double sfunc_sig = 1;
+
+#ifdef USE_BABAR_BOX
+	s_func_x = 29;
+	s_func_y = 29;
+#endif 
 
 	int n_sim_phots = 40;
 
@@ -1081,7 +1091,7 @@ int main(int nargs, char* argv[])
 
 
 	TRandom3 spread_ang(rseed+3);
-
+/*
 	DircOpticalSim *dirc_model_2 = new DircOpticalSim(\
 			rseed,\
 			-1200 + mirror_r_difference,\
@@ -1089,7 +1099,21 @@ int main(int nargs, char* argv[])
 			main_mirror_angle,\
 			600,\
 			47.87 + box_rot + mirror_angle_change);
+*/
 
+//hackish, especially with the uncertainty functions, but easiest
+#ifdef USE_BABAR_BOX
+	DircBaBarSim *dirc_model = new DircBaBarSim(\
+                        rseed);
+	minx = -429.0/2;//assum it's babar's size
+	minx = -1500;
+	maxx = -minx;
+	miny = 0;
+	maxy = dirc_model->get_sens_r()*dirc_model->get_sens_subtend_angle()/57.3;
+	double babar_t_unc = 1;
+	double babar_t_bin = 1;
+	double babar_pmt_r = 29./2;
+#else
 	DircThreeSegBoxSim *dirc_model = new DircThreeSegBoxSim(\
 			rseed,\
 			-1200 + mirror_r_difference,\
@@ -1097,7 +1121,7 @@ int main(int nargs, char* argv[])
 			main_mirror_angle,\
 			600,\
 			47.87 + box_rot + mirror_angle_change);
-
+#endif
 
 	dirc_model->set_store_traveled(false);// uses LOTS of memory if set to true.
 	dirc_model->set_liquid_index(liquid_index);
@@ -1185,8 +1209,8 @@ int main(int nargs, char* argv[])
 	TH2F *ref_theta_cphi_pion = new TH2F("ref_theta_cphi_pion","Emitted angle of Pion Photons versus angle into interface", 7200,0,360,1800,0,90);
 	TH2F *ref_theta_cphi_kaon = new TH2F("ref_theta_cphi_kaon","Emitted angle of Kaon Photons versus angle into interface", 7200,0,360,1800,0,90);
 
-	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
-	//TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",500,-1500,1500,67,-150,252);
+	//TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
+	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",500,-1500,1500,67,-150,252);
 	TH2F *kaon_dist_xy = new TH2F("kaon_dist_xy","xy val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 
 	TH2F *box_check_xy = new TH2F("box_check_xy","xy val of points from top of wedge",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
@@ -1236,7 +1260,17 @@ int main(int nargs, char* argv[])
 	TH1F *zero_pion_id = new TH1F("zero_pion_id","Correct pion ID with cut at 0",2,-0.5,1.5);
 	TH1F *zero_kaon_id = new TH1F("zero_kaon_id","Correct kaon ID with cut at 0",2,-0.5,1.5);
 
-
+#ifdef USE_BABAR_BOX
+	DircBaBarDigitizer digitizer(\
+			minx,\
+			maxx,\
+			miny,\
+			maxy,\
+			babar_pmt_r,\
+			babar_t_unc,\
+			babar_t_bin);
+			
+#else
 	DircRectDigitizer digitizer(\
 			minx,\
 			maxx,\
@@ -1246,7 +1280,7 @@ int main(int nargs, char* argv[])
 			resy,\
 			t_unc,\
 			t_bin_size);
-
+#endif
 	//  	
 	printf("Beginning Run\n");
 	double llc, llf, ll_diff;
@@ -1924,7 +1958,7 @@ int main(int nargs, char* argv[])
 						//TODO: Check timing
 						}
 						else if(abs(PID[j])==8||PID[j]==9){
-							pion_beta = dirc_model->get_beta(E[j],pimass);
+							//pion_beta = dirc_model->get_beta(E[j],pimass);
 							pion_angle = rad_to_deg*acos(1/(refrac_index*pion_beta));
 
 
@@ -3781,6 +3815,7 @@ int main(int nargs, char* argv[])
 			pion_dist_xt->Fill(x,t_ns);
 			pion_dist_yt->Fill(y,t_ns);
 			pion_dist_t->Fill(t_ns);
+			//printf("pion_dist_xyt: %12.04f %12.04f %12.04f\n",x,y,t_ns);
 		}
 
 		//	printf("Found %d kaon points on the target\n", (int) hit_points_kaon.size());

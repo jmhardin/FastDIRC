@@ -158,8 +158,8 @@ void DircBaseSim::rotate_2d(double &x, double &y, double cval, double sval) {
 void DircBaseSim::set_bar_box_angle(double ang) {
 	//expect degrees
 	//sets angle between readout box and bars - rotates angle coming out of bars
-	box_angle_off_cval = cos(ang/57.3);
-	box_angle_off_sval = sin(ang/57.3);
+	//box_angle_off_cval = cos(ang/57.3);
+	//box_angle_off_sval = sin(ang/57.3);
 }
 std::vector<double> DircBaseSim::get_dist_traveled() {
 	return dist_traveled;
@@ -465,8 +465,8 @@ void DircBaseSim::sim_lut_points(\
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
 		//Useful for directly testing box, not fo lut
-		//randTheta = 45/57.3;
-		//randPhi = -3.1415926535;
+		randTheta = 45/57.3;
+		randPhi = -3.1415926535;
 		//This timing won't be correct
 		mm_index = 0;
 

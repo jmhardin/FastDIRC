@@ -3,15 +3,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-theta_spacing=0.5-.000001
-phi_spacing=1.0-.000001
+theta_spacing=0.5
+phi_spacing=1.0
 
 theta_min=0
 theta_max=12
 phi_min=0
-phi_max=90
+phi_max=89
 
-filename="res_fullscan_fullfdirc.csv"
+filename="res_fullscan_chromcorr.csv"
 theta, phi, pion_y, kaon_y, kde, lin, lin_cal, lut = np.loadtxt(filename, delimiter=' ', usecols=(2, 3, 5, 7, 8, 9, 10, 11), unpack=True)
 
 nphi = np.unique(phi).size
@@ -46,123 +46,133 @@ theta_ticks = np.unique(theta)
 clim_low = 1
 clim_high = 4
 
-phi_label="Phi (deg)"
-theta_label="Theta (deg)"
+phi_label=r"$\phi$ (deg)"
+theta_label=r"$\theta$ (deg)"
 res_label="Resolution (mrad)"
-improvement_label="Percent Improvement"
-worse_label="Percent Worse"
+improvement_label="Fractional Improvement"
+worse_label="Fraction Worse"
 fudge_label="Y correction (mm)"
+label_fontsize=20
 
-
-plt.pcolor(phi_ticks,theta_ticks,KDE,cmap=plt.cm.afmhot)
+cnt = plt.pcolor(phi_ticks,theta_ticks,KDE,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(res_label)
-plt.savefig('kde_map.pdf')
+cbar.ax.set_ylabel(res_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('kde_map.pdf',bbox_inches='tight')
 plt.clf()
-plt.pcolor(phi_ticks,theta_ticks,LIN,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LIN,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
 plt.xlabel(phi_label)
 plt.ylabel(theta_label)
 cbar = plt.colorbar()
 cbar.ax.set_ylabel(res_label)
-plt.savefig('lin_map.pdf')
+cbar.solids.set_edgecolor("face")
+plt.savefig('lin_map.pdf',bbox_inches='tight')
 plt.clf()
-plt.pcolor(phi_ticks,theta_ticks,LIN_CAL,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LIN_CAL,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(res_label)
-plt.savefig('lin_cal_map.pdf')
+cbar.ax.set_ylabel(res_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lin_cal_map.pdf',bbox_inches='tight')
 plt.clf()
-plt.pcolor(phi_ticks,theta_ticks,LUT,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LUT,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(res_label)
-plt.savefig('lut_map.pdf')
+cbar.ax.set_ylabel(res_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lut_map.pdf',bbox_inches='tight')
 plt.clf()
 
 clim_low = -1
 clim_high = 0
 
-plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_IMP,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_IMP,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(improvement_label)
-plt.savefig('lin_cal_imp_map.pdf')
+cbar.ax.set_ylabel(improvement_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lin_cal_imp_map.pdf',bbox_inches='tight')
 plt.clf()
 
 clim_low = 0
 clim_high = 1
 
-plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_V_KDE,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LIN_CAL_V_KDE,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(worse_label)
-plt.savefig('lin_cal_v_kde_map.pdf')
+cbar.ax.set_ylabel(worse_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lin_cal_v_kde_map.pdf',bbox_inches='tight')
 plt.clf()
 
-plt.pcolor(phi_ticks,theta_ticks,LUT_V_KDE,cmap=plt.cm.afmhot)
+plt.pcolor(phi_ticks,theta_ticks,LUT_V_KDE,cmap=plt.cm.afmhot,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(worse_label)
-plt.savefig('lut_v_kde_map.pdf')
+cbar.ax.set_ylabel(worse_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lut_v_kde_map.pdf',bbox_inches='tight')
 plt.clf()
 
 clim_low = -1
 clim_high = 1
 
-plt.pcolor(phi_ticks,theta_ticks,LUT_V_LIN_CAL,cmap=plt.cm.seismic)
+plt.pcolor(phi_ticks,theta_ticks,LUT_V_LIN_CAL,cmap=plt.cm.seismic,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(worse_label)
-plt.savefig('lut_v_lin_cal_map.pdf')
+cbar.ax.set_ylabel(worse_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('lut_v_lin_cal_map.pdf',bbox_inches='tight')
 plt.clf()
 
 clim_low = -15
 clim_high = 15
 
-plt.pcolor(phi_ticks,theta_ticks,FUDGE_PION,cmap=plt.cm.seismic)
+plt.pcolor(phi_ticks,theta_ticks,FUDGE_PION,cmap=plt.cm.seismic,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(fudge_label)
-plt.savefig('pion_fudge_map.pdf')
+cbar.ax.set_ylabel(fudge_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('pion_fudge_map.pdf',bbox_inches='tight')
 plt.clf()
 
 clim_low = -15
 clim_high = 15
 
-plt.pcolor(phi_ticks,theta_ticks,FUDGE_KAON,cmap=plt.cm.seismic)
+plt.pcolor(phi_ticks,theta_ticks,FUDGE_KAON,cmap=plt.cm.seismic,edgecolors="face")
 plt.clim(clim_low,clim_high)
 plt.axis([phi_min,phi_max,theta_min,theta_max])
-plt.xlabel(phi_label)
-plt.ylabel(theta_label)
+plt.xlabel(phi_label,fontsize=label_fontsize)
+plt.ylabel(theta_label,fontsize=label_fontsize)
 cbar = plt.colorbar()
-cbar.ax.set_ylabel(fudge_label)
-plt.savefig('kaon_fudge_map.pdf')
+cbar.ax.set_ylabel(fudge_label,fontsize=label_fontsize)
+cbar.solids.set_edgecolor("face")
+plt.savefig('kaon_fudge_map.pdf',bbox_inches='tight')
 plt.clf()
 

@@ -10,11 +10,13 @@ OUT = ./dircfit
 
 OBJFILES = dirc_optical_sim.o
 OBJFILES += dirc_threesegbox_sim.o
+OBJFILES += dirc_babar_sim.o
 OBJFILES += dirc_base_sim.o
 OBJFILES += dirc_lut_enum.o
 OBJFILES += dirc_lut.o
 OBJFILES += dirc_gluex_lut_enum.o
 OBJFILES += dirc_rect_digitizer.o
+OBJFILES += dirc_babar_digitizer.o
 OBJFILES += dirc_probability_spread.o
 OBJFILES += dirc_spread_relative.o
 OBJFILES += dirc_spread_radius.o

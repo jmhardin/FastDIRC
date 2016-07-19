@@ -134,7 +134,10 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 		hkaon->SetBinContent(hkaon->GetNbinsX() - i + 1, t_swap);
 	}
 
+	double titlesize=1.2*.04;
+
 	int rebin = 20;
+	rebin = 160;
 	hpion->Rebin(rebin);
 	hkaon->Rebin(rebin);
 
@@ -142,6 +145,9 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 	hkaon->SetAxisRange(hmin,hmax);
 
 	hkaon->GetXaxis()->SetTitle("Loglikelihood difference");
+	hkaon->GetYaxis()->SetTitle("A.U.");
+	hkaon->GetXaxis()->SetTitleSize(titlesize);
+	hkaon->GetYaxis()->SetTitleSize(titlesize);
 
 	hpion->SetStats(false);
 	hkaon->SetStats(false);
@@ -155,6 +161,8 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 	TLegend *leg_ll = new TLegend(.6,.6,.8,.8);
 	leg_ll->AddEntry(hpion,"Pion");
 	leg_ll->AddEntry(hkaon,"Kaon");
+	leg_ll->SetBorderSize(0);
+
 
 	hkaon->SetTitle("log(P(Pi)/P(K)) for actual Pi (red) and K (blue) at 5 GeV");
 
@@ -208,6 +216,7 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 		c1->Print("overlap_integral.pdf");
 	}
 
+	double linewidth=6;
 	TGraph* roc_graph;
 	int roc_n = pion_veto_eff->GetNbinsX();
 	TVectorF xr(roc_n);//gross
@@ -249,9 +258,12 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 	roc_graph->SetTitle("");
 	roc_graph->GetXaxis()->SetTitle("Kaon Efficiency");
 	roc_graph->GetYaxis()->SetTitle("Pion Rejection");
+	roc_graph->GetXaxis()->SetTitleSize(titlesize);
+	roc_graph->GetYaxis()->SetTitleSize(titlesize);
 	roc_graph->GetXaxis()->SetLimits(0,1.01);
 	roc_graph->SetMinimum(0);
 	roc_graph->SetMaximum(1.01);
+	roc_graph->SetLineWidth(linewidth);
 
 	if (verbose_out == true)
 	{
@@ -368,15 +380,18 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 	}	
 	//printf("Fake ROC integral: %12.04f\n",fival);
 
+
 	froc_graph = new TGraph(fxr,fyr);
 	if (verbose_out == true)
 	{
 		froc_graph->SetLineColor(4);
-		froc_graph->SetLineWidth(4);
+		froc_graph->SetLineWidth(linewidth);
 		froc_graph->SetLineStyle(2);
 		froc_graph->SetTitle("");
 		froc_graph->GetXaxis()->SetTitle("\"Kaon Efficiency\"");
 		froc_graph->GetYaxis()->SetTitle("\"Pion Rejection\"");
+		froc_graph->GetXaxis()->SetTitleSize(titlesize);
+		froc_graph->GetYaxis()->SetTitleSize(titlesize);
 		froc_graph->GetXaxis()->SetLimits(0,1.01);
 		froc_graph->SetMinimum(0);
 		froc_graph->SetMaximum(1.01);
@@ -387,7 +402,8 @@ double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true
 		TLegend *leg_roc = new TLegend(.3,.5,.7,.7);
 		leg_roc->AddEntry(roc_graph,"ROC Curve");
 		leg_roc->AddEntry(froc_graph,"Matched Gaussian ROC Curve");
-
+		leg_roc->SetBorderSize(0);
+		leg_roc->SetTextSize(0.04*1.1);
 
 		froc_graph->Draw("SAME");
 		leg_roc->Draw("SAME");

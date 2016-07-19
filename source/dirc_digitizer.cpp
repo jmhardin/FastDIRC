@@ -27,11 +27,11 @@ void DircDigitizer::digitize_point(dirc_point &pt)
 		//overflow/underflow?
 	double x = pt.x;
 	double y = pt.y;
-	int xdig = (x - minx)/resx;
-	int ydig = (y - miny)/resy;
+	int xdig = 1.0000001*round((x - minx)/resx);
+	int ydig = 1.0000001*round((y - miny)/resy);
 	
-	double xout = resx*xdig + minx + resx/2;
-	double yout = resy*ydig + miny + resy/2;
+	double xout = resx*xdig + minx;
+	double yout = resy*ydig + miny;
 	
 	if (x < minx)
 	{

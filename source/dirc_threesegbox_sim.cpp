@@ -271,8 +271,9 @@ void DircThreeSegBoxSim::fill_foc_mirror_vecs() {
 	//double foc_center_ang = foc_rot/57.3 + asin(foc_mirror_size/(2*foc_r));
 	//focMirrorY = focMirrorBottom + foc_r*sin(foc_center_ang);
 	//focMirrorZ = foc_r*cos(foc_center_ang);
-	//focMirrorY = barLength/2 - 795.2;
-	//focMirrorZ = -457.42 - 8.65;
+	printf("Adjusting to match geant exactly\n");
+	focMirrorY = barLength/2 - 795.2;
+	focMirrorZ = -457.42 - 8.65;
 	//printf("%12.04f %12.04f %12.04f %12.04f\n",foc_rot,foc_mirror_size,foc_r,foc_center_ang);
 }
 void DircThreeSegBoxSim::fill_threeseg_plane_vecs() {
