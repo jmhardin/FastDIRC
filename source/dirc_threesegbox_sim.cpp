@@ -80,7 +80,8 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	boxCloseZ = -559;
 
 	//reflOff = 9;
-	baseReflOff = 9;
+	//baseReflOff = .75;
+	baseReflOff = 0;
 	reflOff = baseReflOff;
 
 	three_seg_mirror = false;
@@ -186,16 +187,23 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
                 if (rand_gen->Uniform(0,1/(min_QE*min_QE)) > 1/(tmp_lam*tmp_lam)) continue;
 
 
+
+		//OH NO	
+		//tmp_lam = 410.53;
+
+
                 n_lam = get_quartz_n(tmp_lam);
 
 
                 out_ang = 57.3*acos(1/(beta*n_lam));
+		
+		
                 break;
         }
 
-	//out_ang *= 1.02;
-
-        out_ang += rand_gen->Gaus(0,additional_spread);
+//BRING THIS BACK TODO
+//	out_ang += .23;
+       out_ang += rand_gen->Gaus(0,additional_spread);
 
         return out_ang;
 }
@@ -253,8 +261,8 @@ void DircThreeSegBoxSim::fill_sens_plane_vecs() {
         unReflSensPlaneD = unReflSensPlaneNy*unReflSensPlaneY + unReflSensPlaneNz*unReflSensPlaneZ;
 
 
-	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
-	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
+	sensPlaneYdistConversion = 1/sin(sens_rot/57.3);
+	sensPlaneZdistConversion = 1/cos(sens_rot/57.3);
 }
 void DircThreeSegBoxSim::set_sidemirror_reflectivity(double isr) {
 	sidemirror_reflectivity = isr;
@@ -271,9 +279,9 @@ void DircThreeSegBoxSim::fill_foc_mirror_vecs() {
 	//double foc_center_ang = foc_rot/57.3 + asin(foc_mirror_size/(2*foc_r));
 	//focMirrorY = focMirrorBottom + foc_r*sin(foc_center_ang);
 	//focMirrorZ = foc_r*cos(foc_center_ang);
-	printf("Adjusting to match geant exactly\n");
-	//focMirrorY = barLength/2 - 795.2;
-	//focMirrorZ = -457.42 - 8.65;
+//	printf("Adjusting to match geant exactly\n");
+	focMirrorY = barLength/2 - 795.77;
+	focMirrorZ = -457.42 - 8.65;
 	//printf("%12.04f %12.04f %12.04f %12.04f\n",foc_rot,foc_mirror_size,foc_r,foc_center_ang);
 }
 void DircThreeSegBoxSim::fill_threeseg_plane_vecs() {
@@ -790,6 +798,8 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 	y = newy;
 	z = newz;
 
+//	printf("cylAAA: %12.04f %12.04f %12.04f\n",x,y-barLength/2,z+barDepth/2);
+
 	//combine later to save speed
 	localNy = yrel;
 	localNz = zrel;
@@ -823,7 +833,7 @@ double DircThreeSegBoxSim::cylindrical_reflect(\
 	dy += 2*n_dot_v*localNy;
 	dz += 2*n_dot_v*localNz;
 
-	// 	printf("dx: %8.04f dy: %8.04f dz: %8.04f\n",dx,dy,dz);
+	//printf("post_cyl_reflect: %12.04f %12.04f %12.04f\n",dx,dy,dz);
 
 	//printf("inside cyl: %12.04f %12.04f\n",quartzIndex,liquidIndex);
 
@@ -853,7 +863,7 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 			dy,\
 			dz);
 
-	//printf("LM %12.04f %12.04f\n",tmpz + barDepth/2, (tmpz-z)/dz*dy+y);
+//	printf("LMxyz %12.04f %12.04f %12.04f\n",x + (tmpz-z)/dz*dx,tmpz + barDepth/2, (tmpz-z)/dz*dy+y - barLength/2);
 	//printf("%12.04f %12.04f %12.04f\n",dy,dz, atan(dz/dy)*57.3);
 /*
 	if (tmpz < largePlanarMirrorMinZ || tmpz > largePlanarMirrorMaxZ)
@@ -980,10 +990,14 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 	//printf("sens_norm: %12.04f\n",180 - acos(dx*sensPlaneNx+dy*sensPlaneNy+dz*sensPlaneNz)*57.3);
 	//printf("%12.04f %12.04f %12.04f\n",sensPlaneNx,sensPlaneNy,sensPlaneNz);
 
-	fill_val.x = x;
+//	printf("Out XYZ: %12.04f %12.04f %12.04f\n",x,barLength/2 + 2*upperWedgeTop + reflOff - y,z+barDepth/2);
+
+//	printf("hitxyz: %12.04f %12.04f %12.04f\n",x,barLength/2 + 2*upperWedgeTop + reflOff - y,z+barDepth/2);
+
+	fill_val.x = x + 5;
 	//fill_val.y = (y-sensPlaneY)*sensPlaneYdistConversion;
 
-	fill_val.y = (-z-559)*sensPlaneYdistConversion + 260 + 12;
+	fill_val.y = (-z-559)*sensPlaneYdistConversion + 240 + 16;
 	//if (tmpz > largePlanarMirrorMaxZ)
 	{
 //		printf("%12.04f %12.04f\n",z,dz);

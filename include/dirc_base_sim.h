@@ -6,6 +6,19 @@
 
 #ifndef DIRC_BASE_SIM
 #define DIRC_BASE_SIM 
+struct dirc_base_sim_tracking_step
+{
+	//position at start of step
+	double x;
+	double y;
+	double z;
+
+	//radians
+	double sin_theta;
+	double cos_theta;
+	double sin_phi;
+	double cos_phi;
+};
 class DircBaseSim
 {
 protected:
@@ -63,6 +76,9 @@ protected:
 	int wedge_bounces;
 	int lastWallX;
 	int wedgeBeforeInterface;
+
+	double moliereP;
+	bool useMoliere;
 
 	double liquidIndex;
 	double liquidAbsorbtion;
@@ -131,6 +147,23 @@ protected:
 		double phi_theta_unc, /*= 0*/
 		double ckov_theta_unc /* = 0*/,\
 		double beta /* = -1*/);
+
+
+	double generate_cos_moliere_angle(\
+                double rad_length);
+
+
+	void fill_moliere_tracking_steps(\
+		std::vector<dirc_base_sim_tracking_step> &rsteps,\
+		double &travel_distance,\
+		double step_length,\
+		double start_theta,\
+		double start_phi,\
+		double start_x,\
+		double start_y,\
+		double start_z);
+		
+
 	
 	double get_quartz_n(double lambda);
 	double get_liquid_n(double lambda);
@@ -201,6 +234,8 @@ protected:
 		double dx,\
 		double dy,\
 		double dz);
+
+
 	//The compiler should be inlining this without our help
 	double sgn(double val);
 	
@@ -243,6 +278,9 @@ public:
 	int get_bar_from_x(double x);
 	
 	void set_use_quartz_n_for_liquid(bool iu);
+
+	void set_moliere_p(double ip);
+	void set_use_moliere(bool ium);
 	//Random seed chosen arbitrarily
 	//default parameters correspond to babar dirc bars
 	//default upper wedge top is for gluex implementation.  Set to 0 to remove upper wedge

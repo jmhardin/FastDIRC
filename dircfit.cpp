@@ -398,6 +398,8 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 int main(int nargs, char* argv[])
 {  
 
+//	printf("%12.04f\n",atan2(0,10)*57.3);
+
 	clock_t timing_clock;
 
 	const char* in_str;
@@ -450,6 +452,7 @@ int main(int nargs, char* argv[])
 	bool lut_slac = false;
 	bool run_minuit_calibration = false;
 	bool perform_chromatic_correction = true;
+	bool use_moliere_scattering = false;
 
 	int num_runs = 1000;
 	int max_particles = 60000000;
@@ -561,6 +564,8 @@ int main(int nargs, char* argv[])
 
 	//int n_phi_phots = 900000;
 	int n_phi_phots = 150000;
+	//TODO REMOVE THIS
+	//n_phi_phots = 4500;
 	int n_z_phots = 4;
 	int n_step_phots = 1000;
 	// 	n_step_phots = n_z_phots*n_phi_phots;
@@ -756,6 +761,11 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-use_quartz_for_liquid") == 0)
 			{
 				use_quartz_for_liquid = true;
+			}
+			else if (strcmp(argv[i], "-use_moliere_scattering") == 0)
+			{
+				use_moliere_scattering = true;
+				printf("Enabling Moliere Scattering - only implemented in loop mode\n");
 			}
 			else if (strcmp(argv[i], "-force_kinematics") == 0)
 			{
@@ -3411,6 +3421,9 @@ int main(int nargs, char* argv[])
 
 		// 	dirc_model->set_upper_wedge_angle_diff(0);
 
+		dirc_model->set_use_moliere(use_moliere_scattering);
+		dirc_model->set_moliere_p(energy*1000);//assume momentum is the same for both for now - high energy;
+
 		dirc_model->set_liquid_absorbtion(liquid_absorbtion);
 		dirc_model->set_liquid_index(liquid_index);
 		dirc_model->set_three_seg_mirror(three_seg_mirror);
@@ -3439,6 +3452,7 @@ int main(int nargs, char* argv[])
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
 				pion_beta);
+//TODO RETURN
 
 		dirc_model->sim_reg_n_photons(\
 				hit_points_kaon,\

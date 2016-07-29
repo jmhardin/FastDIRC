@@ -84,7 +84,7 @@ DircBaseSim::DircBaseSim(
 	quartzIndex = 1.47;
 	liquidIndex = 1.47;
 	quartzLiquidY = upperWedgeBottom - upperWedgeGap;
-	
+
 	use_liquid_n = false;
 	use_quartz_n_for_liquid = false;
 
@@ -110,7 +110,7 @@ DircBaseSim::DircBaseSim(
 	max_transmittance = 660;
 	sep_transmittance = (max_transmittance - min_transmittance)/(num_transmittance - 1);
 
-//Numbers from Baptise
+	//Numbers from Baptise
 	double tmp_quartz_transmittance[36] = {\
 		0.999572036,0.999544661,0.999515062,0.999483019,0.999448285,\
 			0.999410586,0.999369611,0.999325013,0.999276402,0.999223336,\
@@ -129,13 +129,15 @@ DircBaseSim::DircBaseSim(
 	midLineWedgeWallFlip = 1;
 
 	store_bounces = false;
-        x_bounces.clear();
+	x_bounces.clear();
 	z_bounces.clear();
-        x_direct_bounces.clear();
-        z_direct_bounces.clear();
-        x_indirect_bounces.clear();
-        z_indirect_bounces.clear();
-	
+	x_direct_bounces.clear();
+	z_direct_bounces.clear();
+	x_indirect_bounces.clear();
+	z_indirect_bounces.clear();
+
+	useMoliere = true;
+	moliereP = 1000000;//minimal scattering 
 
 	build_system();
 }
@@ -438,11 +440,11 @@ void DircBaseSim::sim_lut_points(\
 		std::vector<double> &thetas,\
 		int n_photons, \
 		double particle_bar /*= 0*/){
-	
+
 	ovals.clear();
 	phis.clear();
 	thetas.clear();
-	
+
 
 	double x,y,z,dx,dy,dz;
 
@@ -465,8 +467,8 @@ void DircBaseSim::sim_lut_points(\
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		randTheta = acos(2*rand_gen->Uniform(.5,1) - 1);
 		//Useful for directly testing box, not fo lut
-		randTheta = 45/57.3;
-		randPhi = -3.1415926535;
+		//		randTheta = 45/57.3;
+		//		randPhi = -3.1415926535*(180+45)/180.;
 		//This timing won't be correct
 		mm_index = 0;
 
@@ -480,6 +482,11 @@ void DircBaseSim::sim_lut_points(\
 		dz = sin(randTheta)*cos(randPhi); 
 
 		//printf("lutstart: %12.04f %12.04f %12.04f\n",dx,dy,dz);
+		/*
+		   dx = 0;
+		   dy = 1;
+		   dz = 0;
+		 */
 
 		mm_index += warp_wedge(\
 				x,\
@@ -554,6 +561,62 @@ void DircBaseSim::fill_rand_phi(\
 	double saveGeneralQuartzIndex = quartzIndex;
 	double saveGeneralLiquidIndex = liquidIndex;
 
+	std::vector<dirc_base_sim_tracking_step> track_steps;
+	double dist_traveled = -1;
+	//hardcode step length to 1mm for now
+	double step_length = 1;
+	//note: These are general tracking vectors - you can implement your own MC with them.  Each refers to position and direction at the start of the step
+	if (useMoliere == true)
+	{
+		fill_moliere_tracking_steps(\
+				track_steps,\
+				dist_traveled,\
+				step_length,\
+				particleTheta/57.3,\
+				particlePhi/57.3,\
+				particle_x,\
+				particle_y,\
+				-barDepth);
+	}
+	else
+	{
+		dirc_base_sim_tracking_step step1;
+		step1.x = particle_x;	
+		step1.y = particle_y;	
+		step1.z = -barDepth;
+		
+		step1.sin_theta = sin_ptheta;
+		step1.cos_theta = cos_ptheta;
+		step1.sin_phi = sin_pphi;
+		step1.cos_phi = cos_pphi;
+
+		dist_traveled = barDepth/cos_ptheta;
+		//take_1_step
+		step_length = barDepth/cos_ptheta;
+
+		
+		dirc_base_sim_tracking_step step2;
+		step2.x = particle_x + step_length*sin_ptheta*cos_pphi;	
+		step2.y = particle_y + step_length*sin_ptheta*sin_pphi;	
+		step2.z = -barDepth + step_length*cos_ptheta;
+		
+		step2.sin_theta = sin_ptheta;
+		step2.cos_theta = cos_ptheta;
+		step2.sin_phi = sin_pphi;
+		step2.cos_phi = cos_pphi;
+
+		
+		track_steps.push_back(step1);
+		track_steps.push_back(step2);	
+
+	}
+
+	double track_loc = -1;
+
+	//define numbers to linearly interp
+	int low_ind = 0;
+	double above_ind = 0;
+
 	for (int i = 0; i < numPhots; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
 		sourceOff = -rand_gen->Uniform(0,barDepth);
@@ -570,25 +633,43 @@ void DircBaseSim::fill_rand_phi(\
 			quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 			liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 		}
-		mm_index = (sourceOff - barDepth)*quartzIndex/cos(particleTheta/57.3);
+//		mm_index = (sourceOff - barDepth)*quartzIndex/cos(particleTheta/57.3);
 
-		x = 0;
-		y = 0;
-		z = sourceOff;
+		track_loc = rand_gen->Uniform(0,dist_traveled);
+		
+		//this will actually floor - track_loc > 0
+		low_ind = (int) (track_loc/step_length);
+		above_ind = (track_loc - low_ind*step_length);
+
+		cos_ptheta = track_steps[low_ind].cos_theta;
+		sin_ptheta = track_steps[low_ind].sin_theta;
+		cos_pphi = track_steps[low_ind].cos_phi;
+		sin_pphi = track_steps[low_ind].sin_phi;
+
+		x = track_steps[low_ind].x + above_ind*sin_ptheta*cos_pphi;
+		y = track_steps[low_ind].y + above_ind*sin_ptheta*sin_pphi;
+		z = track_steps[low_ind].z + above_ind*cos_ptheta;
+
+		mm_index = (barDepth+z)*quartzIndex/cos(particleTheta/57.3);
+//		printf("particle xyz: %12.04f %12.04f %12.04f\n",x,y,z);
+
+//		x = 0;
+//		y = 0;
+//		z = sourceOff;
 
 		dx = sin(temit/57.3)*cos(randPhi);
 		dy = sin(temit/57.3)*sin(randPhi);
 		dz = cos(temit/57.3);
 
-		rotate_2d(z,y,cos_ptheta,sin_ptheta);
-		rotate_2d(x,y,cos_pphi,sin_pphi);
+//		rotate_2d(z,y,cos_ptheta,sin_ptheta);
+//		rotate_2d(x,y,cos_pphi,sin_pphi);
 
 		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
 		rotate_2d(dy,dx,cos_pphi,sin_pphi);
 
-		z -= barDepth;
-		x += particle_x;
-		y += particle_y;
+//		z -= barDepth;
+//		x += particle_x;
+//		y += particle_y;
 
 
 
@@ -861,6 +942,7 @@ void DircBaseSim::fill_reg_phi(\
 				temit = emitAngle + rand_add;
 			} else {
 				temit = get_cerenkov_angle_rand(beta,ckov_theta_unc,wavelength);
+
 				quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 				liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 			}
@@ -888,6 +970,8 @@ void DircBaseSim::fill_reg_phi(\
 			rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
 			rotate_2d(dy,dx,cos_pphi,sin_pphi);
 
+			//	printf("%12.04f %12.04f %12.04f %12.04f\n",temit,dx,dy,dz);
+
 			z -= barDepth;
 			x += particle_x;
 			y += particle_y;
@@ -911,12 +995,13 @@ void DircBaseSim::fill_reg_phi(\
 					dz,\
 					sqrt(1-1/(1.47*1.47)));
 
+
 			if (z > 0)
 			{
 				continue;
 			}
 
-			spread_wedge_mirror();
+			//spread_wedge_mirror();
 
 			mm_index += warp_wedge(\
 					x,\
@@ -1211,7 +1296,7 @@ bool DircBaseSim::track_line_photon(\
 	if (dz > 0)
 	{
 		//y += dy/dz*(-z);
-	//	dz = -dz;
+		//	dz = -dz;
 	}
 
 
@@ -1246,12 +1331,12 @@ bool DircBaseSim::track_line_photon(\
 	}
 	if (lastWallX == 1)
 	{
-	//	x += saveBarWidth/2 - 3;
+		//	x += saveBarWidth/2 - 3;
 	}
 	else if (lastWallX == -1)
 	{
 		//x += saveBarWidth/2 - saveWedgeWidthOff;
-	//	x += saveBarWidth/2 - 3;
+		//	x += saveBarWidth/2 - 3;
 	}	
 	out_val.wedge_before_interface = -1;
 	warp_readout_box(out_val,particle_bar,mm_index,x,y,z,dx,dy,dz);
@@ -1549,13 +1634,13 @@ bool DircBaseSim::track_all_line_photons(\
 		dirc_point out_val;
 
 		//branch here
-	
+
 		if (upperWedgeBottom/(upperWedgeBottom*tan(wedgeCloseAngle/57.3)+1.5*barDepth+wedgeDepthOff) < -dy/dz)
 		{
 			mustache_phi.push_back(regPhi);
-		//	printf("%12.04f\n",regPhi);
+			//	printf("%12.04f\n",regPhi);
 		}
-	
+
 		mm_index += warp_wedge(\
 				x,\
 				y,\
@@ -1563,7 +1648,7 @@ bool DircBaseSim::track_all_line_photons(\
 				dx,\
 				dy,\
 				dz);
-		
+
 		mm_index_r = mm_index;
 
 		int dx_lr = sgn(dx);
@@ -1572,7 +1657,7 @@ bool DircBaseSim::track_all_line_photons(\
 		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
 		x += saveBarWidth/2-3;
-	
+
 		//And this set of ifs is why we try and do one photon at a time normally
 		if (z < 0)
 		{
@@ -1602,7 +1687,7 @@ bool DircBaseSim::track_all_line_photons(\
 		z = sourceOff;
 		mm_index = (sourceOff - barDepth)*1.47;
 		regPhi = mustache_phi[i];
-		
+
 
 		//save some time ~31ms per 400k
 		//could compute sin even faster with a taylor series
@@ -1680,7 +1765,7 @@ bool DircBaseSim::track_all_line_photons(\
 		dirc_point out_val;
 
 		//branch here
-	
+
 		mm_index += warp_wedge(\
 				x,\
 				y,\
@@ -1688,7 +1773,7 @@ bool DircBaseSim::track_all_line_photons(\
 				dx,\
 				dy,\
 				dz);
-		
+
 		mm_index_r = mm_index;
 
 		int dx_lr = sgn(dx);
@@ -1697,7 +1782,7 @@ bool DircBaseSim::track_all_line_photons(\
 		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 
 		x += saveBarWidth/2-3;
-	
+
 		//And this set of ifs is why we try and do one photon at a time normally
 		if (z < 0)
 		{
@@ -1889,12 +1974,12 @@ double DircBaseSim::warp_wedge(\
 	double n_dot_v0 = 0;
 
 	//deal with yz first
-	
+
 	//Can't ever not totally internal reflect	
 	//force dz to be negative	
 	//double wedgeCloseIncidentAngle = acos(-dx*wedgeClosePlaneNx - dy*wedgeClosePlaneNy + fabs(dz)*wedgeClosePlaneNz);
 	//printf("%12.04f\n",57.3*wedgeCloseIncidentAngle);
-	
+
 
 	//Check for reflection from far wedge plane - max 1 bounce
 	if (dz > 0) {
@@ -1968,7 +2053,7 @@ double DircBaseSim::warp_wedge(\
 		//start the bouncing here
 		starty = y;
 		startz = z;
-	
+
 		wedgeBeforeInterface = 1;
 
 	} 
@@ -1984,6 +2069,7 @@ double DircBaseSim::warp_wedge(\
 			z = 1337;
 			return -1;
 		}
+		//printf("top_of_lowerwedge_postinter_dxdydz %12.04f %12.04f %12.04f\n",dx,dy,dz);
 		//correct ordering below - interface is xz plane, so dx and dz go first
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
 		passed_interface = true;
@@ -2015,16 +2101,16 @@ double DircBaseSim::warp_wedge(\
 				z = 1337;
 				return -1;
 			}
-			
+
 			if (upperWedgeAngleStore == true)
 			{
 				upper_wedge_incident.push_back(57.3*acos(n_dot_v));
 			}
-			
+
 			dx += 2*n_dot_v*upperWedgeClosePlaneNx;
 			dy += 2*n_dot_v*upperWedgeClosePlaneNy;
 			dz += 2*n_dot_v*upperWedgeClosePlaneNz;
-			
+
 			//printf("upper wedge ty: %12.04f z-bd/2: %12.04f uwb: %12.04f uwt: %12.04f\n",ty,z+barDepth/2,upperWedgeBottom,upperWedgeTop);
 			//yet again, start after bouncing
 			starty = y;
@@ -2055,7 +2141,7 @@ double DircBaseSim::warp_wedge(\
 	}
 
 	//Have now performed the maximum number of reflections (besides x direction)
-		//Sort of - still have to account for z direction as well
+	//Sort of - still have to account for z direction as well
 	//Finish by taking it to the top
 	if (!passed_interface == true) {
 		//Will go through the interface now before it hits the top
@@ -2069,6 +2155,7 @@ double DircBaseSim::warp_wedge(\
 		//correct ordering below - interface is xz plane, so dx and dz go first
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
 		passed_interface = true;
+		//printf("top_of_lowerwedge_preinter_dxdydz %12.04f %12.04f %12.04f\n",dx,dy,dz);
 	}
 
 	//Now we just finish
@@ -2086,7 +2173,7 @@ double DircBaseSim::warp_wedge(\
 		//I'm not sure if it can go out the window at this point, but just in case
 		//Goes out the window, fail and return
 		//y position when hitting the back wall
-		
+
 		z = 1337;
 		return -1;
 	}
@@ -2109,7 +2196,7 @@ double DircBaseSim::warp_wedge(\
 		//account for window and gap
 		if (wally > wedgeHeight + barLength/2)
 		{
-		//bounced off upper part of mirror
+			//bounced off upper part of mirror
 			if (wally < upperWedgeBottom + barLength/2)
 			{
 				//printf("%12.04f\n",wally);
@@ -2249,7 +2336,8 @@ bool DircBaseSim::x_wedge_coerce_check(\
 			//add to total time taken
 			cdt += tdt;
 			ty += dy*tdt;
-			
+
+
 			if (ty > wedgeHeight && ty < upperWedgeBottom) {
 				//out the window on an edge
 				//this is ok, finish propagation without bouncing
@@ -2258,9 +2346,10 @@ bool DircBaseSim::x_wedge_coerce_check(\
 				tdt = dt - cdt;
 				break;
 			}
-			
+
 
 			//not out the window, propagate x for the next iteration
+			//printf("in wedge: x: %12.04f y: %12.04f z: %12.04f\n", x + tdt*dx, ty, z + barDepth/2);
 			x += tdt*dx;
 			if (ty < upperWedgeBottom) {
 				//Must be less than Wedge height at this point
@@ -2286,6 +2375,188 @@ bool DircBaseSim::x_wedge_coerce_check(\
 
 	return true;//not out the window for the whole trip
 }
+void DircBaseSim::set_moliere_p(double ip)
+{
+	moliereP = ip;
+}
+void DircBaseSim::set_use_moliere(bool ium)
+{
+	useMoliere = ium;
+}
+double DircBaseSim::generate_cos_moliere_angle(\
+		double rad_length)
+{
+	//Algorithm from Macro by Mike Williams 07/26/16
+	//Magic numbers taken from limits of scattering
+//	TF1 g1("g1","exp(-[0]*(1-x))",-1,1);
+//	TF1 g2("g2","pow([0]-x,-2)",-1,1); 
+
+	// .17 corresponds to rad_length in this limit
+	//double theta0=(13.6/P)*sqrt(0.17)*(1+0.038*log(0.17)); 
+	rad_length = .17;
+	double theta0=(13.6/moliereP)*sqrt(rad_length)*(1+0.038*log(rad_length)); 
+	double a = pow(theta0,-2);
+	double u0 = 1-3*pow(theta0,2);
+	double b = 1-pow(theta0,2);
+//	g1.SetParameter(0,a);
+//	g2.SetParameter(0,b);
+
+	double c1 = a;
+	double c2 = 1/(1/(3*pow(theta0,2))-1/2.);
+
+	double g10 = exp(-a*(1-u0))*c1;
+	double g20 = pow(b-u0,-2)*c2;
+	double p = g20/(g10+g20);
+
+	double max_g = 0;
+
+	//binning chosen based on original ROOT histograms
+	//actually undercounts forward scattering for this formulation
+	//done this way to be able to simulate this in nonzero time
+	double u = 1-.005/100000;
+	double g1val = 0, g2val = 0;
+	if(u >= u0) g1val = c1*exp(-a*(1-u));
+	if(u <= u0) g2val = c2*pow(b-u,-2);
+	double g = p*g1val + (1-p)*g2val;
+	if(g < 0) g=0;
+	//printf("%12.04f\n",g);
+	max_g = std::max(g,max_g);
+
+
+	while (true)
+	{
+		double u = rand_gen->Uniform(.99,1);
+		double g1val = 0, g2val = 0;
+		if(u >= u0) g1val = c1*exp(-a*(1-u));
+		if(u <= u0) g2val = c2*pow(b-u,-2);
+		double g = p*g1val + (1-p)*g2val;
+		if(g < 0) g=0;
+		//printf("%12.04f\n",g);
+		if (rand_gen->Uniform(0,max_g) < g)
+		{
+			return u;
+		}
+	}
+}
+void DircBaseSim::fill_moliere_tracking_steps(\
+		std::vector<dirc_base_sim_tracking_step> &rsteps,\
+		double &travel_distance,\
+		double step_length,\
+		double start_theta,\
+		double start_phi,\
+		double start_x,\
+		double start_y,\
+		double start_z)
+{
+		rsteps.clear();
+		travel_distance = 0;
+
+		double max_travel = fabs(barDepth*2/cos(start_theta));
+		
+		double cur_x = start_x;
+		double cur_y = start_y;
+		double cur_z = start_z;
+		double cur_theta = start_theta;
+		double cur_phi = start_phi;
+
+		//printf("Enter ctheta: %12.04f\n",cur_theta);
+	
+		double cur_sintheta = sin(cur_theta);
+		double cur_costheta = cos(cur_theta);
+		double cur_sinphi = sin(cur_phi);
+		double cur_cosphi = cos(cur_phi);
+
+		double sin_scatter_theta;
+		double cos_scatter_theta;
+		double scatter_phi;
+		double sin_scatter_phi;
+		double cos_scatter_phi;
+
+		double sdx,sdy,sdz;
+
+
+		while (cur_z < 0 && travel_distance < max_travel)
+		{
+			dirc_base_sim_tracking_step add_step;
+			add_step.x = cur_x;
+			add_step.y = cur_y;
+			add_step.z = cur_z;
+			add_step.sin_theta = cur_sintheta;
+			add_step.cos_theta = cur_costheta;
+			add_step.sin_phi = cur_sinphi;
+			add_step.cos_phi = cur_cosphi;
+		
+	
+			rsteps.push_back(add_step);
+
+			cos_scatter_theta = generate_cos_moliere_angle(step_length);
+			sin_scatter_theta = sqrt(1-cos_scatter_theta*cos_scatter_theta);
+
+			scatter_phi = rand_gen->Uniform(0,2*3.14159265);
+
+			cos_scatter_phi = cos(scatter_phi);
+			//sin_scatter_phi = sqrt(1-cos_scatter_phi*cos_scatter_phi);			
+			//compute together to save time in the future - not currently the limiting factor
+			sin_scatter_phi = sin(scatter_phi);			
+
+			sdx = step_length*sin_scatter_theta*cos_scatter_phi;
+			sdy = step_length*sin_scatter_theta*sin_scatter_phi;
+			sdz = step_length*cos_scatter_theta;
+
+			sdx = 0;
+			sdy = 0;
+			sdz = 1;
+
+			rotate_2d(sdz,sdy,cur_costheta,cur_sintheta);
+			rotate_2d(sdy,sdx,cur_cosphi,cur_sinphi);
+
+			//printf("inmol: %12.04f %12.04f %12.04f step_length: %12.04f cos_theta: %12.04f sdxyz:  %12.04f %12.04f %12.04f\n",cur_x,cur_y,cur_z,step_length,cos_scatter_theta,sdx,sdy,sdz);
+			//printf("cst,cct,csp,ccp: %12.04f %12.04f %12.04f %12.04f step_length: %12.04f cos_theta: %12.04f sdxyz:  %12.04f %12.04f %12.04f\n",cur_sintheta,cur_costheta,cur_sinphi,cur_cosphi,step_length,cos_scatter_theta,sdx,sdy,sdz);
+		
+			//exits bar at this step, add it again
+			if (cur_z + sdz > 0)
+			{
+				//Adjust to ensure the step 
+				sdx = -sdx*cur_z/sdz*1.0001;
+				sdy = -sdy*cur_z/sdz*1.0001;
+				sdz = -sdz*cur_z/sdz*1.0001;
+				travel_distance += -step_length*cur_z/sdz;
+			}
+			else
+			{
+				travel_distance += step_length;
+			}
+			
+			cur_x += sdx;
+			cur_y += sdy;
+			cur_z += sdz;
+			cur_theta = acos(sdz);
+			//ordering below is correct - has to do with the rotate_2d coordinates above, which are left as they are for consistency with production
+			//still produces the same phi (0 along x axis)
+			cur_phi = atan2(sdx,sdy);
+
+			cur_sintheta = sin(cur_theta);
+			cur_costheta = cos(cur_theta);
+			cur_sinphi = sin(cur_phi);
+			cur_cosphi = cos(cur_phi);
+
+			//same as condition above, finish with last step.
+			if (cur_z > 0)
+			{
+				dirc_base_sim_tracking_step add_step;
+				add_step.x = cur_x;
+				add_step.y = cur_y;
+				add_step.z = cur_z;
+				add_step.sin_theta = cur_sintheta;
+				add_step.cos_theta = cur_costheta;
+				add_step.sin_phi = cur_sinphi;
+				add_step.cos_phi = cur_cosphi;
+				
+				rsteps.push_back(add_step);
+			}
+		}
+}
+
 void DircBaseSim::plane_reflect(\
 		double Nx,\
 		double Ny,\
@@ -2298,7 +2569,8 @@ void DircBaseSim::plane_reflect(\
 		double &dy,\
 		double &dz,\
 		double &dt,\
-		double offang /*=0*/) {
+		double offang /*=0*/) 
+{
 	//Propagate to the intercept and reflects off a plane
 	//Could use this in the Wedge, but would loose some speed
 
