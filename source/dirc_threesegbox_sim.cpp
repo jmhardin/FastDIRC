@@ -12,6 +12,7 @@
 
 #include <TRandom3.h>
 
+//#define EXACT_GEANT_ADJUST
 
 
 DircThreeSegBoxSim::DircThreeSegBoxSim(
@@ -80,8 +81,11 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	boxCloseZ = -559;
 
 	//reflOff = 9;
-	//baseReflOff = .75;
+	baseReflOff = .75;
+#ifdef EXACT_GEANT_ADJUST
+	printf("Warning: adjusting to match the superB prototype of geant exactly.  Hard coded numbers in the optical box\n");
 	baseReflOff = 0;
+#endif
 	reflOff = baseReflOff;
 
 	three_seg_mirror = false;
@@ -280,8 +284,12 @@ void DircThreeSegBoxSim::fill_foc_mirror_vecs() {
 	//focMirrorY = focMirrorBottom + foc_r*sin(foc_center_ang);
 	//focMirrorZ = foc_r*cos(foc_center_ang);
 //	printf("Adjusting to match geant exactly\n");
+
+#ifdef EXACT_GEANT_ADJUST
 	focMirrorY = barLength/2 - 795.77;
 	focMirrorZ = -457.42 - 8.65;
+#endif
+
 	//printf("%12.04f %12.04f %12.04f %12.04f\n",foc_rot,foc_mirror_size,foc_r,foc_center_ang);
 }
 void DircThreeSegBoxSim::fill_threeseg_plane_vecs() {
