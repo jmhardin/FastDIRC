@@ -564,6 +564,7 @@ int main(int nargs, char* argv[])
 
 	//int n_phi_phots = 900000;
 	int n_phi_phots = 150000;
+	n_phi_phots = 75000;
 	//TODO REMOVE THIS
 	//n_phi_phots = 4500;
 	int n_z_phots = 4;
