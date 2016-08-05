@@ -272,15 +272,9 @@ void DircBaBarSim::warp_sens_cyl(
         //Pretending the cylinder has no Nx for intersection purposes
         //Should be a valid approximation, and saves a ton of speed
 
-        double rval = 0;
-
         double dydz_norm = sqrt(dz*dz+dy*dy);
         double dy_norm = dy/dydz_norm;
         double dz_norm = dz/dydz_norm;
-
-        double localNx = 0;
-        double localNy = 0;
-        double localNz = 0;
 
         //there's gotta be a faster way to do all of this
         //different than plane intercept D.  Took this algorithm from internet (wolfram Mathworld)
@@ -302,7 +296,7 @@ void DircBaBarSim::warp_sens_cyl(
 	}
 	if (newz < sensCylMinZ)
 	{
-		double plane_theta = atan2(-zrel,yrel);
+		//double plane_theta = atan2(-zrel,yrel);
 		//printf("minZ: %12.04f\n",sensCylMinZ);
 		//printf("failed: z and y: %12.04f %12.04f dz and dy: %12.04f %12.04f zrel and yrel: %12.04f %12.04f atan: %12.04f\n",z,y,dz,dy,-zrel,yrel,plane_theta);
 		z = 1337;

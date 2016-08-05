@@ -453,7 +453,7 @@ void DircBaseSim::sim_lut_points(\
 
 	double mm_index = 0;
 
-	double c_mm_ns = 300;
+//	double c_mm_ns = 300;
 
 	double saveGeneralQuartzIndex = quartzIndex;
 	double saveGeneralLiquidIndex = liquidIndex;
@@ -542,7 +542,7 @@ void DircBaseSim::fill_rand_phi(\
 	double particlePhi = particle_phi + rand_gen->Gaus(0,phi_theta_unc);
 	int numPhots = n_photons/cos(particle_theta/57.3);
 
-	double sourceOff,randPhi;
+	double randPhi;
 
 	double temit, rand_add;
 	double wavelength = 400;
@@ -619,10 +619,11 @@ void DircBaseSim::fill_rand_phi(\
 
 	for (int i = 0; i < numPhots; i++) {
 		randPhi = rand_gen->Uniform(0,2*3.14159265);
-		sourceOff = -rand_gen->Uniform(0,barDepth);
+		track_loc = rand_gen->Uniform(0,dist_traveled);
 		if (kaleidoscope_plot == true)
 		{	
-			sourceOff = -barDepth/2;
+			//sourceOff = -barDepth/2;
+			track_loc = dist_traveled/2;
 		}
 
 		if (beta < 0) {
@@ -635,7 +636,6 @@ void DircBaseSim::fill_rand_phi(\
 		}
 //		mm_index = (sourceOff - barDepth)*quartzIndex/cos(particleTheta/57.3);
 
-		track_loc = rand_gen->Uniform(0,dist_traveled);
 		
 		//this will actually floor - track_loc > 0
 		low_ind = (int) (track_loc/step_length);
@@ -653,24 +653,12 @@ void DircBaseSim::fill_rand_phi(\
 		mm_index = (barDepth+z)*quartzIndex/cos(particleTheta/57.3);
 //		printf("particle xyz: %12.04f %12.04f %12.04f\n",x,y,z);
 
-//		x = 0;
-//		y = 0;
-//		z = sourceOff;
-
 		dx = sin(temit/57.3)*cos(randPhi);
 		dy = sin(temit/57.3)*sin(randPhi);
 		dz = cos(temit/57.3);
 
-//		rotate_2d(z,y,cos_ptheta,sin_ptheta);
-//		rotate_2d(x,y,cos_pphi,sin_pphi);
-
 		rotate_2d(dz,dy,cos_ptheta,sin_ptheta);
 		rotate_2d(dy,dx,cos_pphi,sin_pphi);
-
-//		z -= barDepth;
-//		x += particle_x;
-//		y += particle_y;
-
 
 
 		//photon is now defined as up or down
@@ -1129,7 +1117,7 @@ bool DircBaseSim::track_single_photon(\
 	{
 		lastWallX = -1;
 	}
-	int beforeWedgeLastWall = lastWallX;
+	//int beforeWedgeLastWall = lastWallX;
 
 	mm_index += warp_wedge(\
 			x,\
@@ -1282,9 +1270,9 @@ bool DircBaseSim::track_line_photon(\
 	{
 		lastWallX = -1;
 	}
-	int beforeWedgeLastWall = lastWallX;
+//	int beforeWedgeLastWall = lastWallX;
 
-
+/*
 	double target_z = -17.25/2;
 
 	if (z_at_top < 0)
@@ -1298,7 +1286,7 @@ bool DircBaseSim::track_line_photon(\
 		//y += dy/dz*(-z);
 		//	dz = -dz;
 	}
-
+*/
 
 	mm_index += warp_wedge(\
 			x,\
@@ -1455,7 +1443,7 @@ bool DircBaseSim::track_single_photon_beta(\
 	{
 		lastWallX = -1;
 	}
-	int beforeWedgeLastWall = lastWallX;
+//	int beforeWedgeLastWall = lastWallX;
 
 	mm_index += warp_wedge(\
 			x,\
@@ -1530,10 +1518,10 @@ bool DircBaseSim::track_all_line_photons(\
 	std::vector<double> mustache_phi;
 
 	double x,y,z,dx,dy,dz;
-	//righthand side versions
-	double x_r,y_r,z_r,dx_r,dy_r,dz_r;
+	//righthand side versions - right hand not needed, just reuse
+	//double x_r,y_r,z_r,dx_r,dy_r,dz_r;
 	double mm_index;
-	double mm_index_r;
+//	double mm_index_r;
 
 	double temit = emit_theta;
 	double regPhi;
@@ -1615,7 +1603,7 @@ bool DircBaseSim::track_all_line_photons(\
 		spread_wedge_mirror();
 
 
-		int beforeWedgeLastWall = lastWallX;
+//		int beforeWedgeLastWall = lastWallX;
 
 
 		double target_z = -17.25/2;
@@ -1649,7 +1637,7 @@ bool DircBaseSim::track_all_line_photons(\
 				dy,\
 				dz);
 
-		mm_index_r = mm_index;
+//		mm_index_r = mm_index;
 
 		int dx_lr = sgn(dx);
 
@@ -1740,7 +1728,7 @@ bool DircBaseSim::track_all_line_photons(\
 		spread_wedge_mirror();
 
 
-		int beforeWedgeLastWall = lastWallX;
+//		int beforeWedgeLastWall = lastWallX;
 
 		//now in the mustache => at wall
 		//And going up
@@ -1774,7 +1762,7 @@ bool DircBaseSim::track_all_line_photons(\
 				dy,\
 				dz);
 
-		mm_index_r = mm_index;
+		//mm_index_r = mm_index;
 
 		int dx_lr = sgn(dx);
 
@@ -2208,7 +2196,7 @@ double DircBaseSim::warp_wedge(\
 		}
 		else
 		{
-			double sz = z;
+			//double sz = z;
 			double sdz = dz;
 			double sdy = dy;
 			//bounced off lower part - just an appoximation

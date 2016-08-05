@@ -3,6 +3,8 @@ CFLAGS_OPT = -g
 CFLAGS_BASE += $(CFLAGS_OPT)
 INCLUDE = -I./include/
 
+EXAMPLE_LOC = example_driver/dircfit_example.cpp
+
 CFLAGS = $(CFLAGS_BASE) $(goptical_CPPFLAGS)
 
 LIBLOC = ./lib/
@@ -38,6 +40,10 @@ vpath %.cpp ./source/
 all: dircfit.cpp $(OBJFILES)
 	g++ -Wall dircfit.cpp $(OBJLOC) $(CFLAGS) $(INCLUDE) -o $(OUT)
 
+.PHONY : example
+example: $(EXAMPLE_LOC) $(OBJFILES)
+	g++ -Wall $(EXAMPLE_LOC) $(OBJLOC) $(CFLAGS) $(INCLUDE) -o $(OUT)_example
+
 .PHONY : libs
 libs: $(OBJFILES)
 	echo libraries built
@@ -46,10 +52,12 @@ libs: $(OBJFILES)
 clean:
 	rm lib/*.o
 	rm $(OUT)
+	rm $(OUT)_example
 	
 .PHONY : cleanall
 cleanall:
 	rm lib/*
 	rm *.gcda
 	rm $(OUT)
+	rm $(OUT)_example
 	

@@ -109,6 +109,7 @@ void DircBaBarDigitizer::digitize_point(dirc_point &pt)
 		int tmp_t_bin = pt.t/(t_bin_size);
 		pt.t = tmp_t_bin*t_bin_size + t_bin_size/2;
 	}
+	if (tout < 0) pt.t = tout;
 }
 void DircBaBarDigitizer::digitize_points(std::vector<dirc_point> &points)
 {

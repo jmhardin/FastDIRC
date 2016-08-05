@@ -117,21 +117,6 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 		0.269913,0.283034,0.294369,0.303953,0.31158,0.317117,0.320523,0.321858,
 		0.321271,0.31895,0.315347,0.310875,0.306056,0.301365};
 */
-/*
-	num_QE = 30;
-	min_QE = 300;
-	max_QE = 590;
-	sep_QE = (max_QE - min_QE)/(num_QE - 1);
-
-	double marias_QE[30] = {\
-		13.214500, 13.650000, 13.845000, 14.527500, 14.794000,\
-		14.755000, 14.950000, 15.327000, 15.333500, 15.301000,\
-		14.956500, 14.456000, 13.968500, 13.494000, 12.935000,\
-		12.265500, 11.147500, 10.185500, 9.392500, 8.846500,\
-		8.489000, 7.663500, 5.941000, 4.777500, 4.225000,\
-		3.828500, 3.471000, 3.204500, 2.918500, 2.684500};
-*/
-
 	// Transmittance of quartz per 1m
 
 
@@ -231,7 +216,7 @@ void DircThreeSegBoxSim::set_large_mirror_zs(double imin, double imax)
 	largePlanarMirrorMaxZ = imax;
 }
 void DircThreeSegBoxSim::fill_sens_plane_vecs() {
-	double adjusted_sens_size = 312;
+	//double adjusted_sens_size = 312;
 
 	sensPlaneNx = 0;
 	sensPlaneNy = sin(sens_rot/57.3);
@@ -920,6 +905,8 @@ double DircThreeSegBoxSim::warp_sens_plane(\
 		//printf("%12.04f %12.04f\n",z,dz);
 		//printf("%12.04f %12.04f %12.04f %12.04f %12.04f %12.04f\n",x,y - barLength/2 - upperWedgeTop,z,dx,dy,dz);
 		//fill vectors for  unreflected sensitive plane
+
+/*   Only neded for debugging/comparison
 		double tz = 0;
 		tz = get_z_intercept(\
                         focPlaneNx,\
@@ -932,7 +919,7 @@ double DircThreeSegBoxSim::warp_sens_plane(\
                         dx,\
                         dy,\
                         dz);
-
+*/
 		//printf("%12.04f %12.04f %12.04f %12.04f %12.04f\n",tz, focPlaneNx,focPlaneNy,focPlaneNz,focPlaneD);
 	
 	

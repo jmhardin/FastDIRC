@@ -114,7 +114,7 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 	int passed_ind = 0;
 	int passed_refl = 0;
 	int passed_time = 0;
-	int rval_filled = 0;
+//	int rval_filled = 0;
 	for (unsigned int i = 0; i < pts.size(); i++)
 	{
 		int ind = pt_to_ind->return_enum(pts[i]);
@@ -129,7 +129,7 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 
 		int time_direction = 0;	
 		passed_ind++;
-		bool added_angle = false;
+//		bool added_angle = false;
 		for (unsigned int j = 0; j < lu_table[ind].size(); j++)
 		{
 			vphi = lu_table[ind][j].phi;
@@ -205,7 +205,7 @@ void DircLUT::get_ckov_theta_all(std::vector<double> &rval, std::vector<double> 
 						//ret_dt_dl.push_back(vt_indirect);
 						ret_dt_dl.push_back(vt_indirect*vy/y_indirect*1000);
 					}
-					added_angle = true; 
+					//added_angle = true; 
 					//break;
 				}
 			}
@@ -278,7 +278,7 @@ void DircLUT::get_chromcorr_m_b_single_oval_cut(
 	int passed_ind = 0;
 	int passed_refl = 0;
 	int passed_time = 0;
-	int rval_filled = 0;
+//	int rval_filled = 0;
 	double used_dt = 0;
 	for (unsigned int i = 0; i < pts.size(); i++)
 	{
@@ -294,7 +294,7 @@ void DircLUT::get_chromcorr_m_b_single_oval_cut(
 
 		int time_direction = 0;	
 		passed_ind++;
-		bool added_angle = false;
+//		bool added_angle = false;
 		for (unsigned int j = 0; j < lu_table[ind].size(); j++)
 		{
 			vphi = lu_table[ind][j].phi;
@@ -357,7 +357,7 @@ void DircLUT::get_chromcorr_m_b_single_oval_cut(
 				avg_angle_pt += fill_val;
 				avg_angle_count += 1;
 
-				added_angle = true; 
+				//added_angle = true; 
 				//break;
 			}
 			if (avg_angle_count > 0)
@@ -400,12 +400,6 @@ void DircLUT::get_chromcorr_m_b_single_oval_cut(
 		mean_dang_indirect += dang_indirect[i];
 	}
 	mean_dang_indirect /= dang_indirect.size();
-
-
-	double slope_direct = 0;
-	double intercept_direct = 0;
-	double slope_indirect = 0;
-	double intercept_indirect = 0;
 
 	double dtdl_dev2_direct = 0; //Sum[(x-meanx)^2]
 	double dtdldang_dev_direct = 0;	//Sum[(x-meanx)(y-meany)]
@@ -488,7 +482,7 @@ void DircLUT::get_ckov_theta_single_oval_cut(
 	int passed_ind = 0;
 	int passed_refl = 0;
 	int passed_time = 0;
-	int rval_filled = 0;
+	//int rval_filled = 0;
 	double used_dt = 0;
 	for (unsigned int i = 0; i < pts.size(); i++)
 	{
@@ -504,7 +498,7 @@ void DircLUT::get_ckov_theta_single_oval_cut(
 
 		int time_direction = 0;	
 		passed_ind++;
-		bool added_angle = false;
+		//bool added_angle = false;
 		for (unsigned int j = 0; j < lu_table[ind].size(); j++)
 		{
 			vphi = lu_table[ind][j].phi;
@@ -568,7 +562,7 @@ void DircLUT::get_ckov_theta_single_oval_cut(
 				avg_angle_pt += fill_val;
 				avg_angle_count += 1;
 
-				added_angle = true; 
+				//added_angle = true; 
 				//break;
 			}
 			if (avg_angle_count > 0)

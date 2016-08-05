@@ -78,7 +78,7 @@ void init_global_data()
 	double particle_y = global_particle_y;
 	double energy = global_particle_energy;
 	double particle_flight_distance = global_particle_flight_distance;
-	double particle_t = global_particle_t;
+//	double particle_t = global_particle_t;
 	int n_sim_phots = global_n_sim_phots;
 
 	double tracking_unc = global_tracking_unc;
@@ -207,14 +207,10 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 	TH1F *ll_diff_pion = new TH1F("ll_diff_pion_tmp","Difference of log likelihood real = pion",60000,-600,600);
 	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon_tmp","Difference of log likelihood real = kaon",60000,-600,600);
 
-	int num_line_points = 5000;
-	double points_dist_sq = 6000;
-	double time_spread = 2;
-	//double time_spread = 1000;
+	double time_spread = 1000;
 	//double dist_spread = 40;
 	double dist_spread = 50;
 	double max_dev_sq = 5;
-	int line_recon_n = 5000;
 
 	max_dev_sq *= max_dev_sq;
 	
@@ -366,8 +362,6 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 		}
 	 }
 
-        double y1,y2,x1,x2;
-        x1 = xr[0];
         double last_x = xr[0];
         double last_y = yr[0];
 
@@ -564,11 +558,8 @@ int main(int nargs, char* argv[])
 
 	//int n_phi_phots = 900000;
 	int n_phi_phots = 150000;
-	n_phi_phots = 75000;
-	//TODO REMOVE THIS
-	//n_phi_phots = 4500;
+	//n_phi_phots = 75000;
 	int n_z_phots = 4;
-	int n_step_phots = 1000;
 	// 	n_step_phots = n_z_phots*n_phi_phots;
 
 /*
@@ -1081,17 +1072,18 @@ int main(int nargs, char* argv[])
 	//double res_enhance = 1/6.;
 	double res_enhance = 1;
 
-	double prog_thresh = 500;
+//	double prog_thresh = 500;
 
 	if (flatten_time == true)
 	{
 		s_func_t = 100000000;
 	}	
 
-	double outcsv_x,outcsv_y,outcsv_t;
+	double outcsv_x,outcsv_y;
+	//double outcsv_t;
 	outcsv_x = 0*35;//bars are 35mm wide
 	outcsv_y = 0;//mm
-	outcsv_t = 0;//ns
+	//outcsv_t = 0;//ns
 
 
 	if(out_csv){
@@ -1514,7 +1506,7 @@ int main(int nargs, char* argv[])
 				s_func_t,\
 				min_pval);//could make this an array that is filled...
 		//Might be worth making a new copy each time
-		DircProbabilitySeparation * sep_pdfs_mc;
+//		DircProbabilitySeparation * sep_pdfs_mc;
 /*
 		DircProgressiveSeparation *progressive_separation = \
 								    new DircProgressiveSeparation(\
@@ -1842,8 +1834,6 @@ int main(int nargs, char* argv[])
 				s_func_y,\
 				s_func_t,\
 				min_pval);//could make this an array that is filled...
-		//Might be worth making a new copy each time
-		DircProbabilitySeparation * sep_pdfs_mc;
 		unsigned int r=0;
 		while(f>>ievent_index>>iPID>>iBAR>>ix>>iy>>it>>itheta>>iphi>>iE)
 		{
@@ -2089,10 +2079,10 @@ int main(int nargs, char* argv[])
 					ll_diff = llc - llf;
 
 					// 					printf("\n%12.04f %12.04f %12.04f\n",llc,llf,ll_diff);
-					int correct_id = 1;
+					//int correct_id = 1;
 					if (ll_diff*pion_kaon_diff < 0)
 					{
-						correct_id = 0;
+						//correct_id = 0;
 
 						printf("wrong: %12.04f %d\n",ll_diff,pion_kaon_diff);
 						for (unsigned int k = 0; k < sim_points.size(); k++)
@@ -2520,9 +2510,6 @@ int main(int nargs, char* argv[])
 			
 			std::vector<double> start_phi;
 			std::vector<dirc_point> provisional_points;
-
-			double pion_emit_angle = 57.3*acos(1/(pion_beta*refrac_index*1.47));
-			double kaon_emit_angle = 57.3*acos(1/(kaon_beta*refrac_index*1.47));
 
 
 			for (int i = 0; i < num_provisional_points; i++)
@@ -2952,10 +2939,11 @@ int main(int nargs, char* argv[])
 
 		int n_minuit_pars = 2;	
 		double *minuit_pars = new double[n_minuit_pars];
+/*
 		double *minuit_grad;//not_computed
 		double minuit_val;
 		double minuit_flag = 0;
-
+*/
 		minuit_pars[0] = pion_x_adj;
 		minuit_pars[1] = pion_y_adj;
 		minuit_pars[2] = kaon_x_adj;
@@ -3036,7 +3024,7 @@ int main(int nargs, char* argv[])
 		}
 
 		int num_line_points = 5000;
-		double points_dist_sq = 6000;
+//		double points_dist_sq = 6000;
 		double time_spread = 2;
 		//double time_spread = 1000;
 		//double dist_spread = 40;
@@ -3932,50 +3920,6 @@ int main(int nargs, char* argv[])
 
 
 	}
-	if (sparse_sim_n > 0)
-	{
-		printf("Sparse Sim Output for %d Phi steps\n",sparse_sim_n);
-		dirc_point out_val;
-		double phi_step = 3.14159*2/sparse_sim_n;
-		//assume speed of light particle and "thin" cone.
-		double emit_angle;
-		double cur_phi;
-		bool hit_pmt;
-		double pion_beta = dirc_model->get_beta(energy,pimass);
-		double kaon_beta = dirc_model->get_beta(energy,kmass);
-		double wavelength = 0;
-		for (int phi_ind = 0; phi_ind < sparse_sim_n; phi_ind++)
-		{
-			emit_angle = 57.3*acos(pion_beta/(.996*refrac_index)) + spread_ang.Gaus(0,particle_theta_spread);
-			emit_angle = dirc_model->get_cerenkov_angle_rand(pion_beta,0,wavelength);
-			double emit_z = spread_ang.Uniform(-17.25,0);
-			cur_phi = (2*3.14159*phi_ind)/sparse_sim_n;
-			cur_phi = spread_ang.Uniform(0,2*3.1415);
-
-			//emit_z = -17.25/2;
-
-			hit_pmt = dirc_model->track_line_photon(\
-			        out_val,\
-			        emit_angle,\
-        			cur_phi,\
-        			particle_theta,\
-        			particle_phi,\
-        			particle_x,\
-        			particle_y,\
-        			emit_z,\
-        			0,\
-        			1);
-				//last 3 are z, t, and bar;
-
-			if (hit_pmt == true)
-			{
-				if (out_val.last_wall_x == 1)
-				{
-					printf("%05d %12.04f %12.04f %12.04f %12.04f %12.04f\n",phi_ind,emit_angle,cur_phi,out_val.x,out_val.y,out_val.t);
-				}
-			}
-		}
-	}
 	if (gaus_ll_n > 0)
 	{
 		printf("Running Filling LL hists with points drawn from gaussian, Do not perform any other fills\n");
@@ -4049,7 +3993,7 @@ int main(int nargs, char* argv[])
 		{
 			dirc_lut->add_table_pt(lut_points[i],lut_phis[i],lut_thetas[i]);
 		}
-		printf("LUT Table filled with %d points\n",lut_points.size());
+		printf("LUT Table filled with %d points\n", (int) lut_points.size());
 		double fmin = 57.3*(pion_cerenkov+kaon_cerenkov)/2 - 1;
 		double fmax = 57.3*(pion_cerenkov+kaon_cerenkov)/2 + 1;
 
@@ -4060,7 +4004,7 @@ int main(int nargs, char* argv[])
 		double oval_cut_time_spread_sq = .5;//ns/m - scaled by pathlength
 		//double oval_cut_time_spread_sq = 4;//ns/m - scaled by pathlength
 		oval_cut_time_spread_sq *= oval_cut_time_spread_sq;//ns
-		double oval_cut_val = -1;
+		//double oval_cut_val = -1;
 
 		double ll_mean_adjust = 47.1;
 		double ll_mean_enhance = 17.45;
@@ -4105,7 +4049,7 @@ int main(int nargs, char* argv[])
        				particle_phi, \
        				particle_theta, \
        				particle_y, \
-       				pion_cerenkov, \ 
+       				pion_cerenkov, \
        				oval_cut_angle_spread_sq,\
        				oval_cut_time_spread_sq,\
 				pion_cerenkov,\
@@ -4330,17 +4274,11 @@ int main(int nargs, char* argv[])
 
 		TH1F* tmp_pion_lut = new TH1F(*pion_lut_vals);
 		TH1F* tmp_kaon_lut = new TH1F(*kaon_lut_vals);
-		TH1F* tmp_pion_means = new TH1F(*pion_lut_means);
-		TH1F* tmp_kaon_means = new TH1F(*kaon_lut_means);
 		
 		double pion_mean = 0;//Degrees
 		double pion_sigma = 0;//mrad
 		double kaon_mean = 0;//Degrees
 		double kaon_sigma = 0;//mrad
-
-		double mean_fit_min = 0;
-		double mean_fit_max = 90;
-
 
 		
 		tmp_pion_lut->Fit("gaus","RQL","",fmin,fmax);
@@ -4400,7 +4338,6 @@ int main(int nargs, char* argv[])
 		}
 
 		int num_line_points = 5000;
-		double points_dist_sq = 4000;
 		//double time_spread = 4;
 		double time_spread = 4;
 		double dist_spread = 40;
@@ -4429,7 +4366,6 @@ int main(int nargs, char* argv[])
 		//ns
 		double pion_time = particle_flight_distance/(pion_beta*.3);
 		double kaon_time = particle_flight_distance/(kaon_beta*.3);
-		double unused_photons = 0;
 
 		for (int i = 0; i < fill_d_midline_n; i++)
 		{
@@ -4609,10 +4545,7 @@ int main(int nargs, char* argv[])
 		dirc_point out_val;
 		//assume speed of light particle and "thin" cone.
 		double emit_angle;
-		double cur_phi;
-		bool hit_pmt;
 		double pion_beta = dirc_model->get_beta(energy,pimass);
-		double kaon_beta = dirc_model->get_beta(energy,kmass);
 		double wavelength = 0;
 		std::vector<dirc_point> left_points;
 		std::vector<dirc_point> right_points;
