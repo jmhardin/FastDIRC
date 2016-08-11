@@ -249,6 +249,8 @@ void DircThreeSegBoxSim::fill_sens_plane_vecs() {
 
         unReflSensPlaneD = unReflSensPlaneNy*unReflSensPlaneY + unReflSensPlaneNz*unReflSensPlaneZ;
 
+//	sensPlaneYdistConversion = 1/cos(sens_rot/57.3);
+//	sensPlaneZdistConversion = 1/sin(sens_rot/57.3);
 
 	sensPlaneYdistConversion = 1/sin(sens_rot/57.3);
 	sensPlaneZdistConversion = 1/cos(sens_rot/57.3);

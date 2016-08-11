@@ -1212,8 +1212,10 @@ int main(int nargs, char* argv[])
 	TH2F *ref_theta_cphi_pion = new TH2F("ref_theta_cphi_pion","Emitted angle of Pion Photons versus angle into interface", 7200,0,360,1800,0,90);
 	TH2F *ref_theta_cphi_kaon = new TH2F("ref_theta_cphi_kaon","Emitted angle of Kaon Photons versus angle into interface", 7200,0,360,1800,0,90);
 
-	//TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
-	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",500,-1500,1500,67,-150,252);
+	TH2F *pion_dist_xy = new TH2F("pion_dist_xy","xy val of intercepted points - pion",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
+	TH2F *pion_dist_xy_geantbins_cm = new TH2F("pion_dist_xy_geantbins_cm","xy val of intercepted points with geant bins - pion",500,-150.,150.,67,-5.,35.2);
+	TH2F *pion_dist_xy_geantbins = new TH2F("pion_dist_xy_geantbins","xy val of intercepted points with geant bins - pion",500,-1500,1500,67,-50,352);
+	//TH2F *pion_dist_xy_geantbins = new TH2F("pion_dist_xy_geantbins","xy val of intercepted points - pion",500,-1500,1500,67,-150,252);
 	TH2F *kaon_dist_xy = new TH2F("kaon_dist_xy","xy val of intercepted points - kaon",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
 
 	TH2F *box_check_xy = new TH2F("box_check_xy","xy val of points from top of wedge",(maxx-minx)/(res_enhance*resx),minx,maxx,(maxy-miny)/(res_enhance*resy),miny,maxy);
@@ -3815,6 +3817,9 @@ int main(int nargs, char* argv[])
 			pion_dist_y->Fill(y);
 			pion_dist_t->Fill(t_ns);
 			pion_dist_xy->Fill(x,y);
+			pion_dist_xy_geantbins->Fill(x,y+50);
+			//pion_dist_xy_geantbins->Fill(x,y);
+			pion_dist_xy_geantbins_cm->Fill(x/10,(y+50)/10);
 			pion_dist_xt->Fill(x,t_ns);
 			pion_dist_yt->Fill(y,t_ns);
 			pion_dist_t->Fill(t_ns);
@@ -4934,6 +4939,8 @@ int main(int nargs, char* argv[])
 	box_check_xy->Write();
 
 	pion_dist_xy->Write();
+	pion_dist_xy_geantbins->Write();
+	pion_dist_xy_geantbins_cm->Write();
 	kaon_dist_xy->Write();
 	pion_dist_xt->Write();
 	kaon_dist_xt->Write();
