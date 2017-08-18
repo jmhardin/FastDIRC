@@ -3552,7 +3552,7 @@ int main(int nargs, char* argv[])
 					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+main_mirror_angle_off,\
 					spread_ang.Gaus(0,mirror_angle_change_yunc)+main_mirror_yangle_off,\
 					main_mirror_zangle_off);
-			dirc_model->set_pmt_plane_offsets(\
+			dirc_model->set_mirror_plane_offsets(\
 					main_mirror_yoff,\
 					main_mirror_zoff);
 			dirc_model->set_upper_wedge_angle_diff(\

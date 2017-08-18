@@ -210,7 +210,7 @@ void DircThreeSegBoxSim::build_readout_box()
 	fill_sens_plane_vecs();
 	//still rebuild wedge and bars when this is called:
 }
-void DircThreeSegBoxSim::set_pmt_plane_offsets(double off_y, double off_z)
+void DircThreeSegBoxSim::set_mirror_plane_offsets(double off_y, double off_z)
 {
 	focYoff = off_y;
 	focZoff = off_z;

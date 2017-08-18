@@ -184,7 +184,7 @@ public:
 	void set_pmt_angle(double ang);
 	void set_pmt_plane_zs(double imin, double imax);
 	void set_large_mirror_zs(double imin, double imax);
-	void set_pmt_plane_offsets(double off_y, double off_z);
+	void set_mirror_plane_offsets(double off_y, double off_z);
 
 
 	
