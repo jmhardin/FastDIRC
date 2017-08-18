@@ -68,7 +68,8 @@ protected:
         double focPlaneD;
         double focPlaneMinZ;
 
-
+	double focYoff;
+	double focZoff;
 
 	double sensPlaneYdistConversion;
 	double sensPlaneZdistConversion;
@@ -183,6 +184,9 @@ public:
 	void set_pmt_angle(double ang);
 	void set_pmt_plane_zs(double imin, double imax);
 	void set_large_mirror_zs(double imin, double imax);
+	void set_pmt_plane_offsets(double off_y, double off_z);
+
+
 	
 	void set_store_optical_angles(bool ibool);
 	std::vector<double> get_focus_photon_angles();

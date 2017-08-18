@@ -483,6 +483,12 @@ int main(int nargs, char* argv[])
 	double foc_mirror_size = 288;
 
 
+	double main_mirror_angle_off = 0;
+	double main_mirror_yangle_off = 0;
+	double main_mirror_zangle_off = 0;
+	double main_mirror_yoff = 0;
+	double main_mirror_zoff = 0;
+
 
 	double pmt_min_z = -1000;
 	double pmt_max_z = 1000;
@@ -1004,6 +1010,31 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				upper_wedge_yang_spread = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_angle_off") == 0)
+			{
+				i++;
+				main_mirror_angle_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_yangle_off") == 0)
+			{
+				i++;
+				main_mirror_yangle_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_zangle_off") == 0)
+			{
+				i++;
+				main_mirror_zangle_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_yoff") == 0)
+			{
+				i++;
+				main_mirror_yoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_zoff") == 0)
+			{
+				i++;
+				main_mirror_zoff = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-rseed") == 0)
 			{
@@ -3518,8 +3549,12 @@ int main(int nargs, char* argv[])
 		for (int i = 0; i < num_runs; i++)
 		{
 			dirc_model->set_focus_mirror_angle(\
-					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc),\
-					spread_ang.Gaus(0,mirror_angle_change_yunc));
+					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+main_mirror_angle_off,\
+					spread_ang.Gaus(0,mirror_angle_change_yunc)+main_mirror_yangle_off,\
+					main_mirror_zangle_off);
+			dirc_model->set_pmt_plane_offsets(\
+					main_mirror_yoff,\
+					main_mirror_zoff);
 			dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,wedge_uncertainty),\
 					spread_ang.Gaus(0,upper_wedge_yang_spread));

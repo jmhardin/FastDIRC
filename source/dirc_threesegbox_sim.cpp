@@ -76,6 +76,7 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	liquidIndex = 1.47;
 	quartzLiquidY = upperWedgeBottom;
 
+	
 
 	//boxCloseZ = -614;
 	boxCloseZ = -559;
@@ -144,6 +145,8 @@ DircThreeSegBoxSim::DircThreeSegBoxSim(
 	for (int i = 0; i < num_transmittance; i++) {
 		quartz_transmittance.push_back(tmp_quartz_transmittance[i]);
 	}
+	focYoff = 0;
+	focZoff = 0;
 	set_focmirror_nonuniformity(0);
 	build_readout_box();
 }
@@ -190,6 +193,8 @@ double DircThreeSegBoxSim::get_cerenkov_angle_rand(double beta, double additiona
                 break;
         }
 
+
+
 //BRING THIS BACK TODO
 //	out_ang += .23;
        out_ang += rand_gen->Gaus(0,additional_spread);
@@ -204,6 +209,12 @@ void DircThreeSegBoxSim::build_readout_box()
 	fill_foc_mirror_vecs();
 	fill_sens_plane_vecs();
 	//still rebuild wedge and bars when this is called:
+}
+void DircThreeSegBoxSim::set_pmt_plane_offsets(double off_y, double off_z)
+{
+	focYoff = off_y;
+	focZoff = off_z;
+	build_readout_box();
 }
 void DircThreeSegBoxSim::set_pmt_plane_zs(double imin, double imax)
 {
@@ -265,8 +276,8 @@ void DircThreeSegBoxSim::set_foc_mirror_r(double ifoc_r) {
 void DircThreeSegBoxSim::fill_foc_mirror_vecs() {
 	//is off by pi/2 to reduce rounding errors and such
 	double foc_center_ang = foc_rot/57.3 + acos(-foc_mirror_size/(2*foc_r));
-	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang);
-	focMirrorZ = foc_r*sin(foc_center_ang);
+	focMirrorY = focMirrorBottom - foc_r*cos(foc_center_ang) + focYoff;
+	focMirrorZ = foc_r*sin(foc_center_ang) + focZoff;
 	//double foc_center_ang = foc_rot/57.3 + asin(foc_mirror_size/(2*foc_r));
 	//focMirrorY = focMirrorBottom + foc_r*sin(foc_center_ang);
 	//focMirrorZ = foc_r*cos(foc_center_ang);
