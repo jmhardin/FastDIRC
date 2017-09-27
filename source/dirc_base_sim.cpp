@@ -160,8 +160,15 @@ void DircBaseSim::rotate_2d(double &x, double &y, double cval, double sval) {
 void DircBaseSim::set_bar_box_angle(double ang) {
 	//expect degrees
 	//sets angle between readout box and bars - rotates angle coming out of bars
-	//box_angle_off_cval = cos(ang/57.3);
-	//box_angle_off_sval = sin(ang/57.3);
+	box_angle_off_cval = cos(ang/57.3);
+	box_angle_off_sval = sin(ang/57.3);
+}
+void DircBaseSim::set_bar_box_offsets(double x, double y, double z) {
+	//expect degrees
+	//sets angle between readout box and bars - rotates angle coming out of bars
+	bar_box_xoff = x;
+	bar_box_yoff = y;
+	bar_box_zoff = z;
 }
 std::vector<double> DircBaseSim::get_dist_traveled() {
 	return dist_traveled;
@@ -419,6 +426,7 @@ void DircBaseSim::test_from_wedge_top(\
 		dy = cos(temit/57.3);
 		dz = sin(temit/57.3)*cos(randPhi/57.3);
 
+		
 		rotate_2d(dy,dz,cos(overall_theta/57.3),sin(overall_theta/57.3));
 
 		optical_interface_z(quartzIndex,liquidIndex,dx,dz,dy);
@@ -433,6 +441,19 @@ void DircBaseSim::test_from_wedge_top(\
 
 		ovals.push_back(out_val);
 	}
+}
+void DircBaseSim::bar_box_interface(\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz)
+{
+	x += bar_box_xoff;
+	y += bar_box_yoff;
+	z += bar_box_zoff;
+	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
 }
 void DircBaseSim::sim_lut_points(\
 		std::vector<dirc_point> &ovals,\
@@ -496,8 +517,8 @@ void DircBaseSim::sim_lut_points(\
 				dy,\
 				dz);
 		//account (quickly) for the bar box having a different angle than the readout
-		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
-
+		//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		bar_box_interface(x,y,z,dx,dy,dz);
 		if (z > 0) {
 			continue;
 		}
@@ -695,7 +716,8 @@ void DircBaseSim::fill_rand_phi(\
 				dy,\
 				dz);
 		//account (quickly) for the bar box having a different angle than the readout
-		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		bar_box_interface(x,y,z,dx,dy,dz);
 
 		if (z > 0) {
 			continue;
@@ -827,7 +849,8 @@ std::vector<std::pair<double,double> > DircBaseSim::get_refraction_rand_phi(\
 				dz);
 
 		//account (quickly) for the bar box having a different angle than the readout
-		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		bar_box_interface(x,y,z,dx,dy,dz);
 
 		if (z > 0) {
 			continue;
@@ -1000,7 +1023,8 @@ void DircBaseSim::fill_reg_phi(\
 					dz);
 
 			//account (quickly) for the bar box having a different angle than the readout
-			rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+			//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+			bar_box_interface(x,y,z,dx,dy,dz);
 
 			if (z > 0)
 			{
@@ -1138,7 +1162,8 @@ bool DircBaseSim::track_single_photon(\
 	out_val.last_wall_x = lastWallX;
 	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
-	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	bar_box_interface(x,y,z,dx,dy,dz);
 
 	if (z > 0)
 	{
@@ -1307,7 +1332,8 @@ bool DircBaseSim::track_line_photon(\
 	out_val.last_wall_x = lastWallX;
 	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
-	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	bar_box_interface(x,y,z,dx,dy,dz);
 
 	if (z > 0)
 	{
@@ -1464,7 +1490,8 @@ bool DircBaseSim::track_single_photon_beta(\
 	out_val.last_wall_x = lastWallX;
 	//	printf("lastwall agrees: %d\n",beforeWedgeLastWall==lastWallX);
 	//account (quickly) for the bar box having a different angle than the readout
-	rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+	bar_box_interface(x,y,z,dx,dy,dz);
 
 	if (z > 0)
 	{
@@ -1642,7 +1669,8 @@ bool DircBaseSim::track_all_line_photons(\
 		int dx_lr = sgn(dx);
 
 		out_val.last_wall_x = -1;
-		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		bar_box_interface(x,y,z,dx,dy,dz);
 
 		x += saveBarWidth/2-3;
 
@@ -1767,7 +1795,8 @@ bool DircBaseSim::track_all_line_photons(\
 		int dx_lr = sgn(dx);
 
 		out_val.last_wall_x = -1;
-		rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		//rotate_2d(dy,dz,box_angle_off_cval,box_angle_off_sval);
+		bar_box_interface(x,y,z,dx,dy,dz);
 
 		x += saveBarWidth/2-3;
 

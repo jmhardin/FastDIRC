@@ -489,6 +489,9 @@ int main(int nargs, char* argv[])
 	double main_mirror_yoff = 0;
 	double main_mirror_zoff = 0;
 
+	double bar_box_xoff = 0;
+	double bar_box_yoff = 0;
+	double bar_box_zoff = 0;
 
 	double pmt_min_z = -1000;
 	double pmt_max_z = 1000;
@@ -1085,6 +1088,21 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				phot_check_max_theta = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_xoff") == 0)
+			{
+				i++;
+				bar_box_xoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_yoff") == 0)
+			{
+				i++;
+				bar_box_yoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_zoff") == 0)
+			{
+				i++;
+				bar_box_zoff = atof(argv[i]);
 			}
 			else
 			{
@@ -3555,6 +3573,12 @@ int main(int nargs, char* argv[])
 			dirc_model->set_mirror_plane_offsets(\
 					main_mirror_yoff,\
 					main_mirror_zoff);
+			dirc_model->set_bar_box_offsets(\
+					bar_box_xoff,\
+					bar_box_yoff,\
+					bar_box_zoff);
+
+
 			dirc_model->set_upper_wedge_angle_diff(\
 					spread_ang.Gaus(0,wedge_uncertainty),\
 					spread_ang.Gaus(0,upper_wedge_yang_spread));

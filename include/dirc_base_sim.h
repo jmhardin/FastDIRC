@@ -70,6 +70,9 @@ protected:
 	
 	double box_angle_off_cval;
 	double box_angle_off_sval;
+	double bar_box_xoff;
+	double bar_box_yoff;
+	double bar_box_zoff;
 	double quartzIndex;
 	double quartzLiquidY;
 
@@ -152,6 +155,13 @@ protected:
 	double generate_cos_moliere_angle(\
                 double rad_length);
 
+	void bar_box_interface(\
+		double &x,\
+		double &y,\
+		double &z,\
+		double &dx,\
+		double &dy,\
+		double &dz);
 
 	void fill_moliere_tracking_steps(\
 		std::vector<dirc_base_sim_tracking_step> &rsteps,\
@@ -271,6 +281,7 @@ public:
 	std::vector<double> get_upper_wedge_incident();
 	void set_liquid_index(double li);
 	void set_bar_box_angle(double ang);
+	void set_bar_box_offsets(double x, double y, double z);
 	void set_wedge_mirror_rand(double ispread);
 	double get_beta(double E, double m);
 	void set_upper_wedge_angle_diff(double rads, double radsy_y = 0);	
