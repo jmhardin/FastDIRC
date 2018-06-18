@@ -599,6 +599,8 @@ int main(int nargs, char* argv[])
 	bool coverage_plot = false;
 	int num_cov = 100000;
 
+	bool timing_test = false;
+
 	char* rootfilename = new char[256];
 	char* inputrootfilename = new char[256];
 	sprintf(rootfilename,"fitdirc.root");	
@@ -632,6 +634,10 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-cylindrical_mirror") == 0)
 			{
 				three_seg_mirror = false;	
+			}
+			else if (strcmp(argv[i], "-timing_test") == 0)
+			{
+				timing_test = true;	
 			}
 			else if (strcmp(argv[i], "-updown") == 0)
 			{
@@ -3478,6 +3484,7 @@ int main(int nargs, char* argv[])
 		double pion_time = particle_flight_distance/(pion_beta*.3);
 		double kaon_time = particle_flight_distance/(kaon_beta*.3);
 
+
 		dirc_model->sim_reg_n_photons(\
 				hit_points_pion,\
 				n_phi_phots,\
@@ -3508,6 +3515,10 @@ int main(int nargs, char* argv[])
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
 				kaon_beta);
+
+		std::vector<dirc_point> hit_points_pion_dummy;
+		std::vector<dirc_point> hit_points_kaon_dummy;
+
 
 /*
 		dirc_model->sim_rand_n_photons(\
@@ -3566,6 +3577,43 @@ int main(int nargs, char* argv[])
 
 		for (int i = 0; i < num_runs; i++)
 		{
+			if (timing_test == true)
+			{
+				hit_points_pion_dummy.clear();
+				hit_points_kaon_dummy.clear();
+				dirc_model->sim_reg_n_photons(\
+						hit_points_pion_dummy,\
+						n_phi_phots,\
+						n_z_phots,\
+						-1,\
+						1,\
+						particle_x,\
+						particle_y,\
+						pion_time,\
+						particle_theta,\
+						particle_phi,\
+						0,\
+						ckov_unc/pdf_unc_red_fac,\
+						pion_beta);
+				//TODO RETURN
+
+				dirc_model->sim_reg_n_photons(\
+						hit_points_kaon_dummy,\
+						n_phi_phots,\
+						n_z_phots,\
+						-1,\
+						1,\
+						particle_x,\
+						particle_y,\
+						kaon_time,\
+						particle_theta,\
+						particle_phi,\
+						0,\
+						ckov_unc/pdf_unc_red_fac,\
+						kaon_beta);
+
+
+			}
 			dirc_model->set_focus_mirror_angle(\
 					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+main_mirror_angle_off,\
 					spread_ang.Gaus(0,mirror_angle_change_yunc)+main_mirror_yangle_off,\
