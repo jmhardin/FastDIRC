@@ -136,8 +136,15 @@ DircBaseSim::DircBaseSim(
 	x_indirect_bounces.clear();
 	z_indirect_bounces.clear();
 
+	generated_theta.clear();
+	generated_phi.clear();
+	generated_z.clear();
+	generated_wavelength.clear();
+
 	useMoliere = true;
 	moliereP = 1000000;//minimal scattering 
+
+
 
 	build_system();
 }
@@ -334,7 +341,9 @@ void DircBaseSim::sim_rand_n_photons(\
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= .0015*57.3*/,\
 		double ckov_theta_unc /* = .0055*57.3*/,\
-		double beta /* = -1*/) {
+		double beta /* = -1*/,\
+		int save_kin /* = -1 */) 
+{
 
 	out_points.clear();
 	fill_rand_phi(\
@@ -349,7 +358,8 @@ void DircBaseSim::sim_rand_n_photons(\
 			particle_phi,\
 			phi_theta_unc,\
 			ckov_theta_unc,\
-			beta);
+			beta,\
+			save_kin);
 }
 void DircBaseSim::sim_reg_n_photons(\
 		std::vector<dirc_point> &out_points,\
@@ -364,8 +374,11 @@ void DircBaseSim::sim_reg_n_photons(\
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= 0*/,\
 		double ckov_theta_unc /* = 0*/,\
-		double beta /* = -1*/) {
+		double beta /* = -1*/,\
+		int save_kin /* = -1 */) 
+{
 	//     std::vector<dirc_point> out_points;
+
 	out_points.clear();
 	fill_reg_phi(\
 			out_points,\
@@ -380,7 +393,8 @@ void DircBaseSim::sim_reg_n_photons(\
 			particle_phi,\
 			phi_theta_unc,\
 			ckov_theta_unc,\
-			beta);
+			beta,\
+			save_kin);
 	//Reflection inside loops
 	//    sidemirror_reflect_points(out_points);
 	//     return out_points;
@@ -555,7 +569,9 @@ void DircBaseSim::fill_rand_phi(\
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc, /*= .0015*57.3*/
 		double ckov_theta_unc /* = .0055*57.3*/,\
-		double beta/* = -1*/) {
+		double beta/* = -1*/,\
+		int save_kin /* = -1*/) 
+{
 
 
 	double emitAngle = ckov_theta;
@@ -632,6 +648,22 @@ void DircBaseSim::fill_rand_phi(\
 
 	}
 
+
+	if (save_kin != 0)
+	{
+		generated_theta.clear();
+		generated_phi.clear();
+		generated_z.clear();
+		generated_wavelength.clear();
+	}
+	else 
+	{
+		if (numPhots != generated_theta.size())
+		{
+			printf("Warning, attempting to generate PDF with previous kinematics, but incorrect number of previous kinematics");
+		}
+	}
+
 	double track_loc = -1;
 
 	//define numbers to linearly interp
@@ -656,6 +688,25 @@ void DircBaseSim::fill_rand_phi(\
 			liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 		}
 //		mm_index = (sourceOff - barDepth)*quartzIndex/cos(particleTheta/57.3);
+
+
+
+		if (save_kin == 1)
+		{
+			generated_theta.push_back(temit);
+			generated_phi.push_back(randPhi);
+			generated_z.push_back(track_loc);
+			generated_wavelength.push_back(wavelength);
+		}
+		else if (save_kin == 0)
+		{
+			temit = generated_theta[i];
+			randPhi = generated_phi[i];
+			track_loc = generated_z[i];
+			wavelength = generated_wavelength[i];
+			quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+			liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+		}
 
 		
 		//this will actually floor - track_loc > 0
@@ -906,7 +957,8 @@ void DircBaseSim::fill_reg_phi(\
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= 0*/,\
 		double ckov_theta_unc /* = 0*/,\
-		double beta /* = -1*/)
+		double beta /* = -1*/,\
+		int save_kin /* = -1*/)
 {
 	double sDepth = .95*barDepth;
 	double emitAngle = ckov_theta;
@@ -937,6 +989,22 @@ void DircBaseSim::fill_reg_phi(\
 	double saveGeneralQuartzIndex = quartzIndex;
 	double saveGeneralLiquidIndex = liquidIndex;
 
+
+	if (save_kin != 0)
+	{
+		generated_theta.clear();
+		generated_phi.clear();
+		generated_z.clear();
+		generated_wavelength.clear();
+	}
+	else 
+	{
+		if (n_photons_z*adj_n_photons_phi != generated_theta.size())
+		{
+			printf("Warning, attempting to generate PDF with previous kinematics, but incorrect number of previous kinematics");
+		}
+	}
+
 	for (int i = 0; i < n_photons_z; i++) {
 		sourceOff = (i+.5)*sDepth/(n_photons_z);
 
@@ -947,7 +1015,6 @@ void DircBaseSim::fill_reg_phi(\
 
 		for (int j = 0; j < adj_n_photons_phi; j++) {
 			regPhi = j*2*3.14159265357/(adj_n_photons_phi);
-
 			if (beta < 0) {
 				rand_add = rand_gen->Gaus(0,ckov_theta_unc);
 				temit = emitAngle + rand_add;
@@ -957,6 +1024,25 @@ void DircBaseSim::fill_reg_phi(\
 				quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 				liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
 			}
+
+
+			if (save_kin == 1)
+			{
+				generated_theta.push_back(temit);
+				generated_phi.push_back(regPhi);
+				generated_z.push_back(sourceOff);
+				generated_wavelength.push_back(wavelength);
+			}
+			else if (save_kin == 0)
+			{
+				temit = generated_theta[adj_n_photons_phi*i + j];
+				regPhi = generated_phi[adj_n_photons_phi*i + j];
+				sourceOff = generated_z[adj_n_photons_phi*i + j];
+				wavelength = generated_wavelength[adj_n_photons_phi*i + j];
+				quartzIndex = get_quartz_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+				liquidIndex = get_liquid_n(wavelength);//Painful way of doing this - saving and correcting is inelegant
+			}
+
 
 			mm_index = (sourceOff - barDepth)*quartzIndex/cos_ptheta;
 

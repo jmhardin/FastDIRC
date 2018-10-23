@@ -103,6 +103,12 @@ protected:
 	std::vector<int> x_indirect_bounces;
 	std::vector<int> z_indirect_bounces;
 
+
+	std::vector<double> generated_theta;
+	std::vector<double> generated_phi;
+	std::vector<double> generated_z;
+	std::vector<double> generated_wavelength;
+
 	
 	double min_transmittance,max_transmittance,sep_transmittance;
 	int num_transmittance;
@@ -135,7 +141,8 @@ protected:
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc /*= .0015*57.3*/,\
 		double ckov_theta_unc /* = .0055*57.3*/,\
-		double beta /* = -1*/);
+		double beta /* = -1*/,\
+		int save_kin /* =-1*/);
 	void fill_reg_phi(\
 		std::vector<dirc_point> &fill_points,\
 		int n_photons_phi, \
@@ -149,7 +156,8 @@ protected:
 		double particle_phi /*= 0*/,\
 		double phi_theta_unc, /*= 0*/
 		double ckov_theta_unc /* = 0*/,\
-		double beta /* = -1*/);
+		double beta /* = -1*/,\
+		int save_kin /* =-1*/);
 
 
 	double generate_cos_moliere_angle(\
@@ -326,7 +334,8 @@ public:
 		double particle_phi = 0,\
 		double phi_theta_unc = .08594,\
 		double ckov_theta_unc = .3151,\
-		double beta = -1);	
+		double beta = -1,\
+		int save_kin = -1);	
 	void sim_reg_n_photons(\
 		std::vector<dirc_point> &out_points,\
 		int n_photons_phi,\
@@ -340,7 +349,8 @@ public:
 		double particle_phi = 0,\
 		double phi_theta_unc = 0,\
 		double ckov_theta_unc = 0,\
-		double beta = -1);	
+		double beta = -1,\
+		int save_kin = -1);	
 	bool track_single_photon(\
 	        dirc_point &out_val,\
 	        double emit_theta,\

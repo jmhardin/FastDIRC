@@ -592,6 +592,9 @@ int main(int nargs, char* argv[])
 	double kinematics_yields_step_phi = 1;
 	int  kinematics_n_phots = 100000;
 
+	double foc_mirror_yoff = 0;
+	double foc_mirror_zoff = 0;
+	
 
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
@@ -1110,6 +1113,16 @@ int main(int nargs, char* argv[])
 				i++;
 				bar_box_zoff = atof(argv[i]);
 			}
+			else if (strcmp(argv[i], "-foc_mirror_yoff") == 0)
+			{
+				i++;
+				foc_mirror_yoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-foc_mirror_zoff") == 0)
+			{
+				i++;
+				foc_mirror_zoff = atof(argv[i]);
+			}
 			else
 			{
 				printf("Unrecognized argument: %s\n",argv[i]);
@@ -1196,11 +1209,16 @@ int main(int nargs, char* argv[])
 	double muon_angle, pion_angle, kaon_angle;
 	muon_angle=pion_angle=kaon_angle = -1;
 
+	printf("BEFORE FILE\n");
 
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
 
+	printf("BEFORE HISTS\n");
+
 	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",200000,-200,200);
+	TH1F *ll_pion = new TH1F("ll_pion","log likelihood real = pion",20000,-2000,0);
 	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",200000,-200,200);
+	TH1F *ll_kaon = new TH1F("ll_kaon","log likelihood real = kaon",20000,-2000,0);
 	TH1F *ll_diff_pion_up = new TH1F("ll_diff_pion_up","Difference of log likelihood real = pion \"up\" going photons",200000,-200,200);
 	TH1F *ll_diff_kaon_up = new TH1F("ll_diff_kaon_up","Difference of log likelihood real = kaon \"up\" going photons",200000,-200,200);
 	TH1F *ll_diff_pion_down = new TH1F("ll_diff_pion_down","Difference of log likelihood real = pion \"down\" going photons",200000,-200,200);
@@ -2761,6 +2779,8 @@ int main(int nargs, char* argv[])
 //			llc = pdf_pion->get_log_likelihood(sim_points);
 //			llf = pdf_kaon->get_log_likelihood(sim_points);
 
+			
+
 			ll_diff_pion->Fill(1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
 			printf("\nll_diff pion: %12.04f\n",llc-llf);
@@ -3480,6 +3500,9 @@ int main(int nargs, char* argv[])
 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 		dirc_model->set_bar_box_angle(bar_box_box_angle);
 
+		dirc_model->set_mirror_plane_offsets(foc_mirror_yoff,foc_mirror_zoff);
+
+
 		//ns
 		double pion_time = particle_flight_distance/(pion_beta*.3);
 		double kaon_time = particle_flight_distance/(kaon_beta*.3);
@@ -3498,9 +3521,10 @@ int main(int nargs, char* argv[])
 				particle_phi,\
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
-				pion_beta);
+				pion_beta,\
+				1);
 //TODO RETURN
-
+/*
 		dirc_model->sim_reg_n_photons(\
 				hit_points_kaon,\
 				n_phi_phots,\
@@ -3515,10 +3539,35 @@ int main(int nargs, char* argv[])
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
 				kaon_beta);
-
+*/
+		dirc_model->sim_reg_n_photons(\
+				hit_points_kaon,\
+				n_phi_phots,\
+				n_z_phots,\
+				-1,\
+				1,\
+				particle_x,\
+				particle_y,\
+				kaon_time,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				pion_beta,\
+				0);
 		std::vector<dirc_point> hit_points_pion_dummy;
 		std::vector<dirc_point> hit_points_kaon_dummy;
 
+		for (int i = 0; i < 20; i++)
+		{
+			double hppx, hppy, hpkx, hpky;
+			hppx = hit_points_pion[i].x;
+			hppy = hit_points_pion[i].y;
+			hpkx = hit_points_kaon[i].x;
+			hpky = hit_points_kaon[i].y;
+
+			printf("%12.04f %12.04f %12.04f %12.04f\n",hppx,hpkx,hppy,hpky);
+		}
 
 /*
 		dirc_model->sim_rand_n_photons(\
@@ -3687,7 +3736,9 @@ int main(int nargs, char* argv[])
 			}
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
-			
+
+			ll_pion->Fill(llc);
+
 			ll_diff_pion->Fill(1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
 
@@ -3757,6 +3808,8 @@ int main(int nargs, char* argv[])
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
 
+			ll_kaon->Fill(llf);
+
 			ll_diff_kaon->Fill(1*(llc-llf));
 			phot_found_kaon->Fill(sim_points.size());
 
@@ -3796,6 +3849,9 @@ int main(int nargs, char* argv[])
 			// 		ll_diff_kaon->Fill(sep_pdfs->get_log_likelihood_spread_diff(sim_points));
 
 		}
+
+		printf("\nPion LL: %12.04f\n",ll_pion->GetMean());
+		printf("Kaon LL: %12.04f\n",ll_kaon->GetMean());
 
 		printf("\nRun Completed\n");
 		if (coverage_plot == true)
@@ -5056,7 +5112,9 @@ int main(int nargs, char* argv[])
 	pion_dist_t->Write();
 	kaon_dist_t->Write();
 	ll_diff_pion->Write();
+	ll_pion->Write();
 	ll_diff_kaon->Write();
+	ll_kaon->Write();
 	ll_diff_pion_up->Write();
 	ll_diff_kaon_up->Write();
 	ll_diff_pion_down->Write();

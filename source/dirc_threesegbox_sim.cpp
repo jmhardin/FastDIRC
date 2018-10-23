@@ -304,8 +304,8 @@ void DircThreeSegBoxSim::fill_threeseg_plane_vecs() {
 	double theta_2 = theta_m;
 	double theta_3 = theta_m + theta_c/3;
 
-	threeSeg1Y = focMirrorBottom;
-	threeSeg1Z = 0;
+	threeSeg1Y = focMirrorBottom + focYoff;
+	threeSeg1Z = 0 + focZoff;
 
 	threeSeg2Y = threeSeg1Y + seg_h*cos(theta_1);
 	threeSeg2Z = threeSeg1Z - seg_h*sin(theta_1);
