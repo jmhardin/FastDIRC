@@ -57,7 +57,7 @@ std::vector<std::vector<dirc_point> > global_pion_hits;
 std::vector<std::vector<dirc_point> > global_kaon_hits;
 
 void init_global_data()
-{	
+{
 	int num_line_points = 5000;
 	int num_particle_hits = 20000;
 
@@ -91,7 +91,7 @@ void init_global_data()
 
 	double refrac_index = global_refrac_index;
 //	printf("%12.04f\n",refrac_index);
-	
+
 	double refrac_split = -.000;
 	double pion_refrac_mod = 1.000;
 	double kaon_refrac_mod = 1.000;
@@ -174,7 +174,7 @@ void init_global_data()
 				ckov_unc,\
 				pion_beta);
 		digitizer->digitize_points(pion_push);
-	
+
 		dirc_model->sim_rand_n_photons(\
 				kaon_push,\
 				n_sim_phots,\
@@ -213,9 +213,10 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 	double max_dev_sq = 5;
 
 	max_dev_sq *= max_dev_sq;
-	
+
 	double llc = 0;
 	double llf = 0;
+	double llc_default = 0;
 
 	double mult_params = 1;
 
@@ -256,21 +257,21 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 	{//global pion hits and global kaon hits should have the same size
 		//do pion hit first
 		sim_points = global_pion_hits[k];
-		
+
 		llc = 0;
 		llf = 0;
 
-		
+
 		for (unsigned int i = 0; i < sim_points.size(); i++)
 		{
 			double min_dist_sq = 10000;
 			double cur_dist_sq = -1;
 			for (unsigned int j = 0; j < pion_line.size(); j++)
 			{
-				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);		
-				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);		
+				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);
+				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);
 				cur_dist_sq /= dist_spread;
-				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;	
+				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;
 				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				//printf("%12.04f\n",cur_dist_sq);
 			}
@@ -284,10 +285,10 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 			double cur_dist_sq = -1;
 			for (unsigned int j = 0; j < kaon_line.size(); j++)
 			{
-				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);		
-				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);		
+				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);
+				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);
 				cur_dist_sq /= dist_spread;
-				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;	
+				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;
 				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 			}
 			//cur_mean_phi /= total_prov_points;
@@ -306,10 +307,10 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 			double cur_dist_sq = -1;
 			for (unsigned int j = 0; j < pion_line.size(); j++)
 			{
-				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);		
-				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);		
+				cur_dist_sq = (sim_points[i].x - pion_line[j].x)*(sim_points[i].x - pion_line[j].x);
+				cur_dist_sq += (sim_points[i].y - pion_line[j].y)*(sim_points[i].y - pion_line[j].y);
 				cur_dist_sq /= dist_spread;
-				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;	
+				cur_dist_sq += (sim_points[i].t - pion_line[j].t)*(sim_points[i].t - pion_line[j].t)/time_spread;
 				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 			}
 			llc += std::min(min_dist_sq,max_dev_sq);
@@ -321,10 +322,10 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
 			double cur_dist_sq = -1;
 			for (unsigned int j = 0; j < kaon_line.size(); j++)
 			{
-				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);		
-				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);		
+				cur_dist_sq = (sim_points[i].x - kaon_line[j].x)*(sim_points[i].x - kaon_line[j].x);
+				cur_dist_sq += (sim_points[i].y - kaon_line[j].y)*(sim_points[i].y - kaon_line[j].y);
 				cur_dist_sq /= dist_spread;
-				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;	
+				cur_dist_sq += (sim_points[i].t - kaon_line[j].t)*(sim_points[i].t - kaon_line[j].t)/time_spread;
 				min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 			}
 			llf += std::min(min_dist_sq,max_dev_sq);
@@ -372,7 +373,7 @@ void dirc_calib_line(int &npar, double *gin, double &f, double *par, int iflag)
                 last_x = xr[i];
                 last_y = yr[i];
         }
-	
+
 //	printf("params: %12.04f %12.04f %12.04f %12.04f %12.04f  val: %12.04f\n",pion_x_adj,pion_y_adj,kaon_x_adj,kaon_y_adj,dist_spread,-ival);
 	f = -ival; //return negative ROC integral
 	delete ll_diff_pion;
@@ -390,7 +391,7 @@ std::vector<dirc_point> fold_x(std::vector<dirc_point> inpoints) {
 	return outvec;
 }
 int main(int nargs, char* argv[])
-{  
+{
 
 //	printf("%12.04f\n",atan2(0,10)*57.3);
 
@@ -402,7 +403,7 @@ int main(int nargs, char* argv[])
 	bool out_csv = false;
 	bool slac_run = false;
 	int output_box_angles_n = -1;
-	double time_window=-1;//time window for confounded pmt hits, in ns	
+	double time_window=-1;//time window for confounded pmt hits, in ns
 
 	double energy = 5.0;
 	double energy_mean = energy;
@@ -475,13 +476,16 @@ int main(int nargs, char* argv[])
 	double box_rot = 0;
 	double box_rot_unc = 0;
 	double bar_box_box_angle = 0/57.3;
+	//double bar_box_box_angle_pdf = 0./57.3; //into rad
 	double mirror_r_difference = 400;//1200 - 400 = 800.  Changed 05/09/2016.  Does not affect threeseg mirror reconstruction as far as I can tell - this was known.
 	//	double mirror_r_difference = 0;
 	double wedge_non_uniformity = 0;
 	double pmt_offset = 0;
+	double pmt_offset_pdf = 0;
+	double pmt_angle_offset = 0;
+	double pmt_angle_offset_pdf = 0;
 	double main_mirror_nonuniformity = 0;
 	double foc_mirror_size = 288;
-
 
 	double main_mirror_angle_off = 0;
 	double main_mirror_yangle_off = 0;
@@ -489,9 +493,19 @@ int main(int nargs, char* argv[])
 	double main_mirror_yoff = 0;
 	double main_mirror_zoff = 0;
 
+	double main_mirror_angle_pdf_off = 0;
+	double main_mirror_yangle_pdf_off = 0;
+	double main_mirror_zangle_pdf_off = 0;
+	double main_mirror_pdf_yoff = 0;
+	double main_mirror_pdf_zoff = 0;
+
 	double bar_box_xoff = 0;
 	double bar_box_yoff = 0;
 	double bar_box_zoff = 0;
+
+	double bar_box_xoff_pdf = 0;
+	double bar_box_yoff_pdf = 0;
+	double bar_box_zoff_pdf = 0;
 
 	double pmt_min_z = -1000;
 	double pmt_max_z = 1000;
@@ -551,7 +565,7 @@ int main(int nargs, char* argv[])
 #ifdef USE_BABAR_BOX
 	s_func_x = 29;
 	s_func_y = 29;
-#endif 
+#endif
 
 	int n_sim_phots = 40;
 
@@ -594,7 +608,7 @@ int main(int nargs, char* argv[])
 
 	double foc_mirror_yoff = 0;
 	double foc_mirror_zoff = 0;
-	
+
 
 	double liquid_absorbtion = 0*-log(.7)/1000;
 	double liquid_index = 1.33;
@@ -606,7 +620,7 @@ int main(int nargs, char* argv[])
 
 	char* rootfilename = new char[256];
 	char* inputrootfilename = new char[256];
-	sprintf(rootfilename,"fitdirc.root");	
+	sprintf(rootfilename,"fitdirc.root");
 
 	printf("Arguments Passed=%d\n",nargs);
 
@@ -628,24 +642,24 @@ int main(int nargs, char* argv[])
 			else if (strcmp(argv[i], "-of") == 0)
 			{
 				i++;
-				sprintf(rootfilename,"%s",argv[i]);	
+				sprintf(rootfilename,"%s",argv[i]);
 			}
 			else if (strcmp(argv[i], "-fill_dist") == 0)
 			{
-				fill_distributions = true;	
+				fill_distributions = true;
 			}
 			else if (strcmp(argv[i], "-cylindrical_mirror") == 0)
 			{
-				three_seg_mirror = false;	
+				three_seg_mirror = false;
 			}
 			else if (strcmp(argv[i], "-timing_test") == 0)
 			{
-				timing_test = true;	
+				timing_test = true;
 			}
 			else if (strcmp(argv[i], "-updown") == 0)
 			{
 				printf("Up-Down Histogram filling only implemented in loop mode, option currently does nothing in other modes\n");
-				sep_updown = true;	
+				sep_updown = true;
 			}
 			else if (strcmp(argv[i], "-root_input") == 0)
 			{
@@ -1013,6 +1027,21 @@ int main(int nargs, char* argv[])
 				i++;
 				pmt_offset = atof(argv[i]);
 			}
+			else if (strcmp(argv[i], "-pmt_offset_pdf") == 0)
+			{
+				i++;
+				pmt_offset_pdf = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-pmt_angle_offset") == 0)
+			{
+				i++;
+				pmt_angle_offset = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-pmt_angle_offset_pdf") == 0)
+			{
+				i++;
+				pmt_angle_offset_pdf = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-main_mirror_nonuniformity") == 0)
 			{
 				i++;
@@ -1047,6 +1076,31 @@ int main(int nargs, char* argv[])
 			{
 				i++;
 				main_mirror_zoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_angle_pdf_off") == 0)
+			{
+				i++;
+				main_mirror_angle_pdf_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_yangle_pdf_off") == 0)
+			{
+				i++;
+				main_mirror_yangle_pdf_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_zangle_pdf_off") == 0)
+			{
+				i++;
+				main_mirror_zangle_pdf_off = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_pdf_yoff") == 0)
+			{
+				i++;
+				main_mirror_pdf_yoff = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-main_mirror_pdf_zoff") == 0)
+			{
+				i++;
+				main_mirror_pdf_zoff = atof(argv[i]);
 			}
 			else if (strcmp(argv[i], "-rseed") == 0)
 			{
@@ -1113,6 +1167,21 @@ int main(int nargs, char* argv[])
 				i++;
 				bar_box_zoff = atof(argv[i]);
 			}
+			else if (strcmp(argv[i], "-bar_box_xoff_pdf") == 0)
+			{
+				i++;
+				bar_box_xoff_pdf = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_yoff_pdf") == 0)
+			{
+				i++;
+				bar_box_yoff_pdf = atof(argv[i]);
+			}
+			else if (strcmp(argv[i], "-bar_box_zoff_pdf") == 0)
+			{
+				i++;
+				bar_box_zoff_pdf = atof(argv[i]);
+			}
 			else if (strcmp(argv[i], "-foc_mirror_yoff") == 0)
 			{
 				i++;
@@ -1145,7 +1214,7 @@ int main(int nargs, char* argv[])
 	if (flatten_time == true)
 	{
 		s_func_t = 100000000;
-	}	
+	}
 
 	double outcsv_x,outcsv_y;
 	//double outcsv_t;
@@ -1198,7 +1267,7 @@ int main(int nargs, char* argv[])
 	dirc_model->set_liquid_index(liquid_index);
 	dirc_model->set_wedge_mirror_rand(wedge_non_uniformity);
 	dirc_model->set_three_seg_mirror(three_seg_mirror);
-	dirc_model->set_kaleidoscope_plot(kaleidoscope_plot);	
+	dirc_model->set_kaleidoscope_plot(kaleidoscope_plot);
 	dirc_model->set_pmt_plane_zs(pmt_min_z,pmt_max_z);
 	dirc_model->set_large_mirror_zs(large_mirror_min_z,large_mirror_max_z);
 	dirc_model->set_use_quartz_n_for_liquid(use_quartz_for_liquid);
@@ -1209,14 +1278,11 @@ int main(int nargs, char* argv[])
 	double muon_angle, pion_angle, kaon_angle;
 	muon_angle=pion_angle=kaon_angle = -1;
 
-	printf("BEFORE FILE\n");
-
 	TFile* tfile = new TFile(rootfilename,"RECREATE");
-
-	printf("BEFORE HISTS\n");
 
 	TH1F *ll_diff_pion = new TH1F("ll_diff_pion","Difference of log likelihood real = pion",200000,-200,200);
 	TH1F *ll_pion = new TH1F("ll_pion","log likelihood real = pion",20000,-2000,0);
+	TH1F *ll_pion_default = new TH1F("ll_pion_default","default log likelihood real = pion",20000,-2000,0);
 	TH1F *ll_diff_kaon = new TH1F("ll_diff_kaon","Difference of log likelihood real = kaon",200000,-200,200);
 	TH1F *ll_kaon = new TH1F("ll_kaon","log likelihood real = kaon",20000,-2000,0);
 	TH1F *ll_diff_pion_up = new TH1F("ll_diff_pion_up","Difference of log likelihood real = pion \"up\" going photons",200000,-200,200);
@@ -1347,7 +1413,7 @@ int main(int nargs, char* argv[])
 			babar_pmt_r,\
 			babar_t_unc,\
 			babar_t_bin);
-			
+
 #else
 	DircRectDigitizer digitizer(\
 			minx,\
@@ -1359,16 +1425,16 @@ int main(int nargs, char* argv[])
 			t_unc,\
 			t_bin_size);
 #endif
-	//  	
+	//
 	printf("Beginning Run\n");
-	double llc, llf, ll_diff;
-	llc=llf=ll_diff=0;
+	double llc, llf, ll_diff, llc_default;
+	llc=llf=ll_diff=llc_default=0;
 	int pion_kaon_diff = 0;
 	std::vector<dirc_point> sim_points;
 	std::vector<dirc_point> confound_points;
 	dirc_model->set_focmirror_nonuniformity(main_mirror_nonuniformity);
-	/*   read in file for events and 
-	 *   initialize an array 
+	/*   read in file for events and
+	 *   initialize an array
 	 *    */
 	if (inputrootfile)
 	{
@@ -1430,7 +1496,7 @@ int main(int nargs, char* argv[])
 			if (r >= (unsigned int) max_particles) break;
 
 			in_tree->GetEntry(i);
-			// 			if (iE > 4) continue;	
+			// 			if (iE > 4) continue;
 			//TODO read more than 1 particle per event
 			iPID = particle_id[0];
 			iBAR = dirc_model->get_bar_from_x(particle_x[0]*10);
@@ -1558,7 +1624,7 @@ int main(int nargs, char* argv[])
 		coverage_plot=false;
 
 		//declare memory addresses for inputs
-		//units: mm, ns, deg, GeV 
+		//units: mm, ns, deg, GeV
 
 		//declare for beta and angle based on PID, and constructors for hitpoints and pdfs
 		double pion_mc_beta,kaon_mc_beta,pion_mc_angle,kaon_mc_angle;
@@ -1734,9 +1800,9 @@ int main(int nargs, char* argv[])
 						ckov_unc/pdf_unc_red_fac,\
 						kaon_mc_beta);
 				//TODO: Check timing
-				double avg_x = 0;	
-				double avg_y = 0;	
-				double avg_t = 0;	
+				double avg_x = 0;
+				double avg_y = 0;
+				double avg_t = 0;
 				for (unsigned int k = 0; k < hits_trk_is_pion.size(); k++)
 				{
 					hits_trk_is_pion[k].t += t[n];
@@ -1877,13 +1943,13 @@ int main(int nargs, char* argv[])
 		num_runs=0;
 		coverage_plot=false;
 		std::ifstream f(in_str);
-		if(!f.is_open()){printf("%s not found!",in_str);return -1;}	
+		if(!f.is_open()){printf("%s not found!",in_str);return -1;}
 
-		int line_buf_size = 1000; 
+		int line_buf_size = 1000;
 		char  s[line_buf_size];
 		f.getline(s,line_buf_size); //skips first line
 		//declare memory addresses for inputs
-		//units: mm, ns, deg, GeV 
+		//units: mm, ns, deg, GeV
 		int iPID, iBAR,ievent_index;
 		double ix,iy,it,itheta,iphi,iE;
 		std::vector<int> PID,BAR,event_index;
@@ -2015,7 +2081,7 @@ int main(int nargs, char* argv[])
 					}
 
 					if(fabs(t[n]-t[j])<time_window && j!=n){
-						confounded_tally++; 
+						confounded_tally++;
 						if(abs(PID[j])==2 ||PID[j]==3){
 
 							dirc_model->sim_rand_n_photons(\
@@ -2212,7 +2278,7 @@ int main(int nargs, char* argv[])
 
 	}
 	else if (slac_run == true)
-	{ 
+	{
 		printf("Testing the SLAC geometry/run\n");
 
 		pion_beta = dirc_model->get_beta(energy,pimass);
@@ -2298,7 +2364,7 @@ int main(int nargs, char* argv[])
 			particle_theta = spread_ang.Uniform(0,box_rot_unc);
 			particle_phi = spread_ang.Uniform(0,360);
 			//Sim new photons
-			
+
 			//ns
 			double pion_time = particle_flight_distance/(pion_beta*.3);
 			double kaon_time = particle_flight_distance/(kaon_beta*.3);
@@ -2487,9 +2553,9 @@ int main(int nargs, char* argv[])
 		}
 	}
 	else if (sparse_recon_n > 0)
-	{ 
+	{
 		printf("Trying sparse reconstruction loop mode\n");
-		
+
 		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
 		{
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the sparse reconstruction.\n");
@@ -2582,7 +2648,7 @@ int main(int nargs, char* argv[])
 
 			llc = 0;
 			llf = 0;
-			
+
 			std::vector<double> start_phi;
 			std::vector<dirc_point> provisional_points;
 
@@ -2618,7 +2684,7 @@ int main(int nargs, char* argv[])
 				double cur_mean_phi = 0;
 				double cur_mean_x = 0;
 				double cur_mean_y = 0;
-				
+
 				int total_prov_points = 0;
 				double cur_dist_sq = 0;
 				for (unsigned int j = 0; j < provisional_points.size(); j++)
@@ -2627,7 +2693,7 @@ int main(int nargs, char* argv[])
 					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
 					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
 					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
-					
+
 					if (cur_dist_sq < points_dist_sq)
 					{
 						cur_mean_phi += start_phi[j];
@@ -2660,7 +2726,7 @@ int main(int nargs, char* argv[])
 					{
 						hit_points_pion.push_back(tmp_point);
 					}
-				}	
+				}
 				pdf_pion->set_support(hit_points_pion);
 				if (hit_points_pion.size() > 0)
 				{
@@ -2678,10 +2744,10 @@ int main(int nargs, char* argv[])
 						}
 					}
 				}
-	
+
 			}
 			start_phi.clear();
-			provisional_points.clear();	
+			provisional_points.clear();
 			for (int i = 0; i < num_provisional_points; i++)
 			{
 				dirc_point tmp_pro_point;
@@ -2721,7 +2787,7 @@ int main(int nargs, char* argv[])
 					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
 					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
 					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
-					
+
 					if (cur_dist_sq < points_dist_sq)
 					{
 						cur_mean_phi += start_phi[j];
@@ -2754,7 +2820,7 @@ int main(int nargs, char* argv[])
 					{
 						hit_points_kaon.push_back(tmp_point);
 					}
-				}	
+				}
 				pdf_kaon->set_support(hit_points_kaon);
 				if (hit_points_kaon.size() > 0)
 				{
@@ -2772,14 +2838,14 @@ int main(int nargs, char* argv[])
 						}
 					}
 				}
-	
+
 			}
 
 
 //			llc = pdf_pion->get_log_likelihood(sim_points);
 //			llf = pdf_kaon->get_log_likelihood(sim_points);
 
-			
+
 
 			ll_diff_pion->Fill(1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
@@ -2803,7 +2869,7 @@ int main(int nargs, char* argv[])
 			digitizer.digitize_points(sim_points);
 
 			start_phi.clear();
-			provisional_points.clear();	
+			provisional_points.clear();
 			llc=0;
 			llf=0;
 			for (int i = 0; i < num_provisional_points; i++)
@@ -2845,7 +2911,7 @@ int main(int nargs, char* argv[])
 					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
 					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
 					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
-					
+
 					if (cur_dist_sq < points_dist_sq)
 					{
 						cur_mean_phi += start_phi[j];
@@ -2877,7 +2943,7 @@ int main(int nargs, char* argv[])
 					{
 						hit_points_pion.push_back(tmp_point);
 					}
-				}	
+				}
 				pdf_pion->set_support(hit_points_pion);
 				if (hit_points_pion.size() > 0)
 				{
@@ -2887,10 +2953,10 @@ int main(int nargs, char* argv[])
 				//	printf("pion/kaon: %12.04f\n",add_ll);
 					llc += add_ll;
 				}
-	
+
 			}
 			start_phi.clear();
-			provisional_points.clear();	
+			provisional_points.clear();
 			for (int i = 0; i < num_provisional_points; i++)
 			{
 				dirc_point tmp_pro_point;
@@ -2930,7 +2996,7 @@ int main(int nargs, char* argv[])
 					cur_dist_sq += (sim_points[i].x-provisional_points[j].x)*(sim_points[i].x-provisional_points[j].x);
 					cur_dist_sq += (sim_points[i].y-provisional_points[j].y)*(sim_points[i].y-provisional_points[j].y);
 					cur_dist_sq += (sim_points[i].t-provisional_points[j].t)*(sim_points[i].t-provisional_points[j].t);
-					
+
 					if (cur_dist_sq < points_dist_sq)
 					{
 						cur_mean_phi += start_phi[j];
@@ -2962,7 +3028,7 @@ int main(int nargs, char* argv[])
 					{
 						hit_points_kaon.push_back(tmp_point);
 					}
-				}	
+				}
 				pdf_kaon->set_support(hit_points_kaon);
 				if (hit_points_kaon.size() > 0)
 				{
@@ -2972,7 +3038,7 @@ int main(int nargs, char* argv[])
 				//	printf("kaon/kaon: %12.04f\n",add_ll);
 					llf += add_ll;
 				}
-	
+
 			}
 //			llc = pdf_pion->get_log_likelihood(sim_points);
 //			llf = pdf_kaon->get_log_likelihood(sim_points);
@@ -2991,12 +3057,12 @@ int main(int nargs, char* argv[])
 		dirc_model->set_liquid_index(liquid_index);
 		dirc_model->set_three_seg_mirror(three_seg_mirror);
 		dirc_model->set_sidemirror(sm_xr,sm_xl);
-	
-	
+
+
 		dirc_model->set_pmt_offset(pmt_offset);
 		dirc_model->set_upper_wedge_angle_diff(wedge_uncertainty);
 		dirc_model->set_bar_box_angle(bar_box_box_angle);
-		
+
 		global_calib_model = dynamic_cast<DircBaseSim*>(dirc_model);
 		global_digitizer = &digitizer; //check this address math
 		global_particle_theta = particle_theta;
@@ -3014,7 +3080,7 @@ int main(int nargs, char* argv[])
 
 		init_global_data();
 
-		int n_minuit_pars = 2;	
+		int n_minuit_pars = 2;
 		double *minuit_pars = new double[n_minuit_pars];
 /*
 		double *minuit_grad;//not_computed
@@ -3038,22 +3104,22 @@ int main(int nargs, char* argv[])
  		double bmin[n_minuit_pars];
  		double bmax[n_minuit_pars];
 
-		vstrt[0] = 0; 
+		vstrt[0] = 0;
 		vstrt[1] = 0;
 //		vstrt[2] = 0;
 //		vstrt[3] = 0;
 //		vstrt[4] = 50;
- 		stp[0] = .5; 
+ 		stp[0] = .5;
 		stp[1] = .5;
 //		stp[2] = 1;
 //		stp[3] = 1;
 //		stp[4] = 10;
-		bmin[0] = -20; 
+		bmin[0] = -20;
 		bmin[1] = bmin[0];
 //		bmin[2] = bmin[0];
 //		bmin[3] = bmin[0];
 //		bmin[4] = 5;
- 		bmax[0] = 20; 
+ 		bmax[0] = 20;
 		bmax[1] = bmax[0];
 //		bmax[2] = bmax[0];
 //		bmax[3] = bmax[0];
@@ -3069,10 +3135,10 @@ int main(int nargs, char* argv[])
 
 		arglist[0] = 100;
 		arglist[1] = .01;
-		minuit.SetPrintLevel(-1);	
+		minuit.SetPrintLevel(-1);
 		minuit.mnexcm("SIM", arglist ,1,ierflg);
 //		minuit.mnexcm("IMP", arglist ,1,ierflg);
-		
+
 		double x_shift = -.6;
 		double y_shift, y_split;
 		double cur_err;
@@ -3090,11 +3156,11 @@ int main(int nargs, char* argv[])
 
 	}
 	else if (line_recon_n > 0)
-	{ 
+	{
 		printf("Trying line reconstruction loop mode\n");
 		printf("Caliibrations: pion_x_adj pion_y_adj kaon_x_adj kaon_y_adj\n");
 		printf("%12.04f %12.04f %12.04f %12.04f\n",pion_x_adj, pion_y_adj, kaon_x_adj, kaon_y_adj);
-		
+
 		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
 		{
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the line reconstruction.\n");
@@ -3178,7 +3244,7 @@ int main(int nargs, char* argv[])
 
 			llc = 0;
 			llf = 0;
-			
+
 			std::vector<double> phi_last_wall_neg;
 			std::vector<double> phi_last_wall_pos;
 			std::vector<dirc_point> provisional_points_lwn;
@@ -3233,23 +3299,23 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				//cur_mean_phi /= total_prov_points;
 				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
-				
+
 				if (min_dist_sq > max_dev_sq)
 				{
 					unused_photons++;
@@ -3261,8 +3327,8 @@ int main(int nargs, char* argv[])
 			pion_unused_photons->Fill(unused_photons);
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
-			provisional_points_lwn.clear();	
-			provisional_points_lwp.clear();	
+			provisional_points_lwn.clear();
+			provisional_points_lwp.clear();
 
 			dirc_model->track_all_line_photons(\
 			        provisional_points_lwn,\
@@ -3293,18 +3359,18 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				//cur_mean_phi /= total_prov_points;
@@ -3339,10 +3405,11 @@ int main(int nargs, char* argv[])
 
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
-			provisional_points_lwn.clear();	
-			provisional_points_lwp.clear();	
+			provisional_points_lwn.clear();
+			provisional_points_lwp.clear();
 			llc=0;
 			llf=0;
+			llc_default=0.;
 
 			dirc_model->track_all_line_photons(\
 			        provisional_points_lwn,\
@@ -3375,18 +3442,18 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				//cur_mean_phi /= total_prov_points;
@@ -3396,8 +3463,8 @@ int main(int nargs, char* argv[])
 			}
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
-			provisional_points_lwn.clear();	
-			provisional_points_lwp.clear();	
+			provisional_points_lwn.clear();
+			provisional_points_lwp.clear();
 
 			dirc_model->track_all_line_photons(\
 			        provisional_points_lwn,\
@@ -3428,18 +3495,18 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					min_dist_sq = std::min(min_dist_sq,cur_dist_sq);
 				}
 				//cur_mean_phi /= total_prov_points;
@@ -3464,7 +3531,7 @@ int main(int nargs, char* argv[])
 	}
 	else if (num_runs > 0)
 	{
-		 
+
 		printf("no input file specified.  Running in loop mode\n");
 
 
@@ -3482,6 +3549,7 @@ int main(int nargs, char* argv[])
 
 		std::vector<dirc_point> hit_points_pion;
 		std::vector<dirc_point> hit_points_kaon;
+		std::vector<dirc_point> hit_points_pion_default;
 
 
 
@@ -3508,6 +3576,25 @@ int main(int nargs, char* argv[])
 		double kaon_time = particle_flight_distance/(kaon_beta*.3);
 
 
+		//--------------- modify model including offsets ----------------//
+
+		dirc_model->set_pmt_offset(pmt_offset_pdf);
+		dirc_model->set_pmt_angle(47.87+pmt_angle_offset_pdf); // awfully
+
+		dirc_model->set_focus_mirror_angle(			\
+						   spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+main_mirror_angle_pdf_off, \
+						   spread_ang.Gaus(0,mirror_angle_change_yunc)+main_mirror_yangle_pdf_off, \
+						   main_mirror_zangle_pdf_off);
+
+		dirc_model->set_mirror_plane_offsets(			\
+					 		 main_mirror_pdf_yoff,	\
+					 		 main_mirror_pdf_zoff);
+
+		dirc_model->set_bar_box_offsets(\
+					 		 bar_box_xoff_pdf,\
+					 		 bar_box_yoff_pdf,\
+					 		 bar_box_zoff_pdf);
+
 		dirc_model->sim_reg_n_photons(\
 				hit_points_pion,\
 				n_phi_phots,\
@@ -3522,7 +3609,45 @@ int main(int nargs, char* argv[])
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
 				pion_beta,\
-				1);
+				1); //stores values for next generated model
+
+
+			//------------- model with default offset for FoM --------------//
+
+			dirc_model->set_pmt_offset(0.);
+			dirc_model->set_pmt_angle(47.87+0.); // awfully
+
+			dirc_model->set_focus_mirror_angle(			\
+							   spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+0., \
+							   spread_ang.Gaus(0,mirror_angle_change_yunc)+0., \
+							   0.);
+
+			dirc_model->set_mirror_plane_offsets(			\
+						 		 0.,	\
+						 		 0.);
+
+			dirc_model->set_bar_box_offsets(\
+						 		 0.,\
+						 		 0.,\
+						 		 0.);
+
+			dirc_model->sim_reg_n_photons(\
+					hit_points_pion_default,\
+					n_phi_phots,\
+					n_z_phots,\
+					-1,\
+					1,\
+					particle_x,\
+					particle_y,\
+					pion_time,\
+					particle_theta,\
+					particle_phi,\
+					0,\
+					ckov_unc/pdf_unc_red_fac,\
+					pion_beta,\
+					0); //stores values for next generated model
+
+
 //TODO RETURN
 /*
 		dirc_model->sim_reg_n_photons(\
@@ -3540,7 +3665,8 @@ int main(int nargs, char* argv[])
 				ckov_unc/pdf_unc_red_fac,\
 				kaon_beta);
 */
-		dirc_model->sim_reg_n_photons(\
+
+		 dirc_model->sim_reg_n_photons(\
 				hit_points_kaon,\
 				n_phi_phots,\
 				n_z_phots,\
@@ -3553,12 +3679,15 @@ int main(int nargs, char* argv[])
 				particle_phi,\
 				0,\
 				ckov_unc/pdf_unc_red_fac,\
-				pion_beta,\
-				0);
+				kaon_beta,\
+				0);  //this returned to be for kaon
+
 		std::vector<dirc_point> hit_points_pion_dummy;
 		std::vector<dirc_point> hit_points_kaon_dummy;
 
 /*
+=======
+>>>>>>> f7582c2b0057cbb87768d4cd7b81f1ad70fe9968
 		for (int i = 0; i < 20; i++)
 		{
 			double hppx, hppy, hpkx, hpky;
@@ -3568,6 +3697,7 @@ int main(int nargs, char* argv[])
 			hpky = hit_points_kaon[i].y;
 
 			printf("%12.04f %12.04f %12.04f %12.04f\n",hppx,hpkx,hppy,hpky);
+<<<<<<< HEAD
 		}
 */
 /*
@@ -3624,6 +3754,15 @@ int main(int nargs, char* argv[])
 				s_func_x,\
 				s_func_y,\
 				s_func_t);
+		DircSpreadGaussian* pdf_pion_default = new DircSpreadGaussian(\
+				sfunc_sig,\
+				hit_points_pion_default,\
+				s_func_x,\
+				s_func_y,\
+				s_func_t);
+
+
+    //------------------ simulated real data ----------------//
 
 		for (int i = 0; i < num_runs; i++)
 		{
@@ -3662,15 +3801,21 @@ int main(int nargs, char* argv[])
 						ckov_unc/pdf_unc_red_fac,\
 						kaon_beta);
 
-
 			}
+
+
+			dirc_model->set_pmt_offset(pmt_offset); //Oct 25 2018
+			dirc_model->set_pmt_angle(47.87+pmt_angle_offset);
+
 			dirc_model->set_focus_mirror_angle(\
 					spread_ang.Gaus(main_mirror_angle,mirror_angle_change_unc)+main_mirror_angle_off,\
 					spread_ang.Gaus(0,mirror_angle_change_yunc)+main_mirror_yangle_off,\
 					main_mirror_zangle_off);
+
 			dirc_model->set_mirror_plane_offsets(\
 					main_mirror_yoff,\
 					main_mirror_zoff);
+
 			dirc_model->set_bar_box_offsets(\
 					bar_box_xoff,\
 					bar_box_yoff,\
@@ -3740,10 +3885,14 @@ int main(int nargs, char* argv[])
 					sim_points[i].t = 0;
 				}
 			}
+
+			//------------ calculate the likelihoods ------------//
 			llc = pdf_pion->get_log_likelihood(sim_points);
 			llf = pdf_kaon->get_log_likelihood(sim_points);
+			llc_default = pdf_pion_default->get_log_likelihood(sim_points);
 
 			ll_pion->Fill(llc);
+			ll_pion_default->Fill(llc_default);
 
 			ll_diff_pion->Fill(1*(llc-llf));
 			phot_found_pion->Fill(sim_points.size());
@@ -3857,6 +4006,7 @@ int main(int nargs, char* argv[])
 		}
 
 		printf("\nPion LL: %12.04f\n",ll_pion->GetMean());
+		printf("Pion LL default: %12.04f\n",ll_pion_default->GetMean());
 		printf("Kaon LL: %12.04f\n",ll_kaon->GetMean());
 
 		printf("\nRun Completed\n");
@@ -3940,7 +4090,7 @@ int main(int nargs, char* argv[])
 					iphi_bin++;
 					printf("\r                                                                             ");
 					printf("\rPhi: %12.04f    Theta: %12.04f",iphi,itheta);
-					fflush(stdout);	
+					fflush(stdout);
 					pion_beta = dirc_model->get_beta(5,pimass); //High energy
 					dirc_model->sim_rand_n_photons(
 							sim_points,
@@ -3963,7 +4113,7 @@ int main(int nargs, char* argv[])
 		}
 
 
-		//Make the distribution - use random	
+		//Make the distribution - use random
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
 		if (monochrome_plot == true)
@@ -4013,7 +4163,7 @@ int main(int nargs, char* argv[])
 	}
 	double dist_mean = 0;
 	if (box_check_n > 0)
-	{	
+	{
 		printf("Box Checking Histograms...\n");
 		std::vector<dirc_point> box_check_points;
 
@@ -4032,8 +4182,8 @@ int main(int nargs, char* argv[])
 
 		for (unsigned int i = 0; i < box_check_points.size(); i++)
 		{
-			box_check_x->Fill(box_check_points[i].x);	
-			box_check_y->Fill(box_check_points[i].y);	
+			box_check_x->Fill(box_check_points[i].x);
+			box_check_y->Fill(box_check_points[i].y);
 			box_check_d->Fill(box_check_points[i].t);
 			dist_mean += box_check_points[i].t;
 			box_check_xy->Fill(box_check_points[i].x,box_check_points[i].y);
@@ -4047,14 +4197,14 @@ int main(int nargs, char* argv[])
 
 	}
 	if (phot_check_n > 0)
-	{	
+	{
 		printf("Checking Number of Photons Found\n");
 		std::vector<dirc_point> phot_check_points;
 
 		int num_phot_points = 100;
 		double phot_check_theta = 0;
 		double phot_check_phi = 0;
-		dist_mean = 0;	
+		dist_mean = 0;
 
 		for (int i = 0; i < phot_check_n; i++)
 		{
@@ -4099,7 +4249,7 @@ int main(int nargs, char* argv[])
 		printf("Running Filling LL hists with points drawn from gaussian, Do not perform any other fills\n");
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
-	
+
 		double quartz_index = 1.473;
 		double pion_cerenkov = acos(1/(quartz_index*pion_beta));
 		double kaon_cerenkov = acos(1/(quartz_index*kaon_beta));
@@ -4138,7 +4288,7 @@ int main(int nargs, char* argv[])
 
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
-	
+
 		double quartz_index = 1.473;
 		double pion_cerenkov = acos(1/(quartz_index*pion_beta));
 		double kaon_cerenkov = acos(1/(quartz_index*kaon_beta));
@@ -4231,7 +4381,7 @@ int main(int nargs, char* argv[])
 				b_cc_direct,\
 				m_cc_indirect,\
 				b_cc_indirect);
-		
+
 			printf("Direct m and b: %12.04f %12.04f\n",m_cc_direct,b_cc_direct);
 			printf("Indirect m and b: %12.04f %12.04f\n",m_cc_indirect,b_cc_indirect);
 		}
@@ -4265,7 +4415,7 @@ int main(int nargs, char* argv[])
                                 tracking_unc,\
                                 ckov_unc, //ckov_unc
                                 pion_beta);
-			
+
 			dirc_model->sim_rand_n_photons(\
                         	hit_points_kaon,\
                                 n_sim_phots,\
@@ -4306,7 +4456,7 @@ int main(int nargs, char* argv[])
 				}
 				iter_last_mean = iter_mean;
 				iter_mean = pion_lut_mean/pion_lut_count;
-				//printf("%3d %12.04f %12.04f\n",j,iter_mean, pion_lut_count);	
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, pion_lut_count);
 			}
 			//printf("Pion Peak: %12.04f\n",57.3*iter_mean);
 			//rerun with oval cut averaging per point
@@ -4321,7 +4471,7 @@ int main(int nargs, char* argv[])
         			oval_cut_angle_spread_sq,\
         			oval_cut_time_spread_sq);
 			*/
-				
+
 			dirc_lut->get_ckov_theta_single_oval_cut(pion_ckov, \
 			       	pion_dts, \
         			hit_points_pion, \
@@ -4370,7 +4520,7 @@ int main(int nargs, char* argv[])
 				}
 				iter_last_mean = iter_mean;
 				iter_mean = kaon_lut_mean/kaon_lut_count;
-				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);	
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);
 			}
 			for (int j = 0; j < max_lut_iter; j++)
 			{
@@ -4388,7 +4538,7 @@ int main(int nargs, char* argv[])
 				}
 				iter_last_mean = iter_mean;
 				iter_mean = kaon_lut_mean/kaon_lut_count;
-				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);	
+				//printf("%3d %12.04f %12.04f\n",j,iter_mean, kaon_lut_count);
 			}
 			//rerun with oval cut averaging per point
 			/*
@@ -4448,13 +4598,13 @@ int main(int nargs, char* argv[])
 
 		TH1F* tmp_pion_lut = new TH1F(*pion_lut_vals);
 		TH1F* tmp_kaon_lut = new TH1F(*kaon_lut_vals);
-		
+
 		double pion_mean = 0;//Degrees
 		double pion_sigma = 0;//mrad
 		double kaon_mean = 0;//Degrees
 		double kaon_sigma = 0;//mrad
 
-		
+
 		tmp_pion_lut->Fit("gaus","RQL","",fmin,fmax);
 		pion_mean = tmp_pion_lut->GetFunction("gaus")->GetParameter(1);
 		pion_sigma = 3141.59/180*tmp_pion_lut->GetFunction("gaus")->GetParameter(2);
@@ -4462,10 +4612,10 @@ int main(int nargs, char* argv[])
 		kaon_mean = tmp_kaon_lut->GetFunction("gaus")->GetParameter(1);
 		kaon_sigma = 3141.59/180*tmp_kaon_lut->GetFunction("gaus")->GetParameter(2);
 		printf("Per photon resolutions of LUT\n");
-		
+
 		printf("Pion - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg\n",pion_mean,pion_sigma,.057*pion_sigma);
 		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg\n",kaon_mean,kaon_sigma,.057*kaon_sigma);
-		
+
 		pion_mean = 0;
 		pion_sigma = 0;//mrad
 		kaon_mean = 0;
@@ -4489,7 +4639,7 @@ int main(int nargs, char* argv[])
 		//kaon_mean *= 17.45;//to mrad
 		pion_sigma *= 17.45;//to mrad
 		kaon_sigma *= 17.45;//to mrad
-		/*	
+		/*
 		tmp_pion_means->Fit("gaus","RQL","",mean_fit_min,mean_fit_max);
 		pion_mean = tmp_pion_means->GetFunction("gaus")->GetParameter(1);
 		pion_sigma = 3141.59/180*tmp_pion_means->GetFunction("gaus")->GetParameter(2);
@@ -4502,10 +4652,10 @@ int main(int nargs, char* argv[])
 		printf("Kaon - Mean: %12.04f deg         Sigma: %12.04f mrad         %12.04f deg        Entries: %12.04f\n",kaon_mean,kaon_sigma,.057*kaon_sigma,kaon_lut_angles->GetMean());
 	}
 	if (fill_d_midline_n > 0)
-	{ 
+	{
 		printf("Check Delta Midline\n");
 
-	
+
 		if (flatten_time==true || sep_updown == true || monochrome_plot == true)
 		{
 			printf("flatten_time, sep_updown, and monochrome_plot  not currently implemented for the line reconstruction.\n");
@@ -4599,8 +4749,8 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
 					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					if (cur_dist_sq < min_dist_sq)
@@ -4609,21 +4759,21 @@ int main(int nargs, char* argv[])
 						t_dx = sim_points[i].x - provisional_points_lwn[j].x;
 						t_dy = sim_points[i].y - provisional_points_lwn[j].y;
 						t_dt = sim_points[i].t - provisional_points_lwn[j].t;
-					}	
+					}
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					if (cur_dist_sq < min_dist_sq)
 					{
 						min_dist_sq = cur_dist_sq;
 						t_dx = sim_points[i].x - provisional_points_lwp[j].x;
 						t_dy = sim_points[i].y - provisional_points_lwp[j].y;
 						t_dt = sim_points[i].t - provisional_points_lwp[j].t;
-					}	
+					}
 				}
 				//cur_mean_phi /= total_prov_points;
 				//printf("pion/pion: %12.04f %12.04f\n",cur_mean_phi/total_prov_points,atan2(cur_mean_y,cur_mean_x));
@@ -4635,8 +4785,8 @@ int main(int nargs, char* argv[])
 
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
-			provisional_points_lwn.clear();	
-			provisional_points_lwp.clear();	
+			provisional_points_lwn.clear();
+			provisional_points_lwp.clear();
 
 			sim_points.clear();
 
@@ -4657,8 +4807,8 @@ int main(int nargs, char* argv[])
 
 			phi_last_wall_neg.clear();
 			phi_last_wall_pos.clear();
-			provisional_points_lwn.clear();	
-			provisional_points_lwp.clear();	
+			provisional_points_lwn.clear();
+			provisional_points_lwp.clear();
 
 			dirc_model->track_all_line_photons(\
 					provisional_points_lwn,\
@@ -4678,31 +4828,31 @@ int main(int nargs, char* argv[])
 				double cur_dist_sq = -1;
 				for (unsigned int j = 0; j < provisional_points_lwn.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwn[j].x)*(sim_points[i].x - provisional_points_lwn[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwn[j].y)*(sim_points[i].y - provisional_points_lwn[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwn[j].t)*(sim_points[i].t - provisional_points_lwn[j].t)/time_spread;
 					if (cur_dist_sq < min_dist_sq)
 					{
 						min_dist_sq = cur_dist_sq;
 						t_dx = sim_points[i].x - provisional_points_lwn[j].x;
 						t_dy = sim_points[i].y - provisional_points_lwn[j].y;
 						t_dt = sim_points[i].t - provisional_points_lwn[j].t;
-					}	
+					}
 				}
 				for (unsigned int j = 0; j < provisional_points_lwp.size(); j++)
 				{
-					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);		
-					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);		
+					cur_dist_sq = (sim_points[i].x - provisional_points_lwp[j].x)*(sim_points[i].x - provisional_points_lwp[j].x);
+					cur_dist_sq += (sim_points[i].y - provisional_points_lwp[j].y)*(sim_points[i].y - provisional_points_lwp[j].y);
 					cur_dist_sq /= dist_spread;
-					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;	
+					cur_dist_sq += (sim_points[i].t - provisional_points_lwp[j].t)*(sim_points[i].t - provisional_points_lwp[j].t)/time_spread;
 					if (cur_dist_sq < min_dist_sq)
 					{
 						min_dist_sq = cur_dist_sq;
 						t_dx = sim_points[i].x - provisional_points_lwp[j].x;
 						t_dy = sim_points[i].y - provisional_points_lwp[j].y;
 						t_dt = sim_points[i].t - provisional_points_lwp[j].t;
-					}	
+					}
 				}
 				kaon_midline_dx->Fill(t_dx);
 				kaon_midline_dy->Fill(t_dy);
@@ -4761,38 +4911,38 @@ int main(int nargs, char* argv[])
 		for (unsigned int i = 0; i < left_points.size(); i++)
 		{
 			out_val = left_points[i];
-			x = out_val.x; 
-			y = out_val.y; 
-			t = out_val.t; 
-			phi = out_val.init_phi; 
+			x = out_val.x;
+			y = out_val.y;
+			t = out_val.t;
+			phi = out_val.init_phi;
 			if (fabs(x-last_x) > x_lim || fabs(y - last_y) > y_lim || fabs(t - last_t) > t_lim || fabs(phi - last_phi) > phi_lim)
 			{
 				//print a break in the data if there are any jumps
 				printf("\n");
 			}
 			printf("%05d %12.04f %12.04f %12.04f %12.04f %12.04f\n",-1,emit_angle,out_val.init_phi,out_val.x,out_val.y,out_val.t);
-			last_x = x; 
-			last_y = y; 
-			last_t = t; 
-			last_phi = phi; 
+			last_x = x;
+			last_y = y;
+			last_t = t;
+			last_phi = phi;
 		}
 		for (unsigned int i = 0; i < right_points.size(); i++)
 		{
 			out_val = right_points[i];
-			x = out_val.x; 
-			y = out_val.y; 
-			t = out_val.t; 
-			phi = out_val.init_phi; 
+			x = out_val.x;
+			y = out_val.y;
+			t = out_val.t;
+			phi = out_val.init_phi;
 			if (fabs(x-last_x) > x_lim || fabs(y - last_y) > y_lim || fabs(t - last_t) > t_lim || fabs(phi - last_phi) > phi_lim)
 			{
 				//print a break in the data;
 				//printf("\n");
 			}
 			//printf("%05d %12.04f %12.04f %12.04f %12.04f %12.04f\n",-1,emit_angle,out_val.init_phi,out_val.x,out_val.y,out_val.t);
-			last_x = x; 
-			last_y = y; 
-			last_t = t; 
-			last_phi = phi; 
+			last_x = x;
+			last_y = y;
+			last_t = t;
+			last_phi = phi;
 		}
 	}
 	if (bounces_phot_n > 0)
@@ -4800,7 +4950,7 @@ int main(int nargs, char* argv[])
 		printf("Outputing N bounces histograms (With %d initial photons)\n",bounces_phot_n);
 		dirc_model->set_store_bounces(true);
 		std::vector<dirc_point> sim_points;
-		
+
 		dirc_model->sim_rand_n_photons(\
 				sim_points,\
 				bounces_phot_n,\
@@ -4814,7 +4964,7 @@ int main(int nargs, char* argv[])
 				tracking_unc,\
 				0,\
 				pion_beta);
-		
+
 		std::vector<int> nbouncesx;
 		std::vector<int> nbouncesz;
 		std::vector<int> nbouncesx_dir;
@@ -4854,7 +5004,7 @@ int main(int nargs, char* argv[])
 		{
 			n_bounces_z_indirect->Fill(nbouncesz_indir[i]);
 		}
-	
+
 		dirc_model->set_store_bounces(false);
 	}
 	if (sim_time_test_n > 0)
@@ -4894,7 +5044,7 @@ int main(int nargs, char* argv[])
 	{
 		int out_csv_n = 40000;
 
-		
+
 		std::vector<dirc_point> store_points;
 		pion_beta = dirc_model->get_beta(energy,pimass);
 		kaon_beta = dirc_model->get_beta(energy,kmass);
@@ -4917,13 +5067,13 @@ int main(int nargs, char* argv[])
 		csv_out.open("pion_loc.csv");
 
 		char outline[256];
-		
+
 		for (unsigned int i = 0; i < store_points.size(); i++)
 		{
 			sprintf(outline,"%12.04f	%12.04f	%12.04f\n",store_points[i].x,store_points[i].y,store_points[i].t);
 			csv_out << outline;
 		}
-		
+
 
 		csv_out.close();
 	}
@@ -4989,14 +5139,14 @@ int main(int nargs, char* argv[])
 	}
 
 
-			
+
 	if (refraction_sim_n > 0)
 	{
 		std::vector<std::pair<double, double> > pion_theta_cphi;
 		std::vector<std::pair<double, double> > kaon_theta_cphi;
 
-		particle_theta=particle_theta_mean;	
-		particle_phi=particle_phi_mean;	
+		particle_theta=particle_theta_mean;
+		particle_phi=particle_phi_mean;
 
 		printf("Creating Refraction histograms...\n");
 		std::vector<double> before_fill;
@@ -5075,7 +5225,7 @@ int main(int nargs, char* argv[])
 	{
 		double pion_beta = dirc_model->get_beta(energy,pimass);
 		double kaon_beta = dirc_model->get_beta(energy,kmass);
-		
+
 		//printf("%12.04f\n",dirc_model->get_cerenkov_angle_rand(pion_beta,0,t_lambda));
 
 		pion_cerenkov->Fill(dirc_model->get_cerenkov_angle_rand(pion_beta,0,t_lambda));
@@ -5119,6 +5269,7 @@ int main(int nargs, char* argv[])
 	kaon_dist_t->Write();
 	ll_diff_pion->Write();
 	ll_pion->Write();
+	ll_pion_default->Write();
 	ll_diff_kaon->Write();
 	ll_kaon->Write();
 	ll_diff_pion_up->Write();
@@ -5139,7 +5290,7 @@ int main(int nargs, char* argv[])
 	liquid_dist->Write();
 	pion_lambda->Write();
 	kaon_lambda->Write();
-	
+
 	pion_unused_photons->Write();
 	kaon_unused_photons->Write();
 
