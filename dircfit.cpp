@@ -3558,6 +3558,7 @@ int main(int nargs, char* argv[])
 		std::vector<dirc_point> hit_points_pion_dummy;
 		std::vector<dirc_point> hit_points_kaon_dummy;
 
+/*
 		for (int i = 0; i < 20; i++)
 		{
 			double hppx, hppy, hpkx, hpky;
@@ -3568,7 +3569,7 @@ int main(int nargs, char* argv[])
 
 			printf("%12.04f %12.04f %12.04f %12.04f\n",hppx,hpkx,hppy,hpky);
 		}
-
+*/
 /*
 		dirc_model->sim_rand_n_photons(\
 				hit_points_pion,\
@@ -3726,6 +3727,11 @@ int main(int nargs, char* argv[])
 					ckov_unc,\
 					pion_beta);
 			digitizer.digitize_points(sim_points);
+
+			if (i == 1)
+			{
+				printf("TEST SIM x,y: %12.04f,%12.04f\n",sim_points[0].x,sim_points[0].y);
+			}
 
 			if (flatten_time == true)
 			{
