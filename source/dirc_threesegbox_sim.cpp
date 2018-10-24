@@ -359,7 +359,6 @@ void DircThreeSegBoxSim::sidemirror_reflect_point(dirc_point &point) {
 	double tmpx = 0;
 	tmpx = point.x;
 	while (tmpx < sidemirror_xl || tmpx > sidemirror_xr) {
-		//printf("%12.04f ",tmpx);
 		if (rand_gen->Uniform(0,1) > sidemirror_reflectivity)
 		{
 			point.t = -1337;
@@ -450,6 +449,12 @@ void DircThreeSegBoxSim::warp_readout_box(
 			dy,\
 			dz);
 
+//Must call absorbtion MC first so that the same number of random calls are maintained
+	if (!(absorbtion_mc(dx,dy)) || (z > 0)) {
+		out_val.t = -1337;
+		return;
+	}
+/*
 	if (z > 0) {
 		out_val.t = -1337;
 		return;
@@ -460,6 +465,7 @@ void DircThreeSegBoxSim::warp_readout_box(
 		out_val.t = -1337;
 		return;
 	}
+*/
 	mm_index += warp_sens_plane(\
 			out_val,\
 			x,\

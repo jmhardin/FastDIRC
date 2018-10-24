@@ -3645,7 +3645,7 @@ int main(int nargs, char* argv[])
 					0,\
 					ckov_unc/pdf_unc_red_fac,\
 					pion_beta,\
-					0); //stores values for next generated model
+					1); //stores values for next generated model
 
 
 //TODO RETURN
