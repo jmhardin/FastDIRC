@@ -46,6 +46,8 @@ double find_sig_val(double seperation, double roc_integral, double sig_start, do
 }
 double runGraphicHistos(TString ifile = "tmpfitdirc.root", bool verbose_out=true, double ienergy = 5, int iupdown = 0)
 {
+	TCanvas *c1 = new TCanvas("myc1","myc1",1000,1200);
+
 	if (verbose_out == false)
 	{
 		//supresses canvas message 

@@ -3595,6 +3595,25 @@ int main(int nargs, char* argv[])
 					 		 bar_box_yoff_pdf,\
 					 		 bar_box_zoff_pdf);
 
+		//Do the kaon first so Cris's default run is done correctly
+		 dirc_model->sim_reg_n_photons(\
+				hit_points_kaon,\
+				n_phi_phots,\
+				n_z_phots,\
+				-1,\
+				1,\
+				particle_x,\
+				particle_y,\
+				kaon_time,\
+				particle_theta,\
+				particle_phi,\
+				0,\
+				ckov_unc/pdf_unc_red_fac,\
+				kaon_beta,\
+				-1);  //this returned to be for kaon
+
+
+
 		dirc_model->sim_reg_n_photons(\
 				hit_points_pion,\
 				n_phi_phots,\
@@ -3611,6 +3630,8 @@ int main(int nargs, char* argv[])
 				pion_beta,\
 				1); //stores values for next generated model
 
+		std::vector<dirc_point> hit_points_pion_dummy;
+		std::vector<dirc_point> hit_points_kaon_dummy;
 
 			//------------- model with default offset for FoM --------------//
 
@@ -3645,7 +3666,7 @@ int main(int nargs, char* argv[])
 					0,\
 					ckov_unc/pdf_unc_red_fac,\
 					pion_beta,\
-					1); //stores values for next generated model
+					0); //stores values for next generated model
 
 
 //TODO RETURN
@@ -3666,24 +3687,6 @@ int main(int nargs, char* argv[])
 				kaon_beta);
 */
 
-		 dirc_model->sim_reg_n_photons(\
-				hit_points_kaon,\
-				n_phi_phots,\
-				n_z_phots,\
-				-1,\
-				1,\
-				particle_x,\
-				particle_y,\
-				kaon_time,\
-				particle_theta,\
-				particle_phi,\
-				0,\
-				ckov_unc/pdf_unc_red_fac,\
-				kaon_beta,\
-				0);  //this returned to be for kaon
-
-		std::vector<dirc_point> hit_points_pion_dummy;
-		std::vector<dirc_point> hit_points_kaon_dummy;
 
 /*
 =======
